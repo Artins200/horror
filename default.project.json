@@ -1,0 +1,21 @@
+{
+  "name": "horror-endless-stairs",
+  "tree": {
+    "$className": "DataModel",
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Script": {
+        "$path": "src/server/HorrorGameServer.server.lua"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "LocalScript": {
+          "$path": "src/client/HorrorClient.client.lua"
+        }
+      }
+    }
+  }
+}
