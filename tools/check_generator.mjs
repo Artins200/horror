@@ -221,7 +221,9 @@ local function addPlayer(name)
         character.Name = self.Name
         local root = Instance.new("Part")
         root.Name = "HumanoidRootPart"
-        root.CFrame = CFrame.new(0, 3, 0)
+        local spawn = self.RespawnLocation
+        root.CFrame = spawn and CFrame.new(spawn.Position + Vector3.new(0, spawn.Size.Y / 2 + 3, 0))
+            or CFrame.new(0, 3, 0)
         root.AssemblyLinearVelocity = Vector3.new()
         root.Parent = character
         local human = Instance.new("Humanoid")
@@ -245,11 +247,18 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
+assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3", "old invisible-avatar place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
+local spawn = world:FindFirstChild("CheckpointSpawn")
+assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
+    and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - NocturneLayout.EntranceY(0)) < 0.01
+    and spawn.Position.Z == 10 and player.RespawnLocation == spawn,
+    "native spawn pad must meet the walkable floor and own the avatar spawn")
 local spawnedRoot = player.Character:FindFirstChild("HumanoidRootPart")
 local spawnedHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
-assert(spawnedRoot and spawnedRoot.Anchored == false and spawnedHumanoid.AutoRotate == true,
-    "the playable avatar must be free to fall, turn, and collide")
+assert(spawnedRoot and spawnedRoot.Anchored == false and spawnedHumanoid.AutoRotate == true
+    and math.abs(spawnedRoot.Position.Y - 3) < 0.01 and spawnedRoot.Position.Z == 10,
+    "native spawn must place the playable avatar on the first room's floor")
 local function roomAt(index)
     for _, child in ipairs(world:GetChildren()) do
         if child:GetAttribute("RoomIndex") == index then return child end

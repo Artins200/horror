@@ -4,6 +4,8 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
+assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3",
+	"Old place loaded: open the NEW 13123.rbxl before testing")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -70,7 +72,10 @@ for index = 0, 99 do
 end
 assert(Layout.IsTurn(6) and not Layout.IsStair(6))
 assert(Layout.PathX(6, 17) == 8 and Layout.PathX(6, 28) == -8)
-assert(world:FindFirstChild("CheckpointSpawn"), "Missing checkpoint spawn")
+local spawn = world:FindFirstChild("CheckpointSpawn")
+assert(spawn and spawn.CanCollide and spawn.Anchored
+	and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - Layout.EntranceY(0)) < 0.01,
+	"Checkpoint spawn pad is not flush with the solid foyer floor")
 assert(game:GetService("ReplicatedStorage"):FindFirstChild("NocturneRemote"))
 -- Unlike an XML inspection, this checks whether the live avatar is grounded.
 local player = game:GetService("Players"):GetPlayers()[1]

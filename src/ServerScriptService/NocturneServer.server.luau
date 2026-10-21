@@ -13,6 +13,7 @@ local Layout = require(ReplicatedStorage:WaitForChild("NocturneLayout"))
 
 local CONFIG = {
 	Doors = 100,
+	SpawnDistance = 10, -- room behind the third-person avatar/camera
 	Ahead = 2,
 	KeepBehind = 8,
 	WalkSpeed = 12,
@@ -1075,14 +1076,15 @@ end
 local function pruneRooms()
 	local first = math.max(0, state.opened - CONFIG.KeepBehind)
 	if state.spawn then
-		state.spawn.CFrame = CFrame.new(0, Layout.EntranceY(first) - 0.75, first * L + 6)
+		state.spawn.CFrame = CFrame.new(0, Layout.EntranceY(first) - 0.1, first * L + CONFIG.SpawnDistance)
+			* CFrame.Angles(0, math.pi, 0)
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
 		local hiding = state.hidden[player]
 		if hiding and hiding.closet.rootCF.Position.Z < first * L then leaveCloset(player, false) end
 		local root = playerRoot(player)
 		if root and root.Position.Z < first * L + 5 then
-			root.CFrame = CFrame.new(0, Layout.EntranceY(first) + 3, first * L + 6)
+			root.CFrame = CFrame.new(0, Layout.EntranceY(first) + 3, first * L + CONFIG.SpawnDistance)
 				* CFrame.Angles(0, math.pi, 0)
 		end
 	end
@@ -1489,6 +1491,7 @@ local function resetWorld()
 	state.backSeal = nil
 	state.seed = CONFIG.Seed or math.floor((os.time() + session * 7919) % 100000000)
 	state.world:SetAttribute("Seed", state.seed)
+	state.world:SetAttribute("CameraBuild", "VisibleAvatar-v3")
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -1496,16 +1499,20 @@ local function resetWorld()
 	buildRoom(1)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "CheckpointSpawn"
-	spawn.Size = Vector3.new(4, 0.4, 4)
-	spawn.CFrame = CFrame.new(0, Layout.EntranceY(0) - 0.75, 6)
+	-- Standard Roblox spawn pad: its top is flush with the colliding subfloor
+	-- rather than hidden below it. The avatar is a real, visible character.
+	spawn.Size = Vector3.new(4, 0.2, 4)
+	spawn.CFrame = CFrame.new(0, Layout.EntranceY(0) - 0.1, CONFIG.SpawnDistance)
+		* CFrame.Angles(0, math.pi, 0)
 	spawn.Anchored = true
-	spawn.CanCollide = false
+	spawn.CanCollide = true
 	spawn.Transparency = 1
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Parent = state.world
 	state.spawn = spawn
 	for _, player in ipairs(Players:GetPlayers()) do
+		player.RespawnLocation = spawn
 		player:SetAttribute("Hidden", false)
 		player:SetAttribute("Finished", false)
 		remote:FireClient(player, "State", state.opened, state.seed, L)
@@ -1539,22 +1546,27 @@ local function registerPlayer(player)
 		humanoid.WalkSpeed = CONFIG.WalkSpeed
 		humanoid.JumpPower = 0
 		humanoid.JumpHeight = 0
-		-- Let the Humanoid own its physical assembly and ordinary wall/floor
-		-- contacts. Only the CAMERA turns freely in first person.
+		-- The standard Roblox Humanoid and third-person camera own movement,
+		-- facing and ordinary wall/floor contacts.
 		humanoid.AutoRotate = true
 		root.Anchored = false
 		root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 		root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 		local checkpoint = math.max(0, state.opened - 2)
 		if not state.rooms[checkpoint] then checkpoint = math.max(0, state.opened - CONFIG.KeepBehind) end
-		root.CFrame = CFrame.new(0, Layout.EntranceY(checkpoint) + 3, checkpoint * L + 6)
-			* CFrame.Angles(0, math.pi, 0)
+		-- On the first run, the Roblox SpawnLocation handles the whole spawn:
+		-- no scripted relocation or invisible replacement of the avatar.
+		if checkpoint > 0 then
+			character:PivotTo(CFrame.new(0, Layout.EntranceY(checkpoint) + 3,
+				checkpoint * L + CONFIG.SpawnDistance) * CFrame.Angles(0, math.pi, 0))
+		end
 		remote:FireClient(player, "State", state.opened, state.seed, L)
 		humanoid.Died:Connect(function()
 			leaveCloset(player, false)
 			remote:FireClient(player, "Death")
 		end)
 	end)
+	player.RespawnLocation = state.spawn
 	player:LoadCharacter()
 end
 
@@ -1615,8 +1627,8 @@ local function keepInsideHotel(player, root)
 		and root.Position.Y >= surfaceY - 3
 		and root.Position.Y <= surfaceY + 10 then return end
 	local target = math.max(first, math.min(state.opened, CONFIG.Doors - 1))
-	root.CFrame = CFrame.new(0, Layout.EntranceY(target) + 3, target * L + 6)
-		* CFrame.Angles(0, math.pi, 0)
+	root.CFrame = CFrame.new(0, Layout.EntranceY(target) + 3,
+		target * L + CONFIG.SpawnDistance) * CFrame.Angles(0, math.pi, 0)
 	root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 	root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 end
@@ -1649,4 +1661,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE] 100 doors, 17 enclosed stairs, 10 turns; keys, hinged wardrobes and three threats ready.")
+print("[NOCTURNE v3 / visible avatar] 100 doors, 17 enclosed stairs, 10 turns; grounded Roblox character ready.")
