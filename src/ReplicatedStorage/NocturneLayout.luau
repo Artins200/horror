@@ -38,6 +38,32 @@ function Layout.WalkwayY(index, localZ)
 	return base + step * Layout.StoreyRise / Layout.StairSteps
 end
 
+-- A dogleg is made inside the sealed shell, not by turning the entire building:
+-- the front and back doorways still join the neighbouring rooms at x = 0.
+function Layout.IsTurn(index)
+	return index >= 6 and index % 10 == 6
+end
+
+function Layout.TurnSide(index)
+	return math.floor(index / 10) % 2 == 0 and 1 or -1
+end
+
+-- The Rush follows both offset openings instead of cutting through partitions.
+-- Values at z=17 and z=28 are the centres of the two archways.
+function Layout.PathX(index, localZ)
+	if not Layout.IsTurn(index) then return 0 end
+	local side = Layout.TurnSide(index)
+	local stops = {{0, 0}, {12, 8}, {17, 8}, {28, -8}, {33, -8}, {40, 0}, {44, 0}}
+	for i = 2, #stops do
+		if localZ <= stops[i][1] then
+			local a, b = stops[i - 1], stops[i]
+			local t = math.max(0, math.min(1, (localZ - a[1]) / (b[1] - a[1])))
+			return side * (a[2] + (b[2] - a[2]) * t)
+		end
+	end
+	return 0
+end
+
 function Layout.RoomIndexAt(z)
 	return math.max(0, math.floor(z / Layout.RoomLength))
 end

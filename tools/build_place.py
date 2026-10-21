@@ -154,9 +154,39 @@ def preview_room(workspace: ET.Element) -> None:
                  (x, 4.25, dz + offset), (46, 31, 28), "wood")
         part(room, "Wardrobe roof", (3.05, 0.24, 3.9),
              (x, 8.52, dz), (25, 20, 22), "wood")
-        for j in range(10):
-            part(room, "Louvred wardrobe door", (0.12, 0.37, 3.4),
-                 (x - side * 1.52, 1.26 + j * 0.71, dz), (72, 51, 40), "wood", collides=False)
+        for leaf_side in (-1, 1):
+            leaf_z = dz + leaf_side * 0.87
+            part(room, "Carved wardrobe leaf", (0.18, 8.05, 1.74),
+                 (x - side * 1.52, 4.14, leaf_z), (44, 31, 29), "wood")
+            for j in range(8):
+                part(room, "Inset wardrobe louvre", (0.12, 0.31, 1.48),
+                     (x - side * 1.66, 0.79 + (j + 1) * 0.78, leaf_z),
+                     (72, 51, 40), "wood")
+            for height in (0.63, 7.65):
+                part(room, "Carved leaf rail", (0.18, 0.26, 1.76),
+                     (x - side * 1.68, height, leaf_z), (83, 66, 49), "wood")
+            part(room, "Wardrobe handle", (0.2, 0.73, 0.27),
+                 (x - side * 1.77, 4.2, dz + leaf_side * 0.23), brass, "metal")
+    # This is an editor-only illustration of the searchable dresser in each
+    # generated flat room. Interactive prompts are created by the server at Play.
+    part(room, "Three-drawer dresser back", (0.24, 4.05, 4.6),
+         (12.17, 2.03, 17), (27, 22, 24), "wood")
+    for offset in (-2.22, 2.22):
+        part(room, "Dresser end panel", (2.55, 4.05, 0.22),
+             (10.9, 2.03, 17 + offset), (42, 30, 29), "wood")
+    part(room, "Marble dresser top", (2.9, 0.2, 4.9),
+         (10.9, 4.12, 17), (72, 77, 77), "marble")
+    for slot in range(3):
+        height = 0.94 + slot * 1.06
+        part(room, "Sliding drawer front", (0.18, 0.89, 4.13),
+             (9.48, height, 17), (72, 51, 40), "wood")
+        part(room, "Brass drawer pull", (0.18, 0.22, 0.82),
+             (9.32, height, 17), brass, "metal")
+    for dz in (9, 33):
+        part(room, "Fluted stone pillar", (1.1, 11, 1.1),
+             (-12.9, 5.5, dz), (72, 77, 77), "slate")
+        part(room, "Pillar capital", (1.7, 0.6, 1.7),
+             (-12.9, 11.25, dz), brass, "metal")
     light(room, (0, H - 1.7, L / 2), 1.2)
 
 

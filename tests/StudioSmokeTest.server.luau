@@ -20,6 +20,17 @@ for index = 0, 1 do
 	assert(room:GetAttribute("ExitY") == Layout.ExitY(index))
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
 		"A generated room has fewer than two accessible hiding places")
+	for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
+		local wardrobe = room:FindFirstChild(name)
+		assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
+			"Wardrobe has no moving leaves")
+		assert(wardrobe:FindFirstChild("HideInside", true), "Wardrobe has no interaction")
+	end
+	if not Layout.IsStair(index) then
+		local dresser = room:FindFirstChild("Three-drawer dresser")
+		assert(dresser and dresser:FindFirstChild("Drawer_1") and dresser:FindFirstChild("Drawer_3"),
+			"A searchable dresser is missing")
+	end
 	local door = room:FindFirstChild(string.format("Door_%03d", index + 1))
 	assert(door, "Missing numbered door")
 	local prompt = door:FindFirstChild("OpenDoor", true)
@@ -40,6 +51,8 @@ for index = 0, 99 do
 	assert(Layout.ExitY(index) == Layout.EntranceY(index + 1),
 		"Disconnected doorway after room " .. index)
 end
+assert(Layout.IsTurn(6) and not Layout.IsStair(6))
+assert(Layout.PathX(6, 17) == 8 and Layout.PathX(6, 28) == -8)
 assert(world:FindFirstChild("CheckpointSpawn"), "Missing checkpoint spawn")
 assert(game:GetService("ReplicatedStorage"):FindFirstChild("NocturneRemote"))
-print("NOCTURNE: 100 connected doors, enclosed stairwell, accessible closets, no unsupported landing")
+print("NOCTURNE: 100 connected doors, enclosed stairs, working wardrobe leaves and drawers; Play-test threats separately")

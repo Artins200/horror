@@ -11,6 +11,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const layout = fs.readFileSync(path.join(root, "src/ReplicatedStorage/NocturneLayout.luau"), "utf8");
 const server = fs.readFileSync(path.join(root, "src/ServerScriptService/NocturneServer.server.luau"), "utf8");
 const mock = `
+math.clamp = function(x, lo, hi) return math.min(hi, math.max(lo, x)) end
+NumberRange = {new = function(...) return {...} end}
+NumberSequence = {new = function(...) return {...} end}
+ColorSequence = {new = function(...) return {...} end}
+local deferred = {}
+local function drainTasks()
+    while #deferred > 0 do
+        local current = table.remove(deferred, 1)
+        current()
+    end
+end
+local observed = {events = {}, monsterPositions = {}}
 local function signal()
     local s = {callbacks = {}}
     function s:Connect(f)
@@ -103,6 +115,13 @@ end
 function methods:FindFirstChildOfClass(class)
     for _, child in ipairs(self:GetChildren()) do if child._class == class then return child end end
 end
+function methods:FindFirstAncestorOfClass(class)
+    local parent = self.Parent
+    while parent do
+        if parent._class == class then return parent end
+        parent = parent.Parent
+    end
+end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
 function methods:SetAttribute(name, value) self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes[name] end
@@ -112,7 +131,12 @@ function methods:Destroy()
     for _, child in ipairs(self:GetChildren()) do child:Destroy() end
     self.Parent = nil
 end
-function methods:PivotTo(cf) self.WorldPivot = cf end
+function methods:PivotTo(cf)
+    self.WorldPivot = cf
+    if self.Name == "TheRush" or self.Name == "TheBlindGuest" then
+        table.insert(observed.monsterPositions, {name=self.Name, x=cf.Position.X, z=cf.Position.Z})
+    end
+end
 local instMeta = {
     __index = function(t, k)
         if k == "Parent" then return rawget(t, "_parent") end
@@ -133,6 +157,7 @@ Instance = {new = function(class)
     local obj = setmetatable({_class=class, _children={}, _attributes={}, Name=class,
         Touched=signal(), Changed=signal(), Triggered=signal(), Died=signal(),
         CharacterAdded=signal(), OnServerEvent=signal(), Completed=signal()}, instMeta)
+    if class == "ProximityPrompt" then obj.Enabled = true end
     return obj
 end}
 local services = {}
@@ -160,15 +185,21 @@ function services.TweenService:Create(instance, _, props)
     return tween
 end
 services.RunService.Heartbeat = signal()
-task = {spawn = function(f) f() end, defer = function(f) f() end, wait = function() return 0.1 end}
+task = {spawn = function(f) table.insert(deferred, f) end,
+    defer = function(f) table.insert(deferred, f) end,
+    delay = function(_, f) f() end, wait = function() return 0.1 end}
 function services.ReplicatedStorage:FireClient() end
 function services.ReplicatedStorage:FireAllClients() end
 local oldNew = Instance.new
 Instance.new = function(class)
     local object = oldNew(class)
     if class == "RemoteEvent" then
-        function object:FireClient() end
-        function object:FireAllClients() end
+        function object:FireClient(player, event, a, b)
+            table.insert(observed.events, {kind="client", player=player, event=event, a=a, b=b})
+        end
+        function object:FireAllClients(event, a, b)
+            table.insert(observed.events, {kind="all", event=event, a=a, b=b})
+        end
     end
     return object
 end
@@ -180,27 +211,38 @@ end)();
 (function()
 ${server}
 end)()
-local player = Instance.new("Player")
-player.Name = "SmokeTester"
-player.CharacterAdded = signal()
-function player:LoadCharacter()
-    local character = Instance.new("Model")
-    character.Name = self.Name
-    local root = Instance.new("Part")
-    root.Name = "HumanoidRootPart"
-    root.CFrame = CFrame.new(0, 3, 0)
-    root.AssemblyLinearVelocity = Vector3.new()
-    root.Parent = character
-    local human = Instance.new("Humanoid")
-    human.Name = "Humanoid"
-    human.Health = 100
-    human.Died = signal()
-    human.Parent = character
-    self.Character = character
-    self.CharacterAdded:Fire(character)
+services.Players._players = {}
+local function addPlayer(name)
+    local player = Instance.new("Player")
+    player.Name = name
+    player.CharacterAdded = signal()
+    function player:LoadCharacter()
+        local character = Instance.new("Model")
+        character.Name = self.Name
+        local root = Instance.new("Part")
+        root.Name = "HumanoidRootPart"
+        root.CFrame = CFrame.new(0, 3, 0)
+        root.AssemblyLinearVelocity = Vector3.new()
+        root.Parent = character
+        local human = Instance.new("Humanoid")
+        human.Name = "Humanoid"
+        human.Health = 100
+        human.Died = signal()
+        human.Parent = character
+        self.Character = character
+        self.CharacterAdded:Fire(character)
+    end
+    table.insert(services.Players._players, player)
+    services.Players.PlayerAdded:Fire(player)
+    return player
 end
-services.Players._players = {player}
-services.Players.PlayerAdded:Fire(player)
+local function removePlayer(player)
+    services.Players.PlayerRemoving:Fire(player)
+    for i, other in ipairs(services.Players._players) do
+        if other == player then table.remove(services.Players._players, i); break end
+    end
+end
+local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 local function roomAt(index)
@@ -208,46 +250,106 @@ local function roomAt(index)
         if child:GetAttribute("RoomIndex") == index then return child end
     end
 end
+local remote = services.ReplicatedStorage:FindFirstChild("NocturneRemote")
+local L = NocturneLayout.RoomLength
+local lockCount, turnCount, rushCount, blindCount, mothCount = 0, 0, 0, 0, 0
+local variants = {}
+local function rootOf(p) return p.Character:FindFirstChild("HumanoidRootPart") end
+local function healthOf(p) return p.Character:FindFirstChildOfClass("Humanoid").Health end
+local function countEvent(name, kind)
+    local count = 0
+    for _, ev in ipairs(observed.events) do
+        if ev.event == name and (not kind or ev.a == kind) then count = count + 1 end
+    end
+    return count
+end
+-- The crouch flag is server-owned and caps WalkSpeed even when Sprint is sent.
+remote.OnServerEvent:Fire(player, "Crouch", true)
+remote.OnServerEvent:Fire(player, "Sprint", true)
+services.RunService.Heartbeat:Fire(0.2)
+assert(player:GetAttribute("Crouching") and player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 7)
+remote.OnServerEvent:Fire(player, "Crouch", false)
+services.RunService.Heartbeat:Fire(0.2)
+assert(not player:GetAttribute("Crouching") and player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 12)
 for index = 0, 99 do
     local room = roomAt(index)
     assert(room, "missing generated room " .. index)
     assert(room:GetAttribute("EntryY") == NocturneLayout.EntranceY(index))
     assert(room:GetAttribute("ExitY") == NocturneLayout.ExitY(index))
-    local wardrobes = 0
-    local treads = 0
-    local solidFlanks = 0
+    variants[room:GetAttribute("Variant")] = true
+    local wardrobes, treads, solidFlanks, partitions, arches, drawers = 0, 0, 0, 0, 0, 0
     for _, child in ipairs(room:GetDescendants()) do
         if child.Name == "Wardrobe_A" or child.Name == "Wardrobe_B" then wardrobes = wardrobes + 1 end
         if child.Name == "Solid stair tread" then treads = treads + 1 end
         if child.Name == "Solid enclosed stair flank" then solidFlanks = solidFlanks + 1 end
+        if child.Name == "Dogleg masonry partition" then partitions = partitions + 1 end
+        if child.Name == "Dogleg arch lintel" then arches = arches + 1 end
+        if child.Name == "OpenDrawer" then drawers = drawers + 1 end
     end
-    assert(wardrobes == 2, "room without two accessible wardrobe models at " .. index)
+    assert(wardrobes == 2, "room without two hinged wardrobe models at " .. index)
+    for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
+        local wardrobe = room:FindFirstChild(name)
+        assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
+            "wardrobe doors must be separate swinging leaves")
+    end
     if NocturneLayout.IsStair(index) then
         assert(treads == 16 and solidFlanks == 2, "unclosed stairwell at " .. index)
+        assert(drawers == 0, "drawers must not be placed on the stair flight")
     else
-        assert(treads == 0)
+        assert(treads == 0 and drawers == 3, "non-stair room needs a searchable three-drawer dresser")
     end
-    -- Enter AND leave a wardrobe on both real stair landings. An upper hide
-    -- must put us back on the UPPER landing, not beneath the floor slab.
-    if index == 0 or NocturneLayout.IsStair(index) then
+    if NocturneLayout.IsTurn(index) then
+        turnCount = turnCount + 1
+        assert(room:GetAttribute("Variant") == "TURN")
+        assert(partitions == 4 and arches == 2, "offset arches are not solid masonry")
+        local side = NocturneLayout.TurnSide(index)
+        for _, gate in ipairs({{17, side * 8}, {28, -side * 8}}) do
+            local segments = {}
+            for _, piece in ipairs(room:GetDescendants()) do
+                if piece.Name == "Dogleg masonry partition"
+                    and math.abs(piece.Position.Z - (index * L + gate[1])) < 0.01 then
+                    table.insert(segments, piece)
+                end
+            end
+            assert(#segments == 2)
+            table.sort(segments, function(a, b) return a.Position.X < b.Position.X end)
+            local left, right = segments[1], segments[2]
+            local openingLeft = left.Position.X + left.Size.X / 2
+            local openingRight = right.Position.X - right.Size.X / 2
+            assert(math.abs(openingRight - openingLeft - 8.6) < 0.02)
+            assert(math.abs((openingLeft + openingRight) / 2 - gate[2]) < 0.02)
+            assert(left.Position.X - left.Size.X / 2 <= -NocturneLayout.RoomWidth / 2)
+            assert(right.Position.X + right.Size.X / 2 >= NocturneLayout.RoomWidth / 2)
+        end
+    else
+        assert(partitions == 0 and arches == 0)
+    end
+    -- Enter AND leave both physical wardrobe leaves on each real stair
+    -- landing, in the foyer, and after the first dogleg turn.
+    if index == 0 or NocturneLayout.IsStair(index) or index == 6 then
         for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
-            local closet = room:FindFirstChild(name)
-            local hidePrompt = closet:FindFirstChild("HideInside", true)
-            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            local wardrobe = room:FindFirstChild(name)
+            local hidePrompt = wardrobe:FindFirstChild("HideInside", true)
+            local closePrompt = wardrobe:FindFirstChild("CloseWardrobe", true)
+            local root = rootOf(player)
             root.CFrame = CFrame.new(hidePrompt.Parent.Position)
             hidePrompt.Triggered:Fire(player)
-            assert(player:GetAttribute("Hidden") and root.Anchored, "closet did not hide player")
-            services.ReplicatedStorage:FindFirstChild("NocturneRemote").OnServerEvent:Fire(player, "Exit")
-            assert(not player:GetAttribute("Hidden") and not root.Anchored, "closet cannot be left")
+            assert(not player:GetAttribute("Hidden") and hidePrompt.ActionText == "Спрятаться",
+                "opening the wardrobe must not instantly teleport the player")
+            assert(closePrompt.Enabled, "an open wardrobe should have a close interaction")
+            hidePrompt.Triggered:Fire(player)
+            assert(player:GetAttribute("Hidden") and root.Anchored, "wardrobe did not hide player")
+            assert(hidePrompt.ActionText == "Открыть шкаф", "leaves did not swing shut behind player")
+            remote.OnServerEvent:Fire(player, "Exit")
+            assert(not player:GetAttribute("Hidden") and not root.Anchored, "wardrobe cannot be left")
             local landingY = name == "Wardrobe_B" and NocturneLayout.ExitY(index)
                 or NocturneLayout.EntranceY(index)
             assert(math.abs(root.Position.Y - landingY - 3) < 0.01, "wardrobe exit is under a floor")
         end
     end
     if NocturneLayout.IsStair(index) then
-        local root = player.Character:FindFirstChild("HumanoidRootPart")
-        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) - 10,
-            index * NocturneLayout.RoomLength + 40)
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) - 10, index * L + 40)
         services.RunService.Heartbeat:Fire(0.2)
         assert(root.Position.Y >= NocturneLayout.EntranceY(index) + 3,
             "falling underneath a landing did not trigger safe return")
@@ -258,17 +360,153 @@ for index = 0, 99 do
     assert(prompt and prompt.Enabled, "door not enterable from room " .. index)
     local leaf = prompt.Parent
     assert(math.abs(leaf.Position.Y - (NocturneLayout.ExitY(index) + 5.1)) < 0.01)
-    player.Character:FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3,
-        (index + 1) * NocturneLayout.RoomLength - 5)
+    if index == 0 then
+        rootOf(player).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 5)
+        prompt.Triggered:Fire(player)
+        assert(world:GetAttribute("DoorsOpened") == 0, "distant prompt bypassed the server")
+    end
+    rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
+    if room:GetAttribute("Locked") then
+        lockCount = lockCount + 1
+        assert(prompt.ActionText == "Нужен ключ", "locked door offers to open without a key")
+        local dresser = room:FindFirstChild("Three-drawer dresser")
+        local concealedKey = dresser:FindFirstChild("TakeKey", true)
+        assert(concealedKey and not concealedKey.Enabled, "key should start concealed in a closed drawer")
+        rootOf(player).CFrame = CFrame.new(concealedKey.Parent.Position)
+        concealedKey.Triggered:Fire(player) -- deliberately bypass the UI as a hostile caller
+        assert(not room:GetAttribute("KeyFound"), "unopened drawer allowed key collection")
+        rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
+        local lockedEvents = countEvent("Locked")
+        prompt.Triggered:Fire(player)
+        assert(world:GetAttribute("DoorsOpened") == index, "locked door opened without a key")
+        assert(countEvent("Locked") == lockedEvents + 1)
+        local firstDrawer = dresser:FindFirstChild("Drawer_1"):FindFirstChild("OpenDrawer", true)
+        firstDrawer.Triggered:Fire(player)
+        assert(firstDrawer.Enabled, "remote drawer interaction ignored server-side distance")
+        local foundKey = false
+        for _, drawer in ipairs(dresser:GetChildren()) do
+            local openPrompt = drawer:FindFirstChild("OpenDrawer", true)
+            if openPrompt then
+                rootOf(player).CFrame = CFrame.new(openPrompt.Parent.Position)
+                openPrompt.Triggered:Fire(player)
+                assert(not openPrompt.Enabled, "drawer was not pulled out")
+                local keyPrompt = drawer:FindFirstChild("TakeKey", true)
+                if keyPrompt then
+                    assert(keyPrompt.Enabled, "the key was not revealed by opening its drawer")
+                    rootOf(player).CFrame = CFrame.new(keyPrompt.Parent.Position)
+                    keyPrompt.Triggered:Fire(player)
+                    foundKey = true
+                end
+            end
+        end
+        assert(foundKey and room:GetAttribute("KeyFound") and not room:GetAttribute("Locked"),
+            "room's own drawers did not unlock room's own numbered door")
+        assert(prompt.ActionText == "Открыть")
+        rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
+    end
     prompt.Triggered:Fire(player)
     assert(world:GetAttribute("DoorsOpened") == index + 1, "player trapped by door " .. index + 1)
+    assert(prompt.Enabled and prompt.ActionText == "Закрыть", "door leaf does not stay operable after opening")
+    if index == 0 or NocturneLayout.IsTurn(index) then
+        prompt.Triggered:Fire(player)
+        assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Открыть",
+            "visited door cannot close")
+        prompt.Triggered:Fire(player)
+        assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Закрыть",
+            "visited door cannot reopen")
+    end
     if index < 99 then
         assert(roomAt(index + 1), "door opens into a void at " .. index + 1)
     else
         assert(world:FindFirstChild("Exit"), "door 100 has no finale")
     end
+    if room:GetAttribute("Threat") == "RUSH" then rushCount = rushCount + 1 end
+    if room:GetAttribute("Threat") == "BLIND" then blindCount = blindCount + 1 end
+    if room:GetAttribute("Threat") == "MOTH" then mothCount = mothCount + 1 end
+    if index == 5 then
+        -- Seed the room-entry trigger, then hide before the scheduled warning.
+        -- The runner is already BEYOND the next door, on the side of a turn.
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 9)
+        room:FindFirstChild("Room entry sensor").Touched:Fire(root)
+        assert(#deferred == 1, "flicker did not schedule the Rush")
+        local hidePrompt = room:FindFirstChild("Wardrobe_A"):FindFirstChild("HideInside", true)
+        root.CFrame = CFrame.new(hidePrompt.Parent.Position)
+        hidePrompt.Triggered:Fire(player)
+        hidePrompt.Triggered:Fire(player)
+        local runner = addPlayer("RunnerBeyondOneDoor")
+        rootOf(runner).CFrame = CFrame.new(10, NocturneLayout.EntranceY(6) + 3, 6 * L + 21)
+        drainTasks()
+        assert(healthOf(player) == 100 and player:GetAttribute("Hidden"), "a wardrobe did not shield from the Rush")
+        assert(healthOf(runner) == 0, "a single next door or side alcove stopped the Rush")
+        assert(countEvent("Warning", "RUSH") == 1 and countEvent("Safe", "RUSH") == 1)
+        local furthest = 0
+        for _, m in ipairs(observed.monsterPositions) do
+            if m.name == "TheRush" then furthest = math.max(furthest, m.z) end
+        end
+        assert(furthest > 6 * L + 22, "Rush did not run from behind THROUGH the next room")
+        remote.OnServerEvent:Fire(player, "Exit")
+        removePlayer(runner)
+    end
+    if index == 9 then
+        -- Three contrasting outcomes in one patrol: standing, touching while
+        -- crouched and hiding in a closet all die; distant crouching survives.
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 9)
+        room:FindFirstChild("Room entry sensor").Touched:Fire(root)
+        assert(#deferred == 1, "entering the room did not summon the Blind Guest")
+        remote.OnServerEvent:Fire(player, "Crouch", true)
+        root.CFrame = CFrame.new(-11, NocturneLayout.EntranceY(index) + 3, index * L + 5)
+        local loud = addPlayer("StandingPlayer")
+        rootOf(loud).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 27)
+        local contact = addPlayer("CrouchedAtSpawn")
+        remote.OnServerEvent:Fire(contact, "Crouch", true)
+        rootOf(contact).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 35)
+        local hidden = addPlayer("WardrobeIsNotSafe")
+        local hidePrompt = room:FindFirstChild("Wardrobe_B"):FindFirstChild("HideInside", true)
+        rootOf(hidden).CFrame = CFrame.new(hidePrompt.Parent.Position)
+        hidePrompt.Triggered:Fire(hidden)
+        hidePrompt.Triggered:Fire(hidden)
+        assert(hidden:GetAttribute("Hidden"))
+        drainTasks()
+        assert(healthOf(player) == 100 and player:GetAttribute("Crouching"),
+            "a silent croucher away from the creature was detected")
+        assert(healthOf(loud) == 0, "standing player was not pursued")
+        assert(healthOf(contact) == 0, "crouching allowed walking THROUGH the monster")
+        assert(healthOf(hidden) == 0, "the Blind Guest did not inspect the occupied wardrobe")
+        assert(countEvent("Warning", "BLIND") == 1 and countEvent("Safe", "BLIND") == 1)
+        remote.OnServerEvent:Fire(player, "Crouch", false)
+        removePlayer(loud)
+        removePlayer(contact)
+        removePlayer(hidden)
+    end
+    if index == 15 then
+        -- A switched-off torch beats this creature even when standing close;
+        -- merely crouching while shining a light does not.
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 9)
+        room:FindFirstChild("Room entry sensor").Touched:Fire(root)
+        assert(#deferred == 1, "entering the room did not summon the Pale Moth")
+        remote.OnServerEvent:Fire(player, "Torch", false)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 30)
+        local bright = addPlayer("CrouchedWithTorchOn")
+        remote.OnServerEvent:Fire(bright, "Crouch", true)
+        rootOf(bright).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 30)
+        drainTasks()
+        assert(healthOf(player) == 100, "unlit player was killed by the light-seeker")
+        assert(healthOf(bright) == 0, "crouching protected a player shining a torch")
+        assert(countEvent("Warning", "MOTH") == 1 and countEvent("Safe", "MOTH") == 1)
+        remote.OnServerEvent:Fire(player, "Torch", true)
+        removePlayer(bright)
+    end
 end
-local first = 100 - 5
+assert(lockCount >= 8 and turnCount == 10, "insufficient locked rooms or turns")
+assert(rushCount == 8 and blindCount == 8 and mothCount == 8,
+    "three different threats were not interleaved across 100 doors")
+local kinds = 0
+for _ in pairs(variants) do kinds = kinds + 1 end
+assert(kinds >= 8, "room interiors do not vary")
+local first = 100 - 8
 assert(not roomAt(first - 1), "old rooms were never culled")
 local backSeal = roomAt(first):FindFirstChild("The corridor closes behind you")
 assert(backSeal and math.abs(backSeal.Position.Y - NocturneLayout.EntranceY(first) - 5.4) < 0.01,
@@ -281,4 +519,4 @@ const status = lauxlib.luaL_dostring(state, to_luastring(mock));
 if (status !== lua.LUA_OK) {
   throw new Error(`Server generator smoke test failed: ${to_jsstring(lua.lua_tostring(state, -1))}`);
 }
-console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors, 17 sealed stairwells, wardrobe entry/exit and fall rescue`);
+console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors, 17 stairs, 10 turns, keys and hinged leaves; Rush, Blind Guest and flashlight-sensitive Moth`);

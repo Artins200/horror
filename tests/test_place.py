@@ -53,6 +53,8 @@ class PlaceTests(unittest.TestCase):
         names = [part.findtext("Properties/string[@name='Name']") for part in parts]
         self.assertIn("Door 001", names)
         self.assertEqual(names.count("Wardrobe back"), 2)
+        self.assertEqual(names.count("Carved wardrobe leaf"), 4)
+        self.assertEqual(names.count("Sliding drawer front"), 3)
         self.assertGreaterEqual(len(preview.findall(".//Item[@class='PointLight']")), 4)
         self.assertIsNotNone(self.named("Atmosphere", "CorridorHaze"))
 
@@ -112,9 +114,37 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("makeCloset(room, 1", self.server)
         self.assertIn("if root and not state.hidden[player]", self.server)
         self.assertIn("state.opened == CONFIG.Doors", self.server)
-        self.assertIn("function() startHunt(room, mySession)", self.server)
+        self.assertIn("function() startRush(room, mySession)", self.server)
+        self.assertIn("function() startBlind(room, mySession)", self.server)
+        self.assertIn("function() startMoth(room, mySession)", self.server)
         self.assertIn("RunService:BindToRenderStep", self.client)
         self.assertIn("Enum.CameraType.Scriptable", self.client)
+
+    def test_keys_crouching_monsters_and_avatar_arms_are_embedded(self):
+        self.assertIn("local function makeDresser", self.server)
+        self.assertIn('takePrompt.Name = "TakeKey"', self.server)
+        self.assertIn('openPrompt.Name = "OpenDrawer"', self.server)
+        self.assertIn('room.model:SetAttribute("KeyFound", true)', self.server)
+        self.assertIn('closePrompt.Name = "CloseWardrobe"', self.server)
+        self.assertIn('local function swingDoor(room, opening)', self.server)
+        self.assertIn('local function swingCloset(closet, opening)', self.server)
+        self.assertIn('info.crouching and CONFIG.CrouchSpeed', self.server)
+        self.assertIn('and (state.hidden[player] or not info.crouching)', self.server)
+        self.assertIn('local function cloneAvatarArm', self.client)
+        self.assertIn('cloneAvatarArm(character, prefix .. "Hand"', self.client)
+        self.assertIn('remote:FireServer("Crouch", on)', self.client)
+        self.assertIn('remote:FireServer("Torch", flashlightOn)', self.client)
+        self.assertIn('startMoth = function(room, epoch)', self.server)
+        self.assertIn('info.torchOn and not state.hidden[player]', self.server)
+        self.assertNotIn('viewPart("Left hand"', self.client)
+        self.assertNotIn('"Whisper"', self.server + self.client)
+        self.assertNotIn('play(heartbeat', self.client)
+        self.assertNotIn('play(knock', self.client)
+        warning_handler = self.client.split('elseif event == "Warning" then', 1)[1].split(
+            'elseif event == "Safe" then', 1)[0]
+        self.assertNotIn('play(', warning_handler, 'light-flicker warning must be silent')
+        self.assertIn('function Layout.IsTurn(index)', self.layout)
+        self.assertIn('function Layout.PathX(index, localZ)', self.layout)
 
     def test_both_filenames_open_the_same_fixed_place(self):
         binary = (ROOT / "Nocturne.rbxl").read_bytes()

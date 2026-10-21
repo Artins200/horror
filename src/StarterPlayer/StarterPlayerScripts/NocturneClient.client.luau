@@ -107,7 +107,7 @@ topLine.ZIndex = 4
 local brand = label(ui, "Title", "N O C T U R N E", UDim2.new(0, 350, 0, 38),
 	UDim2.new(0, 39, 0, 42), Enum.Font.Garamond, 30, GOLD)
 brand.ZIndex = 4
-local tagline = label(ui, "Tagline", "ОТЕЛЬ, КОТОРЫЙ ПОМНИТ", UDim2.new(0, 370, 0, 22),
+local tagline = label(ui, "Tagline", "100 ДВЕРЕЙ  ·  18 ЭТАЖЕЙ", UDim2.new(0, 370, 0, 22),
 	UDim2.new(0, 40, 0, 80), Enum.Font.GothamMedium, 11, PALE)
 tagline.TextTransparency = 0.27
 tagline.ZIndex = 4
@@ -134,8 +134,8 @@ local staminaTrack = frame(ui, "Stamina track", UDim2.new(0, 168, 0, 3),
 staminaTrack.ZIndex = 4
 local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), PALE, 0)
 staminaFill.ZIndex = 5
-local help = label(ui, "Controls", isTouch and "ПРОВЕДИ СПРАВА — ОСМОТР   ·   КНОПКИ СПРАВА" or
-	"WASD — идти    SHIFT — бег    E — действие    Q/R — наклон    F — фонарь", UDim2.new(0.67, 0, 0, 25),
+local help = label(ui, "Controls", isTouch and "СЛЕВА — ИДТИ   ·   СПРАВА — ОСМОТР" or
+	"WASD — идти   SHIFT — бег   C/CTRL — присесть   E — действие   F — фонарь", UDim2.new(0.67, 0, 0, 25),
 	UDim2.new(0.5, 0, 1, -49), Enum.Font.GothamMedium, 11, PALE, Enum.TextXAlignment.Center)
 help.AnchorPoint = Vector2.new(0.5, 0)
 help.TextTransparency = 0.25
@@ -144,7 +144,7 @@ local flashLabel = label(ui, "Flashlight status", "F  ·  ФОНАРЬ", UDim2.n
 	UDim2.new(1, -211, 1, -76), Enum.Font.GothamMedium, 12, GOLD, Enum.TextXAlignment.Right)
 flashLabel.ZIndex = 4
 
-local notice = label(ui, "Subtitles", "", UDim2.new(0.84, 0, 0, 74), UDim2.fromScale(0.08, 0.69),
+local notice = label(ui, "Interaction status", "", UDim2.new(0.84, 0, 0, 74), UDim2.fromScale(0.08, 0.69),
 	Enum.Font.Garamond, 27, GOLD, Enum.TextXAlignment.Center)
 notice.TextWrapped = true
 notice.TextTransparency = 1
@@ -176,24 +176,25 @@ for _, panel in ipairs({leftPanel, rightPanel}) do
 		strip.ZIndex = 13
 	end
 end
-local hiddenNote = label(ui, "Hidden reminder", "ТИШЕ.  ОН ПРОЙДЁТ МИМО.     E — ВЫЙТИ",
+local hiddenNote = label(ui, "Wardrobe controls", "E — ВЫЙТИ  ·  ШКАФ НЕ ЗАЩИЩАЕТ ОТ СЛЕПОГО",
 	UDim2.fromScale(0.46, 0.08), UDim2.fromScale(0.27, 0.84),
 	Enum.Font.Garamond, 20, PALE, Enum.TextXAlignment.Center)
 hiddenNote.Visible = false
+hiddenNote.TextWrapped = true
 hiddenNote.ZIndex = 14
 
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
 modal.Visible = false
 modal.Active = true
-local modalEyebrow = label(modal, "Eyebrow", "ДВЕРЬ ЗАКРЫЛАСЬ", UDim2.fromScale(0.7, 0.055),
+local modalEyebrow = label(modal, "Eyebrow", "ПОРАЖЕНИЕ", UDim2.fromScale(0.7, 0.055),
 	UDim2.fromScale(0.15, 0.29), Enum.Font.GothamMedium, 13, RED, Enum.TextXAlignment.Center)
 modalEyebrow.ZIndex = 26
-local modalTitle = label(modal, "End title", "ОН НАШЁЛ ТЕБЯ", UDim2.fromScale(0.86, 0.14),
+local modalTitle = label(modal, "End title", "ПРОХОЖДЕНИЕ ПРЕРВАНО", UDim2.fromScale(0.86, 0.14),
 	UDim2.fromScale(0.07, 0.36), Enum.Font.Garamond, 52, PALE, Enum.TextXAlignment.Center)
 modalTitle.TextScaled = true
 modalTitle.ZIndex = 26
-local modalDetail = label(modal, "End detail", "В следующий раз спрячься, когда моргнёт свет.",
+local modalDetail = label(modal, "End detail", "Свет — спрячься от погони. Слепой — присядь и не прикасайся.",
 	UDim2.fromScale(0.78, 0.09), UDim2.fromScale(0.11, 0.51),
 	Enum.Font.Gotham, 16, GOLD, Enum.TextXAlignment.Center)
 modalDetail.TextWrapped = true
@@ -204,9 +205,13 @@ retryButton.AnchorPoint = Vector2.new(0.5, 0)
 retryButton.ZIndex = 27
 
 local sprintButton = button(ui, "Mobile sprint", "БЕГ", UDim2.fromOffset(77, 53),
-	UDim2.new(1, -99, 1, -215))
+	UDim2.new(1, -99, 1, -277))
 sprintButton.ZIndex = 18
 sprintButton.Visible = isTouch
+local crouchButton = button(ui, "Mobile crouch", "ПРИСЕСТЬ", UDim2.fromOffset(100, 53),
+	UDim2.new(1, -122, 1, -215))
+crouchButton.ZIndex = 18
+crouchButton.Visible = isTouch
 local lightButton = button(ui, "Mobile torch", "СВЕТ", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -153))
 lightButton.ZIndex = 18
@@ -267,14 +272,14 @@ if isTouch then
 	notice.Size = UDim2.fromScale(0.9, 0.12)
 	notice.Position = UDim2.fromScale(0.05, 0.66)
 	notice.TextSize = 21
-	hiddenNote.Text = "ТИШЕ.  ВЫЙТИ — СПРАВА"
+	hiddenNote.Text = "ВЫЙТИ — СПРАВА  ·  ШКАФ ОПАСЕН"
 	hiddenNote.Size = UDim2.fromScale(0.6, 0.11)
 	hiddenNote.Position = UDim2.fromScale(0.2, 0.81)
 	hiddenNote.TextSize = 15
 end
 
--- Built-in Roblox sounds: the game also works when a sound is unavailable. No
--- private audio IDs, external textures or DOORS assets are required.
+-- No sound plays with the light flicker: the Rush is announced by light alone.
+-- Door, footstep and death sounds are separate from the warning.
 local function sound(name, id, volume)
 	local s = Instance.new("Sound")
 	s.Name = name
@@ -283,10 +288,8 @@ local function sound(name, id, volume)
 	s.Parent = SoundService
 	return s
 end
-local knock = sound("Distant knock", "rbxasset://sounds/impact_generic.mp3", 0.26)
 local doorSound = sound("Oak door", "rbxasset://sounds/impact_generic.mp3", 0.34)
-local heartbeat = sound("Low heartbeat", "rbxasset://sounds/bass.wav", 0.48)
-local scareSound = sound("The Murmur", "rbxasset://sounds/uuhhh.mp3", 0.65)
+local scareSound = sound("Jumpscare", "rbxasset://sounds/uuhhh.mp3", 0.65)
 local stepSound = sound("Footsteps", "rbxasset://sounds/impact_generic.mp3", 0.045)
 local function play(s, rate)
 	s.PlaybackSpeed = rate or 1
@@ -306,6 +309,7 @@ local dead = false
 local finished = false
 local danger = 0
 local warningRoom = -1
+local warningKind = nil
 local roomLength = Layout.RoomLength
 local finalFloor = math.floor(Layout.EntranceY(100) / Layout.StoreyRise) + 1
 local displayedFloor = -1
@@ -313,41 +317,90 @@ local fright = 0
 local shake = 0
 local stride = 0
 local stepTimer = 0
-local lastAmbient = 0
 local elapsed = 0
 local noticeId = 0
 local flashlightOn = true
 local sprinting = false
+local crouching = false
+local crouchAmount = 0
 local leanAxis = 0
 local lean = 0
 local cameraRoll = 0
 local touchLook = Vector2.new(0, 0)
 local stickLook = Vector2.new(0, 0)
 
+-- These are CLONES OF THE PLAYER'S REAL AVATAR LIMBS, not handcrafted cubes.
+-- MeshParts retain their own avatar mesh, colour, package texture and scale;
+-- R15 uses upper/lower arm and hand, R6 uses each original arm.
 local viewModel = Instance.new("Model")
-viewModel.Name = "NocturneHandsLocalOnly"
+viewModel.Name = "AvatarArmsFirstPerson"
 viewModel.Parent = camera
-local function viewPart(name, size, color, material)
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Size = size
-	p.Anchored = true
-	p.CanCollide = false
-	p.CanTouch = false
-	p.CanQuery = false
-	p.CastShadow = false
-	p.Material = material
-	p.Color = color
-	p.Parent = viewModel
-	return p
+local avatarArms = {}
+local avatarShirt
+local function clearAvatarArms()
+	for _, arm in ipairs(avatarArms) do arm.part:Destroy() end
+	avatarArms = {}
+	if avatarShirt then
+		avatarShirt:Destroy()
+		avatarShirt = nil
+	end
 end
-local leftSleeve = viewPart("Left coat sleeve", Vector3.new(0.35, 0.8, 0.42), Color3.fromRGB(22, 29, 33), Enum.Material.Fabric)
-local rightSleeve = viewPart("Right coat sleeve", Vector3.new(0.35, 0.8, 0.42), Color3.fromRGB(22, 29, 33), Enum.Material.Fabric)
-local leftHand = viewPart("Left hand", Vector3.new(0.31, 0.35, 0.33), Color3.fromRGB(115, 91, 79), Enum.Material.SmoothPlastic)
-local rightHand = viewPart("Right hand", Vector3.new(0.31, 0.35, 0.33), Color3.fromRGB(115, 91, 79), Enum.Material.SmoothPlastic)
-local torchMount = viewPart("Invisible torch light source", Vector3.new(0.2, 0.2, 0.2),
-	Color3.new(1, 1, 1), Enum.Material.SmoothPlastic)
+local function cloneAvatarArm(character, name, side, segment)
+	local source = character:WaitForChild(name, 8)
+	if not source or not source:IsA("BasePart") then return end
+	local archivable = source.Archivable
+	source.Archivable = true
+	local part = source:Clone()
+	source.Archivable = archivable
+	if not part then return end
+	for _, descendant in ipairs(part:GetDescendants()) do
+		if descendant:IsA("Script") or descendant:IsA("LocalScript") or descendant:IsA("Sound")
+			or descendant:IsA("JointInstance") or descendant:IsA("WeldConstraint") then
+			descendant:Destroy()
+		end
+	end
+	part.Name = "Avatar " .. name
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
+	part.CastShadow = false
+	part.LocalTransparencyModifier = 0
+	part.Parent = viewModel
+	table.insert(avatarArms, {part = part, source = source, side = side, segment = segment})
+end
+local function loadAvatarArms(character, human)
+	clearAvatarArms()
+	if human.RigType == Enum.HumanoidRigType.R15 then
+		for _, side in ipairs({-1, 1}) do
+			local prefix = side == -1 and "Left" or "Right"
+			cloneAvatarArm(character, prefix .. "UpperArm", side, "upper")
+			cloneAvatarArm(character, prefix .. "LowerArm", side, "lower")
+			cloneAvatarArm(character, prefix .. "Hand", side, "hand")
+		end
+	else
+		cloneAvatarArm(character, "Left Arm", -1, "r6")
+		cloneAvatarArm(character, "Right Arm", 1, "r6")
+	end
+	local shirt = character:FindFirstChildOfClass("Shirt")
+	if shirt then
+		local copy = shirt:Clone()
+		if copy then
+			avatarShirt = copy
+			copy.Parent = viewModel
+		end
+	end
+end
+local torchMount = Instance.new("Part")
+torchMount.Name = "Invisible torch light source"
+torchMount.Size = Vector3.new(0.2, 0.2, 0.2)
+torchMount.Anchored = true
+torchMount.CanCollide = false
+torchMount.CanTouch = false
+torchMount.CanQuery = false
+torchMount.CastShadow = false
 torchMount.Transparency = 1
+torchMount.Parent = viewModel
 local torch = Instance.new("SpotLight")
 torch.Name = "Weak hand torch"
 torch.Angle = 69
@@ -360,13 +413,22 @@ torch.Enabled = flashlightOn
 torch.Parent = torchMount
 
 local function setSprint(on)
+	if on and (crouching or hidden or dead or finished) then return end
 	if sprinting == on then return end
 	sprinting = on
 	remote:FireServer("Sprint", on)
 end
+local function setCrouch(on)
+	if hidden or dead or finished or crouching == on then return end
+	if on then setSprint(false) end
+	crouching = on
+	crouchButton.Text = on and "ВСТАТЬ" or "ПРИСЕСТЬ"
+	remote:FireServer("Crouch", on)
+end
 local function toggleTorch()
 	flashlightOn = not flashlightOn
 	torch.Enabled = flashlightOn
+	remote:FireServer("Torch", flashlightOn)
 	flashLabel.Text = flashlightOn and "F  ·  ФОНАРЬ" or "F  ·  ВКЛЮЧИТЬ"
 	flashLabel.TextColor3 = flashlightOn and GOLD or Color3.fromRGB(136, 143, 146)
 end
@@ -393,16 +455,16 @@ local function showEnd(win)
 		finished = true
 		modalEyebrow.Text = "100 / 100  ·  РАССВЕТ"
 		modalEyebrow.TextColor3 = GOLD
-		modalTitle.Text = "ТЫ ВЫБРАЛСЯ"
-		modalDetail.Text = "Отель остался позади. Кажется."
+		modalTitle.Text = "ВЫХОД"
+		modalDetail.Text = "100 / 100 · Все двери пройдены."
 		retryButton.Text = "СЫГРАТЬ ЕЩЁ РАЗ"
 	else
 		dead = true
 		setSprint(false)
-		modalEyebrow.Text = "ДВЕРЬ ЗАКРЫЛАСЬ"
+		modalEyebrow.Text = "ПОРАЖЕНИЕ"
 		modalEyebrow.TextColor3 = RED
-		modalTitle.Text = "ОН НАШЁЛ ТЕБЯ"
-		modalDetail.Text = "Когда моргает свет, спрячься в шкафу. Выходи, когда он пройдёт."
+		modalTitle.Text = "ПРОХОЖДЕНИЕ ПРЕРВАНО"
+		modalDetail.Text = "Погоня — шкаф. Слепой — присесть и обойти. Мотылёк — выключить фонарь."
 		retryButton.Text = "ПОПРОБОВАТЬ СНОВА"
 	end
 	modal.Visible = true
@@ -419,17 +481,24 @@ end)
 sprintButton.MouseButton1Down:Connect(function() setSprint(true) end)
 sprintButton.MouseButton1Up:Connect(function() setSprint(false) end)
 sprintButton.MouseLeave:Connect(function() if isTouch then setSprint(false) end end)
+crouchButton.MouseButton1Click:Connect(function() setCrouch(not crouching) end)
 lightButton.MouseButton1Click:Connect(toggleTorch)
 exitButton.MouseButton1Click:Connect(function() remote:FireServer("Exit") end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
-	if hidden and (input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonB) then
+	if input.KeyCode == Enum.KeyCode.ButtonB and not UserInputService:GetFocusedTextBox() then
+		if hidden then remote:FireServer("Exit") else setCrouch(not crouching) end
+		return -- Roblox's default jump binding may consume this gamepad button.
+	end
+	if hidden and input.KeyCode == Enum.KeyCode.E then
 		remote:FireServer("Exit")
 		return
 	end
 	if processed or UserInputService:GetFocusedTextBox() then return end
 	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.ButtonL3 then
 		setSprint(true)
+	elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl then
+		setCrouch(not crouching)
 	elseif input.KeyCode == Enum.KeyCode.F or input.KeyCode == Enum.KeyCode.ButtonY then
 		toggleTorch()
 	elseif input.KeyCode == Enum.KeyCode.Q then
@@ -471,10 +540,16 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Door" then
 		setDoor(a)
 		play(doorSound, 0.69)
-		if a == 100 then showNotice("Это последняя дверь.", GOLD, 5) end
+	elseif event == "Locked" then
+		showNotice(string.format("ДВЕРЬ %03d ЗАПЕРТА  ·  КЛЮЧ В ЯЩИКАХ", a), GOLD, 4)
+	elseif event == "Key" then
+		showNotice(string.format("КЛЮЧ НАЙДЕН  ·  ДВЕРЬ %03d", a), GOLD, 3)
 	elseif event == "Hide" then
 		hidden = a
 		setSprint(false)
+		crouching = false
+		crouchButton.Text = "ПРИСЕСТЬ"
+		crouchButton.Visible = not hidden and isTouch
 		if a then
 			leanAxis = 0
 			peekYaw = yawOf(b)
@@ -486,7 +561,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			TweenService:Create(rightPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.33, 1)}):Play()
 			hiddenNote.Visible = true
 			centerDot.Visible = false
-			showNotice("Затаи дыхание.", PALE, 2.4)
 		else
 			peekPosition = nil
 			TweenService:Create(leftPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
@@ -497,24 +571,25 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
 	elseif event == "Warning" then
-		warningRoom = a
-		local nearby = root and math.abs(root.Position.Z - a * roomLength) < roomLength * 2.2
+		warningKind = a
+		warningRoom = b
+		local nearby = root and math.abs(root.Position.Z - b * roomLength) < roomLength * 4.1
 		if nearby then
-			danger = 1
-			shake = 0.2
-			play(heartbeat, 0.54)
-			showNotice("СВЕТ МОРГАЕТ.  СПРЯЧЬСЯ.", RED, 4)
+			danger = a == "RUSH" and 1 or 0.35
+			shake = a == "RUSH" and 0.15 or 0
+			if a == "RUSH" then
+				showNotice("МИГАЕТ СВЕТ  ·  ПОГОНЯ СЗАДИ  ·  СПРЯЧЬСЯ", RED, 4.2)
+			elseif a == "BLIND" then
+				showNotice("СЛЕПОЙ ВПЕРЕДИ  ·  ПРИСЯДЬ  ·  ОБОЙДИ", PALE, 4.5)
+			elseif a == "MOTH" then
+				showNotice("МОТЫЛЁК ИЩЕТ СВЕТ  ·  ВЫКЛЮЧИ ФОНАРЬ", GOLD, 4.5)
+			end
 		end
 	elseif event == "Safe" then
-		if warningRoom == a then
+		if warningKind == a and warningRoom == b then
 			danger = 0
+			warningKind = nil
 			warningRoom = -1
-			if not dead then showNotice("Шаги стихли.", PALE, 2.7) end
-		end
-	elseif event == "Whisper" then
-		if not dead then
-			showNotice(a, Color3.fromRGB(169, 188, 191), 3.6)
-			play(knock, 0.35)
 		end
 	elseif event == "Jumpscare" then
 		fright = 1
@@ -537,7 +612,12 @@ local function onCharacter(character)
 	dead = false
 	finished = false
 	danger = 0
+	warningKind = nil
 	warningRoom = -1
+	crouching = false
+	crouchAmount = 0
+	crouchButton.Text = "ПРИСЕСТЬ"
+	crouchButton.Visible = isTouch
 	displayedFloor = -1
 	modal.Visible = false
 	leftPanel.Size = UDim2.fromScale(0, 1)
@@ -557,6 +637,8 @@ local function onCharacter(character)
 	camera = Workspace.CurrentCamera
 	camera.CameraType = Enum.CameraType.Scriptable
 	player.CameraMode = Enum.CameraMode.LockFirstPerson
+	loadAvatarArms(character, humanoid)
+	remote:FireServer("Torch", flashlightOn)
 	setSprint(false)
 end
 player.CharacterAdded:Connect(onCharacter)
@@ -611,8 +693,9 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 	local moving = not hidden and not dead and horizontalSpeed > 1.5 and humanoid.MoveDirection.Magnitude > 0.05
 	local moveAmount = moving and math.clamp(horizontalSpeed / 15, 0, 1.25) or 0
-	local running = moving and horizontalSpeed > 15
-	stride = stride + dt * (running and 12.5 or 9.4) * moveAmount
+	local running = moving and not crouching and horizontalSpeed > 15
+	stride = stride + dt * (running and 12.5 or (crouching and 6.5 or 9.4)) * moveAmount
+	crouchAmount = crouchAmount + ((crouching and not hidden and 1 or 0) - crouchAmount) * damp(10, dt)
 	local bob = math.sin(stride * 2) * 0.042 * moveAmount
 	local sidewaysBob = math.cos(stride) * 0.033 * moveAmount
 	local breath = math.sin(elapsed * (danger > 0 and 3.7 or 1.65)) * (hidden and 0.017 or 0.012)
@@ -621,7 +704,7 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	if hidden then
 		targetPosition = peekPosition or (root.Position + Vector3.new(0, 2, 0))
 	else
-		targetPosition = root.Position + Vector3.new(sidewaysBob, 1.58 + bob + breath, 0)
+		targetPosition = root.Position + Vector3.new(sidewaysBob, 1.58 - crouchAmount * 0.95 + bob + breath, 0)
 			+ camera.CFrame.RightVector * lean * 0.22
 	end
 	if not cameraPosition or (targetPosition - cameraPosition).Magnitude > 9 then
@@ -639,40 +722,45 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	local targetCF = CFrame.new(cameraPosition + Vector3.new(0, jitter, 0))
 		* CFrame.Angles(0, yaw, 0) * CFrame.Angles(pitch + jitter * 0.24, 0, cameraRoll + jitter)
 	camera.CFrame = targetCF
-	camera.FieldOfView = camera.FieldOfView + ((hidden and 66 or (running and 83 or 76)) + danger * 2
-		- camera.FieldOfView) * damp(4, dt)
+	camera.FieldOfView = camera.FieldOfView + ((hidden and 66 or (crouching and 72 or (running and 83 or 76)))
+		+ danger * 2 - camera.FieldOfView) * damp(4, dt)
 	if not hidden and not dead and humanoid.Health > 0 then
 		root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
 	end
-	-- Keep the local avatar invisible; the lightweight coat/hands are camera-only.
+	-- Roblox's first-person controller normally fades the whole avatar. Show
+	-- only clones of that player's actual R6/R15 arm MeshParts in the camera.
 	for _, piece in ipairs(player.Character and player.Character:GetDescendants() or {}) do
 		if piece:IsA("BasePart") then piece.LocalTransparencyModifier = 1 end
 	end
 	local armSwing = math.sin(stride) * 0.045 * moveAmount
 	local visible = not hidden and not dead and not finished
-	for _, part in ipairs({leftSleeve, rightSleeve, leftHand, rightHand}) do
-		part.Transparency = visible and 0 or 1
+	for _, arm in ipairs(avatarArms) do
+		local side = arm.side
+		local position, rotation
+		if arm.segment == "upper" then
+			position = Vector3.new(side * 0.86, -0.87 + armSwing, -0.66)
+			rotation = CFrame.Angles(math.rad(31), 0, math.rad(side * 14))
+		elseif arm.segment == "lower" then
+			position = Vector3.new(side * 0.77, -1.05 + armSwing, -1.07)
+			rotation = CFrame.Angles(math.rad(58), 0, math.rad(side * 8))
+		elseif arm.segment == "hand" then
+			position = Vector3.new(side * 0.72, -0.96 + armSwing, -1.49)
+			rotation = CFrame.Angles(math.rad(57), 0, math.rad(side * 5))
+		else -- R6: use the single original arm part, not separate drawn blocks.
+			position = Vector3.new(side * 0.84, -0.94 + armSwing, -1.03)
+			rotation = CFrame.Angles(math.rad(54), 0, math.rad(side * 12))
+		end
+		arm.part.CFrame = targetCF * CFrame.new(position) * rotation
+		arm.part.LocalTransparencyModifier = 0
+		arm.part.Transparency = visible and arm.source.Transparency or 1
 	end
-	leftSleeve.CFrame = targetCF * CFrame.new(-0.83, -0.83 + armSwing, -1.15)
-		* CFrame.Angles(math.rad(-23), 0, math.rad(-16))
-	rightSleeve.CFrame = targetCF * CFrame.new(0.83, -0.83 - armSwing, -1.15)
-		* CFrame.Angles(math.rad(-23), 0, math.rad(16))
-	leftHand.CFrame = targetCF * CFrame.new(-0.76, -0.49 + armSwing, -1.43)
-	rightHand.CFrame = targetCF * CFrame.new(0.76, -0.49 - armSwing, -1.43)
 	torchMount.CFrame = targetCF * CFrame.new(0.45, -0.29, -0.8)
-	torch.Enabled = flashlightOn and visible and not (danger > 0 and math.sin(elapsed * 42) > 0.92)
+	torch.Enabled = flashlightOn and visible
 
 	fright = math.max(0, fright - dt * 0.65)
 	local pulse = danger > 0 and (0.11 + 0.085 * math.sin(elapsed * 9)) or 0
 	redWash.BackgroundTransparency = math.clamp(1 - fright * 0.63 - pulse, 0.03, 1)
 	darkness.BackgroundTransparency = math.clamp(1 - danger * 0.13 - (hidden and 0.09 or 0), 0, 1)
-	if danger > 0 and not dead and elapsed - lastAmbient > 1.1 then
-		lastAmbient = elapsed
-		play(heartbeat, 0.49 + 0.04 * math.sin(elapsed))
-	elseif danger == 0 and not dead and elapsed - lastAmbient > 22 then
-		lastAmbient = elapsed
-		play(knock, 0.25 + 0.08 * math.sin(elapsed))
-	end
 	if moving then
 		stepTimer = stepTimer + dt
 		if stepTimer > (running and 0.37 or 0.55) then
