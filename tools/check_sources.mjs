@@ -11,14 +11,33 @@ const sourceFiles = [
   "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau",
   "src/ReplicatedStorage/NocturneLayout.luau",
 ];
-for (const filename of sourceFiles) {
+for (const filename of [...sourceFiles, "tests/StudioSmokeTest.server.luau", "tests/StudioAvatarCheck.client.luau"]) {
   const source = fs.readFileSync(path.join(root, filename), "utf8");
   luaparse.parse(source, { luaVersion: "5.3", locations: true });
   console.log(`Lua syntax OK: ${filename}`);
 }
 
 function verify(place) {
-  const scripts = place.descendants(place.rootRef).filter((x) =>
+  const instances = place.descendants(place.rootRef);
+  const workspace = instances.find((x) => x.className === "Workspace");
+  if (Math.abs((place.getProperty(workspace.referent, "Gravity")?.Float32 ?? 0) - 196.2) > 0.01
+    || place.getProperty(workspace.referent, "StreamingEnabled")?.Bool !== false) {
+    throw new Error("Gravity/streaming settings lost during place serialization");
+  }
+  const previewFloor = instances.find((x) => x.name === "Herringbone floor");
+  if (!previewFloor || place.getProperty(previewFloor.referent, "Anchored")?.Bool !== true
+    || place.getProperty(previewFloor.referent, "CanCollide")?.Bool !== true) {
+    throw new Error("The editor preview floor must have anchored collision");
+  }
+  const spawn = instances.find((x) => x.className === "SpawnLocation" && x.name === "PreviewSpawn");
+  const starter = instances.find((x) => x.className === "StarterPlayer");
+  if (!spawn || !starter || place.getProperty(spawn.referent, "CanCollide")?.Bool !== true
+    || place.getProperty(starter.referent, "CameraMode")?.Enum !== 0
+    || place.getProperty(starter.referent, "EnableMouseLockOption")?.Bool !== false
+    || Math.abs((place.getProperty(starter.referent, "CameraMinZoomDistance")?.Float32 ?? 0) - 7) > 0.01) {
+    throw new Error("Native spawn and visible-avatar camera were not serialized into the place");
+  }
+  const scripts = instances.filter((x) =>
     ["Script", "LocalScript", "ModuleScript"].includes(x.className),
   );
   if (scripts.length !== 3) throw new Error(`Expected 3 embedded scripts; found ${scripts.length}`);

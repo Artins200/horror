@@ -4,8 +4,12 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
+assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3",
+	"Old place loaded: open the NEW 13123.rbxl before testing")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
+assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
+assert(not workspace.StreamingEnabled, "Floor geometry must not stream out from under the player")
 
 for index = 0, 1 do
 	local room
@@ -27,6 +31,15 @@ for index = 0, 1 do
 		assert(wardrobe:FindFirstChild("HideInside", true), "Wardrobe has no interaction")
 	end
 	if not Layout.IsStair(index) then
+		local floor = room:FindFirstChild("Continuous wooden subfloor")
+		assert(floor and floor.Anchored and floor.CanCollide
+			and math.abs(floor.Position.Y + floor.Size.Y / 2 - Layout.EntranceY(index)) < 0.01,
+			"The playable room has no solid floor")
+		for _, wall in ipairs(room:GetChildren()) do
+			if wall.Name == "Load-bearing corridor wall" then
+				assert(wall.Anchored and wall.CanCollide, "Corridor wall has no collision")
+			end
+		end
 		local dresser = room:FindFirstChild("Three-drawer dresser")
 		assert(dresser and dresser:FindFirstChild("Drawer_1") and dresser:FindFirstChild("Drawer_3"),
 			"A searchable dresser is missing")
@@ -41,8 +54,14 @@ for index = 0, 1 do
 	if Layout.IsStair(index) then
 		local treads, flanks = 0, 0
 		for _, part in ipairs(room:GetDescendants()) do
-			if part.Name == "Solid stair tread" then treads = treads + 1 end
-			if part.Name == "Solid enclosed stair flank" then flanks = flanks + 1 end
+			if part.Name == "Solid stair tread" or part.Name == "Solid enclosed stair flank" then
+				assert(part.Anchored and part.CanCollide, "Stair treads and walls must be solid")
+				if part.Name == "Solid stair tread" then treads = treads + 1 else flanks = flanks + 1 end
+			end
+		end
+		for _, name in ipairs({"Lower stair landing", "Upper stair landing"}) do
+			local landing = room:FindFirstChild(name)
+			assert(landing and landing.Anchored and landing.CanCollide, "Missing solid " .. name)
 		end
 		assert(treads == 16 and flanks == 2, "Stairs are open-sided or incomplete")
 	end
@@ -53,6 +72,26 @@ for index = 0, 99 do
 end
 assert(Layout.IsTurn(6) and not Layout.IsStair(6))
 assert(Layout.PathX(6, 17) == 8 and Layout.PathX(6, 28) == -8)
-assert(world:FindFirstChild("CheckpointSpawn"), "Missing checkpoint spawn")
+local spawn = world:FindFirstChild("CheckpointSpawn")
+assert(spawn and spawn.CanCollide and spawn.Anchored
+	and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - Layout.EntranceY(0)) < 0.01,
+	"Checkpoint spawn pad is not flush with the solid foyer floor")
 assert(game:GetService("ReplicatedStorage"):FindFirstChild("NocturneRemote"))
-print("NOCTURNE: 100 connected doors, enclosed stairs, working wardrobe leaves and drawers; Play-test threats separately")
+-- Unlike an XML inspection, this checks whether the live avatar is grounded.
+local player = game:GetService("Players"):GetPlayers()[1]
+if player then
+	local character = player.Character or player.CharacterAdded:Wait()
+	local root = character:WaitForChild("HumanoidRootPart")
+	local humanoid = character:WaitForChild("Humanoid")
+	task.wait(1) -- allow the avatar to settle on the floor after spawning
+	assert(not root.Anchored and humanoid.AutoRotate, "Avatar physics/rotation is disabled")
+	local cast = RaycastParams.new()
+	cast.FilterType = Enum.RaycastFilterType.Exclude
+	cast.FilterDescendantsInstances = {character}
+	cast.RespectCanCollide = true
+	local ground = workspace:Raycast(root.Position, Vector3.new(0, -12, 0), cast)
+	assert(ground and ground.Instance:IsDescendantOf(world)
+		and root.Position.Y - ground.Position.Y < 6, "No walkable geometry below the avatar")
+	assert(humanoid.FloorMaterial ~= Enum.Material.Air, "Avatar is not physically standing on the floor")
+end
+print("NOCTURNE: 100 connected doors; solid floors/stairs/walls; avatar grounded; Play-test threats separately")

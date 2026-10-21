@@ -1,6 +1,6 @@
--- NOCTURNE / first-person presentation. The server owns doors, hiding and damage.
--- Camera yaw/pitch are smoothed independently of mouse input: this is not Roblox's
--- stock instant-turn first person camera. Works with mouse, touch and a gamepad.
+-- NOCTURNE / a visible Roblox avatar and the ordinary third-person camera.
+-- The engine's camera/controller own movement, occlusion and collision. This
+-- script only draws the HUD, places the flashlight and handles interactions.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,8 +8,6 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local SoundService = game:GetService("SoundService")
-local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("NocturneRemote")
@@ -22,8 +20,6 @@ local PALE = Color3.fromRGB(218, 228, 221)
 local RED = Color3.fromRGB(196, 62, 55)
 local DARK = Color3.fromRGB(8, 11, 16)
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
-local function angleDifference(a, b) return (a - b + math.pi) % (2 * math.pi) - math.pi end
-local function yawOf(cf) return math.atan2(-cf.LookVector.X, -cf.LookVector.Z) end
 
 -- A drawn interface, not imported images. It remains legible at low light and
 -- scales with the viewport. Default ProximityPrompts keep native mobile/gamepad use.
@@ -149,10 +145,6 @@ local notice = label(ui, "Interaction status", "", UDim2.new(0.84, 0, 0, 74), UD
 notice.TextWrapped = true
 notice.TextTransparency = 1
 notice.ZIndex = 8
-local centerDot = frame(ui, "Reticle", UDim2.fromOffset(3, 3), UDim2.fromScale(0.5, 0.5), PALE, 0.35)
-centerDot.AnchorPoint = Vector2.new(0.5, 0.5)
-centerDot.ZIndex = 5
-
 local redWash = frame(ui, "Threat flash", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), RED, 1)
 redWash.ZIndex = 10
 redWash.Active = false
@@ -221,24 +213,8 @@ local exitButton = button(ui, "Leave wardrobe", "ВЫЙТИ", UDim2.fromOffset(1
 exitButton.ZIndex = 18
 exitButton.Visible = false
 
-local intro = frame(ui, "Opening title card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0)
-intro.ZIndex = 30
-local introSmall = label(intro, "Intro caption", "100 ДВЕРЕЙ  ·  ОДНА НОЧЬ", UDim2.fromScale(0.86, 0.07),
-	UDim2.fromScale(0.07, 0.39), Enum.Font.GothamMedium, 14, GOLD, Enum.TextXAlignment.Center)
-introSmall.ZIndex = 31
-local introBig = label(intro, "Intro hotel", "N O C T U R N E", UDim2.fromScale(0.9, 0.1),
-	UDim2.fromScale(0.05, 0.46), Enum.Font.Garamond, 49, PALE, Enum.TextXAlignment.Center)
-introBig.ZIndex = 31
-local introRule = frame(intro, "Intro rule", UDim2.fromScale(0.2, 0.001), UDim2.fromScale(0.4, 0.57), GOLD, 0.25)
-introRule.ZIndex = 31
-
-task.delay(1.5, function()
-	TweenService:Create(intro, TweenInfo.new(1.8), {BackgroundTransparency = 1}):Play()
-	TweenService:Create(introSmall, TweenInfo.new(1.2), {TextTransparency = 1}):Play()
-	TweenService:Create(introBig, TweenInfo.new(1.2), {TextTransparency = 1}):Play()
-	TweenService:Create(introRule, TweenInfo.new(1.2), {BackgroundTransparency = 1}):Play()
-	task.delay(2, function() if intro.Parent then intro:Destroy() end end)
-end)
+-- Show the real character and hotel immediately on spawn: no opaque intro
+-- hiding the first seconds of ordinary Roblox movement.
 
 if isTouch then
 	-- Portrait phones have a separate compact header and large action targets.
@@ -278,32 +254,16 @@ if isTouch then
 	hiddenNote.TextSize = 15
 end
 
--- No sound plays with the light flicker: the Rush is announced by light alone.
--- Door, footstep and death sounds are separate from the warning.
-local function sound(name, id, volume)
-	local s = Instance.new("Sound")
-	s.Name = name
-	s.SoundId = id
-	s.Volume = volume
-	s.Parent = SoundService
-	return s
-end
-local doorSound = sound("Oak door", "rbxasset://sounds/impact_generic.mp3", 0.34)
-local scareSound = sound("Jumpscare", "rbxasset://sounds/uuhhh.mp3", 0.65)
-local stepSound = sound("Footsteps", "rbxasset://sounds/impact_generic.mp3", 0.045)
-local function play(s, rate)
-	s.PlaybackSpeed = rate or 1
-	s.TimePosition = 0
-	s:Play()
-end
+-- Studio cannot reliably read local built-in sound files. Do not create or
+-- preload failing Sound instances; threats are intentionally signalled visually.
 
-local yaw, pitch = math.pi, 0
-local targetYaw, targetPitch = math.pi, 0
-local peekYaw = math.pi
-local peekPosition = nil
-local cameraPosition = nil
+-- Leave the actual character completely visible. In particular, never set
+-- LocalTransparencyModifier on its parts: a transparent avatar plus a detached
+-- first-person camera looks like a flying ghost even on a solid floor.
+local peekCF = nil
 local root = nil
 local humanoid = nil
+local head = nil
 local hidden = false
 local dead = false
 local finished = false
@@ -314,83 +274,12 @@ local roomLength = Layout.RoomLength
 local finalFloor = math.floor(Layout.EntranceY(100) / Layout.StoreyRise) + 1
 local displayedFloor = -1
 local fright = 0
-local shake = 0
-local stride = 0
-local stepTimer = 0
 local elapsed = 0
 local noticeId = 0
 local flashlightOn = true
 local sprinting = false
 local crouching = false
-local crouchAmount = 0
-local leanAxis = 0
-local lean = 0
-local cameraRoll = 0
-local touchLook = Vector2.new(0, 0)
-local stickLook = Vector2.new(0, 0)
 
--- These are CLONES OF THE PLAYER'S REAL AVATAR LIMBS, not handcrafted cubes.
--- MeshParts retain their own avatar mesh, colour, package texture and scale;
--- R15 uses upper/lower arm and hand, R6 uses each original arm.
-local viewModel = Instance.new("Model")
-viewModel.Name = "AvatarArmsFirstPerson"
-viewModel.Parent = camera
-local avatarArms = {}
-local avatarShirt
-local function clearAvatarArms()
-	for _, arm in ipairs(avatarArms) do arm.part:Destroy() end
-	avatarArms = {}
-	if avatarShirt then
-		avatarShirt:Destroy()
-		avatarShirt = nil
-	end
-end
-local function cloneAvatarArm(character, name, side, segment)
-	local source = character:WaitForChild(name, 8)
-	if not source or not source:IsA("BasePart") then return end
-	local archivable = source.Archivable
-	source.Archivable = true
-	local part = source:Clone()
-	source.Archivable = archivable
-	if not part then return end
-	for _, descendant in ipairs(part:GetDescendants()) do
-		if descendant:IsA("Script") or descendant:IsA("LocalScript") or descendant:IsA("Sound")
-			or descendant:IsA("JointInstance") or descendant:IsA("WeldConstraint") then
-			descendant:Destroy()
-		end
-	end
-	part.Name = "Avatar " .. name
-	part.Anchored = true
-	part.CanCollide = false
-	part.CanTouch = false
-	part.CanQuery = false
-	part.CastShadow = false
-	part.LocalTransparencyModifier = 0
-	part.Parent = viewModel
-	table.insert(avatarArms, {part = part, source = source, side = side, segment = segment})
-end
-local function loadAvatarArms(character, human)
-	clearAvatarArms()
-	if human.RigType == Enum.HumanoidRigType.R15 then
-		for _, side in ipairs({-1, 1}) do
-			local prefix = side == -1 and "Left" or "Right"
-			cloneAvatarArm(character, prefix .. "UpperArm", side, "upper")
-			cloneAvatarArm(character, prefix .. "LowerArm", side, "lower")
-			cloneAvatarArm(character, prefix .. "Hand", side, "hand")
-		end
-	else
-		cloneAvatarArm(character, "Left Arm", -1, "r6")
-		cloneAvatarArm(character, "Right Arm", 1, "r6")
-	end
-	local shirt = character:FindFirstChildOfClass("Shirt")
-	if shirt then
-		local copy = shirt:Clone()
-		if copy then
-			avatarShirt = copy
-			copy.Parent = viewModel
-		end
-	end
-end
 local torchMount = Instance.new("Part")
 torchMount.Name = "Invisible torch light source"
 torchMount.Size = Vector3.new(0.2, 0.2, 0.2)
@@ -400,7 +289,7 @@ torchMount.CanTouch = false
 torchMount.CanQuery = false
 torchMount.CastShadow = false
 torchMount.Transparency = 1
-torchMount.Parent = viewModel
+torchMount.Parent = camera
 local torch = Instance.new("SpotLight")
 torch.Name = "Weak hand torch"
 torch.Angle = 69
@@ -409,7 +298,7 @@ torch.Brightness = 1.35
 torch.Color = Color3.fromRGB(255, 221, 179)
 torch.Face = Enum.NormalId.Front
 torch.Shadows = true
-torch.Enabled = flashlightOn
+torch.Enabled = false
 torch.Parent = torchMount
 
 local function setSprint(on)
@@ -423,9 +312,13 @@ local function setCrouch(on)
 	if on then setSprint(false) end
 	crouching = on
 	crouchButton.Text = on and "ВСТАТЬ" or "ПРИСЕСТЬ"
+	-- Only change the native camera's target height. Avatar motion/collision
+	-- remain with Roblox's Humanoid, and the server owns the crouch speed.
+	if humanoid then humanoid.CameraOffset = Vector3.new(0, on and -0.65 or 0, 0) end
 	remote:FireServer("Crouch", on)
 end
 local function toggleTorch()
+	if hidden or dead or finished then return end
 	flashlightOn = not flashlightOn
 	torch.Enabled = flashlightOn
 	remote:FireServer("Torch", flashlightOn)
@@ -501,36 +394,30 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		setCrouch(not crouching)
 	elseif input.KeyCode == Enum.KeyCode.F or input.KeyCode == Enum.KeyCode.ButtonY then
 		toggleTorch()
-	elseif input.KeyCode == Enum.KeyCode.Q then
-		leanAxis = -1
-	elseif input.KeyCode == Enum.KeyCode.R then
-		leanAxis = 1
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.ButtonL3 then
 		setSprint(false)
-	elseif input.KeyCode == Enum.KeyCode.Q and leanAxis == -1 then
-		leanAxis = 0
-	elseif input.KeyCode == Enum.KeyCode.R and leanAxis == 1 then
-		leanAxis = 0
 	end
 end)
-UserInputService.InputChanged:Connect(function(input, processed)
-	if processed then return end
-	if input.UserInputType == Enum.UserInputType.Touch and camera
-		and input.Position.X > camera.ViewportSize.X * 0.46 then
-		touchLook = touchLook + Vector2.new(input.Delta.X, input.Delta.Y)
-	elseif input.KeyCode == Enum.KeyCode.Thumbstick2 then
-		stickLook = Vector2.new(input.Position.X, input.Position.Y)
-	end
-end)
+-- Camera input on mouse, touch and gamepad is handled by Roblox's PlayerModule;
+-- consuming and reapplying those deltas caused the detached, flying viewpoint.
 
 player:GetAttributeChangedSignal("Stamina"):Connect(function()
 	local stamina = math.clamp(player:GetAttribute("Stamina") or 100, 0, 100)
 	staminaFill.Size = UDim2.fromScale(stamina / 100, 1)
 	staminaFill.BackgroundColor3 = stamina < 20 and RED or PALE
 end)
+
+local function restoreCamera()
+	camera = Workspace.CurrentCamera
+	player.CameraMode = Enum.CameraMode.Classic
+	if camera then
+		camera.CameraType = Enum.CameraType.Custom
+		if humanoid then camera.CameraSubject = humanoid end
+	end
+end
 
 remote.OnClientEvent:Connect(function(event, a, b, c)
 	if event == "State" then
@@ -539,7 +426,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		if not dead and not finished then modal.Visible = false end
 	elseif event == "Door" then
 		setDoor(a)
-		play(doorSound, 0.69)
 	elseif event == "Locked" then
 		showNotice(string.format("ДВЕРЬ %03d ЗАПЕРТА  ·  КЛЮЧ В ЯЩИКАХ", a), GOLD, 4)
 	elseif event == "Key" then
@@ -548,25 +434,26 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		hidden = a
 		setSprint(false)
 		crouching = false
+		if humanoid then humanoid.CameraOffset = Vector3.new(0, 0, 0) end
 		crouchButton.Text = "ПРИСЕСТЬ"
 		crouchButton.Visible = not hidden and isTouch
 		if a then
-			leanAxis = 0
-			peekYaw = yawOf(b)
-			targetYaw = peekYaw
-			targetPitch = 0
-			peekPosition = b.Position
-			cameraPosition = peekPosition
+			-- An anchored character can peek through the wardrobe. Scriptable
+			-- camera is used ONLY here, never while walking the hotel.
+			peekCF = b
+			if camera and peekCF then
+				camera.CameraType = Enum.CameraType.Scriptable
+				camera.CFrame = peekCF
+			end
 			TweenService:Create(leftPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.33, 1)}):Play()
 			TweenService:Create(rightPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.33, 1)}):Play()
 			hiddenNote.Visible = true
-			centerDot.Visible = false
 		else
-			peekPosition = nil
+			peekCF = nil
+			restoreCamera()
 			TweenService:Create(leftPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
 			TweenService:Create(rightPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
 			hiddenNote.Visible = false
-			centerDot.Visible = true
 		end
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
@@ -576,7 +463,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		local nearby = root and math.abs(root.Position.Z - b * roomLength) < roomLength * 4.1
 		if nearby then
 			danger = a == "RUSH" and 1 or 0.35
-			shake = a == "RUSH" and 0.15 or 0
 			if a == "RUSH" then
 				showNotice("МИГАЕТ СВЕТ  ·  ПОГОНЯ СЗАДИ  ·  СПРЯЧЬСЯ", RED, 4.2)
 			elseif a == "BLIND" then
@@ -593,8 +479,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 	elseif event == "Jumpscare" then
 		fright = 1
-		shake = 2
-		play(scareSound, 0.67)
 		redWash.BackgroundTransparency = 0.05
 	elseif event == "Death" then
 		showEnd(false)
@@ -605,17 +489,20 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 end)
 
 local function onCharacter(character)
-	root = character:WaitForChild("HumanoidRootPart")
-	humanoid = character:WaitForChild("Humanoid")
+	local newRoot = character:WaitForChild("HumanoidRootPart")
+	local newHumanoid = character:WaitForChild("Humanoid")
+	local newHead = character:WaitForChild("Head", 8)
+	if player.Character ~= character then return end -- late appearance from a previous life
+	root, humanoid, head = newRoot, newHumanoid, newHead
 	hidden = false
-	peekPosition = nil
+	peekCF = nil
 	dead = false
 	finished = false
 	danger = 0
 	warningKind = nil
 	warningRoom = -1
 	crouching = false
-	crouchAmount = 0
+	humanoid.CameraOffset = Vector3.new(0, 0, 0)
 	crouchButton.Text = "ПРИСЕСТЬ"
 	crouchButton.Visible = isTouch
 	displayedFloor = -1
@@ -625,19 +512,12 @@ local function onCharacter(character)
 	hiddenNote.Visible = false
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
-	centerDot.Visible = true
-	yaw = math.pi
-	targetYaw = math.pi
-	pitch = 0
-	targetPitch = 0
-	cameraPosition = nil
-	leanAxis = 0
-	lean = 0
-	cameraRoll = 0
-	camera = Workspace.CurrentCamera
-	camera.CameraType = Enum.CameraType.Scriptable
-	player.CameraMode = Enum.CameraMode.LockFirstPerson
-	loadAvatarArms(character, humanoid)
+	-- Spawn as an ordinary, visible Roblox character. CameraSubject follows
+	-- that Humanoid, with Roblox's wall-occluding third-person camera.
+	player.CameraMinZoomDistance = 7
+	player.CameraMaxZoomDistance = 15
+	restoreCamera()
+	torchMount.Parent = camera
 	remote:FireServer("Torch", flashlightOn)
 	setSprint(false)
 end
@@ -645,13 +525,21 @@ player.CharacterAdded:Connect(onCharacter)
 if player.Character then task.spawn(onCharacter, player.Character) end
 remote:FireServer("Ready")
 
-RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Camera.Value + 1, function(dt)
+-- Roblox's CameraModule drives the camera in every playable room. This
+-- render callback never moves, fades, or rotates the character; it only follows
+-- the chosen camera with a non-colliding light and updates screen effects.
+RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value + 1, function(dt)
 	dt = math.min(dt, 0.07)
 	elapsed = elapsed + dt
 	local current = Workspace.CurrentCamera
 	if current ~= camera then
 		camera = current
-		viewModel.Parent = camera
+		torchMount.Parent = camera
+		if hidden and peekCF and camera then
+			camera.CameraType = Enum.CameraType.Scriptable
+		elseif humanoid then
+			restoreCamera()
+		end
 	end
 	if not camera or not root or not humanoid or not root.Parent then return end
 	local roomIndex = Layout.RoomIndexAt(root.Position.Z)
@@ -664,110 +552,25 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 		displayedFloor = storey
 		floorLabel.Text = string.format("ЭТАЖ %02d  /  %02d", storey, finalFloor)
 	end
-	camera.CameraType = Enum.CameraType.Scriptable
-	if not dead and not finished and not UserInputService:GetFocusedTextBox() then
-		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		UserInputService.MouseIconEnabled = false
-	end
 
-	local mouse = UserInputService:GetMouseDelta()
-	if not dead and not finished then
-		targetYaw = targetYaw - mouse.X * 0.00205 - touchLook.X * 0.0035
-		targetPitch = targetPitch - mouse.Y * 0.00205 - touchLook.Y * 0.0035
-		local stick = stickLook.Magnitude > 0.16 and stickLook or Vector2.new(0, 0)
-		targetYaw = targetYaw - stick.X * dt * 2.1
-		targetPitch = targetPitch + stick.Y * dt * 1.7
+	if hidden and peekCF then
+		camera.CameraType = Enum.CameraType.Scriptable
+		camera.CFrame = peekCF
+	elseif camera.CameraType == Enum.CameraType.Scriptable then
+		restoreCamera() -- also recovers after death/respawn inside a wardrobe
 	end
-	touchLook = Vector2.new(0, 0)
-	if hidden then
-		targetYaw = peekYaw + math.clamp(angleDifference(targetYaw, peekYaw), -0.19, 0.19)
-		targetPitch = math.clamp(targetPitch, -0.17, 0.16)
-	else
-		targetPitch = math.clamp(targetPitch, -1.34, 1.34)
-	end
-	-- Response ≈ 70 ms: cinematic inertia without excessive mouse latency.
-	yaw = yaw + angleDifference(targetYaw, yaw) * damp(14.5, dt)
-	pitch = pitch + (targetPitch - pitch) * damp(13.5, dt)
-
 	local velocity = root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-	local moving = not hidden and not dead and horizontalSpeed > 1.5 and humanoid.MoveDirection.Magnitude > 0.05
-	local moveAmount = moving and math.clamp(horizontalSpeed / 15, 0, 1.25) or 0
-	local running = moving and not crouching and horizontalSpeed > 15
-	stride = stride + dt * (running and 12.5 or (crouching and 6.5 or 9.4)) * moveAmount
-	crouchAmount = crouchAmount + ((crouching and not hidden and 1 or 0) - crouchAmount) * damp(10, dt)
-	local bob = math.sin(stride * 2) * 0.042 * moveAmount
-	local sidewaysBob = math.cos(stride) * 0.033 * moveAmount
-	local breath = math.sin(elapsed * (danger > 0 and 3.7 or 1.65)) * (hidden and 0.017 or 0.012)
-	lean = lean + ((hidden and 0 or leanAxis) - lean) * damp(8, dt)
-	local targetPosition
-	if hidden then
-		targetPosition = peekPosition or (root.Position + Vector3.new(0, 2, 0))
-	else
-		targetPosition = root.Position + Vector3.new(sidewaysBob, 1.58 - crouchAmount * 0.95 + bob + breath, 0)
-			+ camera.CFrame.RightVector * lean * 0.22
-	end
-	if not cameraPosition or (targetPosition - cameraPosition).Magnitude > 9 then
-		cameraPosition = targetPosition
-	else
-		cameraPosition = cameraPosition:Lerp(targetPosition, damp(hidden and 22 or 17, dt))
-	end
-	-- A little roll when turning or strafing, plus a soft recovery after scares.
-	local strafe = humanoid.MoveDirection:Dot(camera.CFrame.RightVector)
-	local rollTarget = math.clamp(-mouse.X * 0.00052, -0.035, 0.035) - strafe * 0.024
-		+ lean * 0.085 + math.sin(stride) * 0.007 * moveAmount
-	cameraRoll = cameraRoll + (rollTarget - cameraRoll) * damp(10, dt)
-	shake = math.max(0, shake - dt * 1.65)
-	local jitter = shake * math.sin(elapsed * 49) * 0.019
-	local targetCF = CFrame.new(cameraPosition + Vector3.new(0, jitter, 0))
-		* CFrame.Angles(0, yaw, 0) * CFrame.Angles(pitch + jitter * 0.24, 0, cameraRoll + jitter)
-	camera.CFrame = targetCF
-	camera.FieldOfView = camera.FieldOfView + ((hidden and 66 or (crouching and 72 or (running and 83 or 76)))
+	local running = not crouching and horizontalSpeed > 15
+	camera.FieldOfView = camera.FieldOfView + ((hidden and 70 or (running and 80 or 74))
 		+ danger * 2 - camera.FieldOfView) * damp(4, dt)
-	if not hidden and not dead and humanoid.Health > 0 then
-		root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
-	end
-	-- Roblox's first-person controller normally fades the whole avatar. Show
-	-- only clones of that player's actual R6/R15 arm MeshParts in the camera.
-	for _, piece in ipairs(player.Character and player.Character:GetDescendants() or {}) do
-		if piece:IsA("BasePart") then piece.LocalTransparencyModifier = 1 end
-	end
-	local armSwing = math.sin(stride) * 0.045 * moveAmount
-	local visible = not hidden and not dead and not finished
-	for _, arm in ipairs(avatarArms) do
-		local side = arm.side
-		local position, rotation
-		if arm.segment == "upper" then
-			position = Vector3.new(side * 0.86, -0.87 + armSwing, -0.66)
-			rotation = CFrame.Angles(math.rad(31), 0, math.rad(side * 14))
-		elseif arm.segment == "lower" then
-			position = Vector3.new(side * 0.77, -1.05 + armSwing, -1.07)
-			rotation = CFrame.Angles(math.rad(58), 0, math.rad(side * 8))
-		elseif arm.segment == "hand" then
-			position = Vector3.new(side * 0.72, -0.96 + armSwing, -1.49)
-			rotation = CFrame.Angles(math.rad(57), 0, math.rad(side * 5))
-		else -- R6: use the single original arm part, not separate drawn blocks.
-			position = Vector3.new(side * 0.84, -0.94 + armSwing, -1.03)
-			rotation = CFrame.Angles(math.rad(54), 0, math.rad(side * 12))
-		end
-		arm.part.CFrame = targetCF * CFrame.new(position) * rotation
-		arm.part.LocalTransparencyModifier = 0
-		arm.part.Transparency = visible and arm.source.Transparency or 1
-	end
-	torchMount.CFrame = targetCF * CFrame.new(0.45, -0.29, -0.8)
-	torch.Enabled = flashlightOn and visible
+	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
+	origin = origin + camera.CFrame.RightVector * 0.45
+	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
+	torch.Enabled = flashlightOn and not hidden and not dead and not finished
 
 	fright = math.max(0, fright - dt * 0.65)
 	local pulse = danger > 0 and (0.11 + 0.085 * math.sin(elapsed * 9)) or 0
 	redWash.BackgroundTransparency = math.clamp(1 - fright * 0.63 - pulse, 0.03, 1)
 	darkness.BackgroundTransparency = math.clamp(1 - danger * 0.13 - (hidden and 0.09 or 0), 0, 1)
-	if moving then
-		stepTimer = stepTimer + dt
-		if stepTimer > (running and 0.37 or 0.55) then
-			stepTimer = 0
-			play(stepSound, running and 1.13 or 0.88)
-		end
-	else
-		stepTimer = 0
-	end
 end)

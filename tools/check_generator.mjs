@@ -221,7 +221,9 @@ local function addPlayer(name)
         character.Name = self.Name
         local root = Instance.new("Part")
         root.Name = "HumanoidRootPart"
-        root.CFrame = CFrame.new(0, 3, 0)
+        local spawn = self.RespawnLocation
+        root.CFrame = spawn and CFrame.new(spawn.Position + Vector3.new(0, spawn.Size.Y / 2 + 3, 0))
+            or CFrame.new(0, 3, 0)
         root.AssemblyLinearVelocity = Vector3.new()
         root.Parent = character
         local human = Instance.new("Humanoid")
@@ -245,6 +247,18 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
+assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3", "old invisible-avatar place was loaded")
+assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
+local spawn = world:FindFirstChild("CheckpointSpawn")
+assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
+    and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - NocturneLayout.EntranceY(0)) < 0.01
+    and spawn.Position.Z == 10 and player.RespawnLocation == spawn,
+    "native spawn pad must meet the walkable floor and own the avatar spawn")
+local spawnedRoot = player.Character:FindFirstChild("HumanoidRootPart")
+local spawnedHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
+assert(spawnedRoot and spawnedRoot.Anchored == false and spawnedHumanoid.AutoRotate == true
+    and math.abs(spawnedRoot.Position.Y - 3) < 0.01 and spawnedRoot.Position.Z == 10,
+    "native spawn must place the playable avatar on the first room's floor")
 local function roomAt(index)
     for _, child in ipairs(world:GetChildren()) do
         if child:GetAttribute("RoomIndex") == index then return child end
@@ -277,14 +291,28 @@ for index = 0, 99 do
     assert(room:GetAttribute("EntryY") == NocturneLayout.EntranceY(index))
     assert(room:GetAttribute("ExitY") == NocturneLayout.ExitY(index))
     variants[room:GetAttribute("Variant")] = true
-    local wardrobes, treads, solidFlanks, partitions, arches, drawers = 0, 0, 0, 0, 0, 0
+    local wardrobes, treads, solidFlanks, partitions, arches, drawers, walls = 0, 0, 0, 0, 0, 0, 0
+    -- Collision belongs to the real structural parts, not to the decorative
+    -- non-colliding carpet. Test EACH streamed room so a missing floor in a
+    -- later storey cannot pass a foyer-only check.
+    local loadBearing = {
+        ["Continuous wooden subfloor"] = true, ["Load-bearing corridor wall"] = true,
+        ["Solid enclosed stair flank"] = true, ["Lower stair landing"] = true,
+        ["Upper stair landing"] = true, ["Solid stair tread"] = true,
+        ["Doorway threshold"] = true,
+    }
     for _, child in ipairs(room:GetDescendants()) do
         if child.Name == "Wardrobe_A" or child.Name == "Wardrobe_B" then wardrobes = wardrobes + 1 end
         if child.Name == "Solid stair tread" then treads = treads + 1 end
         if child.Name == "Solid enclosed stair flank" then solidFlanks = solidFlanks + 1 end
+        if child.Name == "Load-bearing corridor wall" then walls = walls + 1 end
         if child.Name == "Dogleg masonry partition" then partitions = partitions + 1 end
         if child.Name == "Dogleg arch lintel" then arches = arches + 1 end
         if child.Name == "OpenDrawer" then drawers = drawers + 1 end
+        if loadBearing[child.Name] then
+            assert(child.Anchored == true and child.CanCollide == true,
+                "non-colliding " .. child.Name .. " in room " .. index)
+        end
     end
     assert(wardrobes == 2, "room without two hinged wardrobe models at " .. index)
     for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
@@ -295,8 +323,21 @@ for index = 0, 99 do
     if NocturneLayout.IsStair(index) then
         assert(treads == 16 and solidFlanks == 2, "unclosed stairwell at " .. index)
         assert(drawers == 0, "drawers must not be placed on the stair flight")
+        for _, pair in ipairs({{"Lower stair landing", NocturneLayout.EntranceY(index)},
+            {"Upper stair landing", NocturneLayout.ExitY(index)}}) do
+            local landing = room:FindFirstChild(pair[1])
+            assert(landing and landing.Anchored and landing.CanCollide
+                and math.abs(landing.Position.Y + landing.Size.Y / 2 - pair[2]) < 0.01,
+                "missing walkable " .. pair[1] .. " at room " .. index)
+        end
     else
-        assert(treads == 0 and drawers == 3, "non-stair room needs a searchable three-drawer dresser")
+        assert(treads == 0 and drawers == 3 and walls == 2,
+            "flat corridor lost its floor, wall or searchable dresser")
+        local floor = room:FindFirstChild("Continuous wooden subfloor")
+        assert(floor and floor.Anchored and floor.CanCollide
+            and floor.Size.X >= NocturneLayout.RoomWidth and floor.Size.Z >= L
+            and math.abs(floor.Position.Y + floor.Size.Y / 2 - NocturneLayout.EntranceY(index)) < 0.01,
+            "missing walkable subfloor at room " .. index)
     end
     if NocturneLayout.IsTurn(index) then
         turnCount = turnCount + 1
@@ -341,7 +382,9 @@ for index = 0, 99 do
             assert(player:GetAttribute("Hidden") and root.Anchored, "wardrobe did not hide player")
             assert(hidePrompt.ActionText == "Открыть шкаф", "leaves did not swing shut behind player")
             remote.OnServerEvent:Fire(player, "Exit")
-            assert(not player:GetAttribute("Hidden") and not root.Anchored, "wardrobe cannot be left")
+            assert(not player:GetAttribute("Hidden") and root.Anchored == false
+                and player.Character:FindFirstChildOfClass("Humanoid").AutoRotate == true,
+                "wardrobe exit did not restore physical movement")
             local landingY = name == "Wardrobe_B" and NocturneLayout.ExitY(index)
                 or NocturneLayout.EntranceY(index)
             assert(math.abs(root.Position.Y - landingY - 3) < 0.01, "wardrobe exit is under a floor")
@@ -350,16 +393,27 @@ for index = 0, 99 do
     if NocturneLayout.IsStair(index) then
         local root = rootOf(player)
         root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) - 10, index * L + 40)
+        root.AssemblyLinearVelocity = Vector3.new(0, -100, 0)
         services.RunService.Heartbeat:Fire(0.2)
-        assert(root.Position.Y >= NocturneLayout.EntranceY(index) + 3,
-            "falling underneath a landing did not trigger safe return")
+        assert(root.Position.Y >= NocturneLayout.EntranceY(index) + 3
+            and root.AssemblyLinearVelocity.Magnitude == 0,
+            "falling underneath a landing did not trigger a safe, stationary return")
+    end
+    if index == 0 then
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 14, index * L + 19)
+        services.RunService.Heartbeat:Fire(0.2)
+        assert(root.Position.Y == NocturneLayout.EntranceY(index) + 3,
+            "floating above the corridor did not trigger safe return")
     end
     local door = room:FindFirstChild(string.format("Door_%03d", index + 1))
     assert(door, "missing numbered door " .. index + 1)
     local prompt = door:FindFirstChild("OpenDoor", true)
     assert(prompt and prompt.Enabled, "door not enterable from room " .. index)
     local leaf = prompt.Parent
-    assert(math.abs(leaf.Position.Y - (NocturneLayout.ExitY(index) + 5.1)) < 0.01)
+    assert(leaf.Anchored and leaf.CanCollide and
+        math.abs(leaf.Position.Y - (NocturneLayout.ExitY(index) + 5.1)) < 0.01,
+        "closed door has no solid collision")
     if index == 0 then
         rootOf(player).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 5)
         prompt.Triggered:Fire(player)
@@ -406,7 +460,8 @@ for index = 0, 99 do
     end
     prompt.Triggered:Fire(player)
     assert(world:GetAttribute("DoorsOpened") == index + 1, "player trapped by door " .. index + 1)
-    assert(prompt.Enabled and prompt.ActionText == "Закрыть", "door leaf does not stay operable after opening")
+    assert(prompt.Enabled and prompt.ActionText == "Закрыть" and leaf.CanCollide,
+        "hinged door did not restore collision after opening")
     if index == 0 or NocturneLayout.IsTurn(index) then
         prompt.Triggered:Fire(player)
         assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Открыть",

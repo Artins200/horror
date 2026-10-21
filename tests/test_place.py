@@ -27,6 +27,9 @@ class PlaceTests(unittest.TestCase):
         for cls in ("Workspace", "Lighting", "ServerScriptService", "StarterPlayer",
                     "ReplicatedStorage", "SoundService"):
             self.named(cls, cls)
+        workspace = self.named("Workspace", "Workspace")
+        self.assertAlmostEqual(float(workspace.findtext("Properties/float[@name='Gravity']")), 196.2)
+        self.assertEqual(workspace.findtext("Properties/bool[@name='StreamingEnabled']"), "false")
         self.assertEqual(len(self.xml.findall(".//Item[@class='SpawnLocation']")), 1)
         self.assertEqual(len(self.xml.findall(".//Item[@class='Camera']")), 1)
 
@@ -43,8 +46,11 @@ class PlaceTests(unittest.TestCase):
             ".//Item[@class='StarterPlayer']/Item[@class='StarterPlayerScripts']/Item[@class='LocalScript']"))
         self.assertIsNotNone(self.xml.find(
             ".//Item[@class='ReplicatedStorage']/Item[@class='ModuleScript']"))
-        self.assertEqual(self.named("StarterPlayer", "StarterPlayer").findtext(
-            "Properties/token[@name='CameraMode']"), "1")
+        starter = self.named("StarterPlayer", "StarterPlayer")
+        self.assertEqual(starter.findtext("Properties/token[@name='CameraMode']"), "0")
+        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMinZoomDistance']")), 7)
+        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMaxZoomDistance']")), 15)
+        self.assertEqual(starter.findtext("Properties/bool[@name='EnableMouseLockOption']"), "false")
 
     def test_editor_preview_has_door_wardrobes_and_lights(self):
         preview = self.named("Model", "StudioPreview")
@@ -52,6 +58,16 @@ class PlaceTests(unittest.TestCase):
         self.assertGreaterEqual(len(parts), 60)
         names = [part.findtext("Properties/string[@name='Name']") for part in parts]
         self.assertIn("Door 001", names)
+        floor = [part for part in parts
+                 if part.findtext("Properties/string[@name='Name']") == "Herringbone floor"]
+        self.assertEqual(len(floor), 1)
+        self.assertEqual(floor[0].findtext("Properties/bool[@name='CanCollide']"), "true")
+        self.assertEqual(floor[0].findtext("Properties/bool[@name='Anchored']"), "true")
+        spawn = self.named("SpawnLocation", "PreviewSpawn")
+        self.assertEqual(spawn.findtext("Properties/bool[@name='CanCollide']"), "true")
+        (sx, sy, sz), (x, y, z) = self.box(spawn)
+        self.assertAlmostEqual(y + sy / 2, 0)
+        self.assertAlmostEqual(z, 10)
         self.assertEqual(names.count("Wardrobe back"), 2)
         self.assertEqual(names.count("Carved wardrobe leaf"), 4)
         self.assertEqual(names.count("Sliding drawer front"), 3)
@@ -85,6 +101,8 @@ class PlaceTests(unittest.TestCase):
         prev_height = 0.0
         sequence = named("Lower stair landing") + treads + named("Upper stair landing")
         for part in sequence:
+            self.assertEqual(part.findtext("Properties/bool[@name='CanCollide']"), "true")
+            self.assertEqual(part.findtext("Properties/bool[@name='Anchored']"), "true")
             (sx, sy, sz), (_, y, z) = self.box(part)
             near, far = z - sz / 2, z + sz / 2
             walk_y = y + sy / 2
@@ -118,9 +136,30 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("function() startBlind(room, mySession)", self.server)
         self.assertIn("function() startMoth(room, mySession)", self.server)
         self.assertIn("RunService:BindToRenderStep", self.client)
-        self.assertIn("Enum.CameraType.Scriptable", self.client)
+        self.assertIn("Enum.CameraType.Custom", self.client)
+        self.assertIn("Enum.CameraType.Scriptable", self.client)  # only while hiding
 
-    def test_keys_crouching_monsters_and_avatar_arms_are_embedded(self):
+    def test_character_camera_does_not_override_roblox_physics(self):
+        self.assertIn("Workspace.Gravity = 196.2", self.server)
+        self.assertIn("root.Anchored = false", self.server)
+        self.assertIn("humanoid.AutoRotate = true", self.server)
+        self.assertIn("hum.AutoRotate = true", self.server)
+        self.assertIn('spawn.CanCollide = true', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "VisibleAvatar-v3")', self.server)
+        self.assertIn('player.CameraMode = Enum.CameraMode.Classic', self.client)
+        self.assertIn('camera.CameraSubject = humanoid', self.client)
+        self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
+        self.assertNotIn('Enum.CameraMode.LockFirstPerson', self.client)
+        self.assertNotIn('AvatarArmsFirstPerson', self.client)
+        self.assertNotIn('Opening title card', self.client)
+        self.assertNotRegex(self.client, r"\broot\.CFrame\s*=")
+        self.assertNotRegex(self.client, r"\.LocalTransparencyModifier\s*=")
+        self.assertNotIn("rbxasset://sounds/", self.client)
+        render = self.client.split('RunService:BindToRenderStep(', 1)[1]
+        self.assertNotIn('camera.CFrame =', render.split('if hidden and peekCF then', 1)[0])
+        self.assertIn('if hidden and peekCF then\n\t\tcamera.CameraType = Enum.CameraType.Scriptable', render)
+
+    def test_keys_crouching_monsters_and_native_avatar_are_embedded(self):
         self.assertIn("local function makeDresser", self.server)
         self.assertIn('takePrompt.Name = "TakeKey"', self.server)
         self.assertIn('openPrompt.Name = "OpenDrawer"', self.server)
@@ -130,8 +169,8 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local function swingCloset(closet, opening)', self.server)
         self.assertIn('info.crouching and CONFIG.CrouchSpeed', self.server)
         self.assertIn('and (state.hidden[player] or not info.crouching)', self.server)
-        self.assertIn('local function cloneAvatarArm', self.client)
-        self.assertIn('cloneAvatarArm(character, prefix .. "Hand"', self.client)
+        self.assertNotIn('cloneAvatarArm', self.client)  # native limbs, not ghost viewmodel
+        self.assertIn('humanoid.CameraOffset = Vector3.new', self.client)
         self.assertIn('remote:FireServer("Crouch", on)', self.client)
         self.assertIn('remote:FireServer("Torch", flashlightOn)', self.client)
         self.assertIn('startMoth = function(room, epoch)', self.server)

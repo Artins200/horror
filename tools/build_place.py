@@ -269,6 +269,10 @@ def build() -> Path:
     ET.SubElement(root, "External").text = "null"
     ET.SubElement(root, "External").text = "nil"
     workspace = item(root, "Workspace", "Workspace")
+    # Pin the physics settings rather than relying on a serializer or Studio's
+    # class defaults. Procedural floors must exist before the client moves.
+    prop(workspace, "float", "Gravity", 196.2)
+    bool_prop(workspace, "StreamingEnabled", False)
     camera = item(workspace, "Camera", "Camera")
     prop(workspace, "Ref", "CurrentCamera", camera.get("referent"))
     # Look down the first corridor. CFrame uses row-major R00..R22.
@@ -284,8 +288,11 @@ def build() -> Path:
     prop(camera, "float", "FieldOfView", 74)
     preview_room(workspace)
     preview_stair(workspace)
-    spawn = part(workspace, "PreviewSpawn", (4, 0.4, 4), (0, -0.75, 7),
-                 (72, 51, 40), "wood", transparency=1, collides=False)
+    # A conventional, collidable spawn pad level with the foyer floor. Placing
+    # a transparent non-colliding pad BELOW the floor looked like a ghost spawn.
+    spawn = part(workspace, "PreviewSpawn", (4, 0.2, 4), (0, -0.1, 10),
+                 (72, 51, 40), "wood", transparency=1, collides=True,
+                 rotation=(-1, 0, 0, 0, 1, 0, 0, 0, -1))
     spawn.set("class", "SpawnLocation")
     bool_prop(spawn, "Neutral", True)
     prop(spawn, "int", "Duration", 0)
@@ -318,7 +325,10 @@ def build() -> Path:
     prop(server_script, "ProtectedString", "Source", SERVER.read_text(encoding="utf-8"))
     bool_prop(server_script, "Disabled", False)
     starter_player = item(root, "StarterPlayer", "StarterPlayer")
-    prop(starter_player, "token", "CameraMode", 1)  # LockFirstPerson
+    prop(starter_player, "token", "CameraMode", 0)  # Classic, visible avatar
+    prop(starter_player, "float", "CameraMinZoomDistance", 7)
+    prop(starter_player, "float", "CameraMaxZoomDistance", 15)
+    bool_prop(starter_player, "EnableMouseLockOption", False)  # Shift is sprint, not shift-lock
     player_scripts = item(starter_player, "StarterPlayerScripts", "StarterPlayerScripts")
     client_script = item(player_scripts, "LocalScript", "NocturneClient")
     prop(client_script, "ProtectedString", "Source", CLIENT.read_text(encoding="utf-8"))
