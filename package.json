@@ -1,0 +1,17 @@
+{
+  "name": "nocturne-roblox-place",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-contained procedurally generated 100-door Roblox horror place",
+  "scripts": {
+    "build": "python3 tools/build_place.py && node tools/build_binary.mjs",
+    "build:xml": "python3 tools/build_place.py",
+    "build:binary": "node tools/build_binary.mjs",
+    "test": "python3 -m unittest discover -s tests -v && node tools/check_sources.mjs && node tools/check_layout.mjs && node tools/check_generator.mjs"
+  },
+  "devDependencies": {
+    "fengari": "^0.1.5",
+    "luaparse": "0.3.1",
+    "rbx-dom": "0.3.0"
+  }
+}
