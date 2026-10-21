@@ -14,6 +14,7 @@ class PlaceTests(unittest.TestCase):
         cls.xml = cls.document.getroot()
         cls.server = (ROOT / "src/ServerScriptService/NocturneServer.server.luau").read_text(encoding="utf-8")
         cls.client = (ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau").read_text(encoding="utf-8")
+        cls.perspective = (ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau").read_text(encoding="utf-8")
         cls.layout = (ROOT / "src/ReplicatedStorage/NocturneLayout.luau").read_text(encoding="utf-8")
 
     def named(self, class_name, name):
@@ -36,6 +37,7 @@ class PlaceTests(unittest.TestCase):
     def test_scripts_are_embedded_unmodified_and_enabled(self):
         for class_name, name, expected in (("Script", "NocturneServer", self.server),
                                             ("LocalScript", "NocturneClient", self.client),
+                                            ("LocalScript", "NocturnePerspective", self.perspective),
                                             ("ModuleScript", "NocturneLayout", self.layout)):
             script = self.named(class_name, name)
             self.assertEqual(script.findtext("Properties/ProtectedString[@name='Source']"), expected)
@@ -47,9 +49,9 @@ class PlaceTests(unittest.TestCase):
         self.assertIsNotNone(self.xml.find(
             ".//Item[@class='ReplicatedStorage']/Item[@class='ModuleScript']"))
         starter = self.named("StarterPlayer", "StarterPlayer")
-        self.assertEqual(starter.findtext("Properties/token[@name='CameraMode']"), "0")
-        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMinZoomDistance']")), 7)
-        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMaxZoomDistance']")), 15)
+        self.assertEqual(starter.findtext("Properties/token[@name='CameraMode']"), "1")
+        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMinZoomDistance']")), 0.5)
+        self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMaxZoomDistance']")), 0.5)
         self.assertEqual(starter.findtext("Properties/bool[@name='EnableMouseLockOption']"), "false")
 
     def test_editor_preview_has_door_wardrobes_and_lights(self):
@@ -145,21 +147,23 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "VisibleAvatar-v3")', self.server)
-        self.assertIn('player.CameraMode = Enum.CameraMode.Classic', self.client)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v5")', self.server)
+        self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
-        self.assertNotIn('Enum.CameraMode.LockFirstPerson', self.client)
-        self.assertNotIn('AvatarArmsFirstPerson', self.client)
+        self.assertNotIn('Enum.CameraMode.Classic', self.client)
+        self.assertIn('AvatarArmsFirstPerson', self.perspective)
+        self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.perspective)
+        self.assertIn('camera.CameraSubject = humanoid', self.perspective)
         self.assertNotIn('Opening title card', self.client)
-        self.assertNotRegex(self.client, r"\broot\.CFrame\s*=")
-        self.assertNotRegex(self.client, r"\.LocalTransparencyModifier\s*=")
-        self.assertNotIn("rbxasset://sounds/", self.client)
+        self.assertNotRegex(self.client + self.perspective, r"\broot\.CFrame\s*=")
+        self.assertNotIn('player.Character:GetDescendants()', self.perspective)
+        self.assertNotIn("rbxasset://sounds/", self.client + self.perspective)
         render = self.client.split('RunService:BindToRenderStep(', 1)[1]
         self.assertNotIn('camera.CFrame =', render.split('if hidden and peekCF then', 1)[0])
         self.assertIn('if hidden and peekCF then\n\t\tcamera.CameraType = Enum.CameraType.Scriptable', render)
 
-    def test_keys_crouching_monsters_and_native_avatar_are_embedded(self):
+    def test_keys_crouching_monsters_and_first_person_avatar_are_embedded(self):
         self.assertIn("local function makeDresser", self.server)
         self.assertIn('takePrompt.Name = "TakeKey"', self.server)
         self.assertIn('openPrompt.Name = "OpenDrawer"', self.server)
@@ -168,8 +172,11 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local function swingDoor(room, opening)', self.server)
         self.assertIn('local function swingCloset(closet, opening)', self.server)
         self.assertIn('info.crouching and CONFIG.CrouchSpeed', self.server)
-        self.assertIn('and (state.hidden[player] or not info.crouching)', self.server)
-        self.assertNotIn('cloneAvatarArm', self.client)  # native limbs, not ghost viewmodel
+        self.assertIn('state.hidden[player] or not info.crouching', self.server)
+        self.assertIn('local function copyArm', self.perspective)
+        self.assertIn('copyArm(prefix .. "Hand"', self.perspective)
+        self.assertIn('copyArm("Left Arm"', self.perspective)
+        self.assertIn('part.CanCollide = false', self.perspective)
         self.assertIn('humanoid.CameraOffset = Vector3.new', self.client)
         self.assertIn('remote:FireServer("Crouch", on)', self.client)
         self.assertIn('remote:FireServer("Torch", flashlightOn)', self.client)
@@ -182,14 +189,18 @@ class PlaceTests(unittest.TestCase):
         warning_handler = self.client.split('elseif event == "Warning" then', 1)[1].split(
             'elseif event == "Safe" then', 1)[0]
         self.assertNotIn('play(', warning_handler, 'light-flicker warning must be silent')
-        self.assertIn('function Layout.IsTurn(index)', self.layout)
-        self.assertIn('function Layout.PathX(index, localZ)', self.layout)
+        self.assertIn('function Layout.IsTurn(index, seed)', self.layout)
+        self.assertIn('function Layout.PathX(index, localZ, seed)', self.layout)
+        self.assertIn('local function planRooms(seed)', self.server)
+        self.assertIn('local function walkRoute(position, destination, speed, dt, height)', self.server)
+        self.assertIn('local function showScare(kind, source)', self.client)
 
-    def test_both_filenames_open_the_same_fixed_place(self):
+    def test_all_three_binary_filenames_open_the_same_place(self):
         binary = (ROOT / "Nocturne.rbxl").read_bytes()
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v5.rbxl").read_bytes())
 
 
 if __name__ == "__main__":

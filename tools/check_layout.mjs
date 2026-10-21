@@ -65,6 +65,25 @@ end
 assert(not Layout.IsStair(0) and Layout.IsStair(1))
 assert(climbs == 17, "100 doors should cross exactly 17 stair flights")
 assert(turns == 10, "route should contain ten navigable dogleg turns")
+local shifted = false
+for _, seed in ipairs({12, 985401, 71500337}) do
+    local count = 0
+    for index = 0, 99 do
+        if Layout.IsTurn(index, seed) then
+            count = count + 1
+            assert(not Layout.IsStair(index))
+            local side = Layout.TurnSide(index, seed)
+            assert(Layout.PathX(index, 0, seed) == 0 and Layout.PathX(index, 44, seed) == 0)
+            assert(Layout.PathX(index, 17, seed) == side * 8)
+            assert(Layout.PathX(index, 28, seed) == -side * 8)
+            if index > 6 and not Layout.IsTurn(index) then shifted = true end
+        else
+            assert(Layout.PathX(index, 17, seed) == 0)
+        end
+    end
+    assert(count == 10, "random turn locations must still total ten per run")
+end
+assert(shifted, "later turns were not really shuffled")
 assert(Layout.EntranceY(100) == 17 * Layout.StoreyRise)
 return climbs, turns
 `;

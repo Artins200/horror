@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceFiles = [
   "src/ServerScriptService/NocturneServer.server.luau",
   "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau",
+  "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau",
   "src/ReplicatedStorage/NocturneLayout.luau",
 ];
 for (const filename of [...sourceFiles, "tests/StudioSmokeTest.server.luau", "tests/StudioAvatarCheck.client.luau"]) {
@@ -32,18 +33,19 @@ function verify(place) {
   const spawn = instances.find((x) => x.className === "SpawnLocation" && x.name === "PreviewSpawn");
   const starter = instances.find((x) => x.className === "StarterPlayer");
   if (!spawn || !starter || place.getProperty(spawn.referent, "CanCollide")?.Bool !== true
-    || place.getProperty(starter.referent, "CameraMode")?.Enum !== 0
+    || place.getProperty(starter.referent, "CameraMode")?.Enum !== 1
     || place.getProperty(starter.referent, "EnableMouseLockOption")?.Bool !== false
-    || Math.abs((place.getProperty(starter.referent, "CameraMinZoomDistance")?.Float32 ?? 0) - 7) > 0.01) {
-    throw new Error("Native spawn and visible-avatar camera were not serialized into the place");
+    || Math.abs((place.getProperty(starter.referent, "CameraMinZoomDistance")?.Float32 ?? 0) - 0.5) > 0.01) {
+    throw new Error("Native spawn and physically attached first-person camera were not serialized");
   }
   const scripts = instances.filter((x) =>
     ["Script", "LocalScript", "ModuleScript"].includes(x.className),
   );
-  if (scripts.length !== 3) throw new Error(`Expected 3 embedded scripts; found ${scripts.length}`);
+  if (scripts.length !== 4) throw new Error(`Expected 4 embedded scripts; found ${scripts.length}`);
   for (const script of scripts) {
     const filename = script.className === "Script" ? sourceFiles[0]
-      : script.className === "LocalScript" ? sourceFiles[1] : sourceFiles[2];
+      : script.name === "NocturneClient" ? sourceFiles[1]
+        : script.name === "NocturnePerspective" ? sourceFiles[2] : sourceFiles[3];
     const pathInPlace = place.fullPath(script.referent);
     if (script.className === "LocalScript" && !pathInPlace.includes("StarterPlayerScripts")) {
       throw new Error(`Client script not in StarterPlayerScripts: ${pathInPlace}`);
@@ -63,4 +65,4 @@ const binary = readBinary(fs.readFileSync(path.join(root, "Nocturne.rbxl")));
 const xmlCount = verify(xml);
 const binaryCount = verify(binary);
 if (xmlCount !== binaryCount) throw new Error("XML and binary have different instance counts");
-console.log(`Studio serialization OK: ${xmlCount} instances, 2 running scripts and 1 layout module in both places`);
+console.log(`Studio serialization OK: ${xmlCount} instances, 3 running scripts and 1 layout module in both places`);

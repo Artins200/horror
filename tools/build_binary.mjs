@@ -11,19 +11,22 @@ const output = path.join(root, "Nocturne.rbxl");
 // Keep the uploaded filename as an alias so opening the old filename cannot
 // accidentally launch the abandoned, open-sided endless staircase again.
 const originalName = path.join(root, "13123.rbxl");
+const releaseName = path.join(root, "Nocturne-v5.rbxl"); // unique Studio filename, not a cached v4 tab
 const dom = readXml(fs.readFileSync(xmlPath));
 
 function assertSources(place) {
   const scripts = place.descendants(place.rootRef).filter((x) =>
     ["Script", "LocalScript", "ModuleScript"].includes(x.className),
   );
-  if (scripts.length !== 3) throw new Error(`Expected three scripts; got ${scripts.length}`);
+  if (scripts.length !== 4) throw new Error(`Expected four scripts; got ${scripts.length}`);
   for (const script of scripts) {
     const filename = script.className === "Script"
       ? "src/ServerScriptService/NocturneServer.server.luau"
-      : script.className === "LocalScript"
+      : script.name === "NocturneClient"
         ? "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau"
-        : "src/ReplicatedStorage/NocturneLayout.luau";
+        : script.name === "NocturnePerspective"
+          ? "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau"
+          : "src/ReplicatedStorage/NocturneLayout.luau";
     const expected = fs.readFileSync(path.join(root, filename), "utf8");
     const source = place.getProperty(script.referent, "Source");
     if (source?.String !== expected) throw new Error(`Source mismatch for ${script.name}`);
@@ -40,4 +43,5 @@ assertSources(check);
 if (check.instanceCount !== dom.instanceCount) throw new Error("Instances lost in binary conversion");
 fs.writeFileSync(output, binary);
 fs.writeFileSync(originalName, binary);
-console.log(`Built ${path.basename(output)} and ${path.basename(originalName)} (${binary.length.toLocaleString()} bytes; ${check.instanceCount} instances)`);
+fs.writeFileSync(releaseName, binary);
+console.log(`Built ${path.basename(output)}, ${path.basename(originalName)} and ${path.basename(releaseName)} (${binary.length.toLocaleString()} bytes; ${check.instanceCount} instances)`);

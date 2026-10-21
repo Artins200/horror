@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parent.parent
 SERVER = ROOT / "src/ServerScriptService/NocturneServer.server.luau"
 CLIENT = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau"
+PERSPECTIVE = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau"
 LAYOUT = ROOT / "src/ReplicatedStorage/NocturneLayout.luau"
 OUTPUT = ROOT / "Nocturne.rbxlx"
 
@@ -325,14 +326,17 @@ def build() -> Path:
     prop(server_script, "ProtectedString", "Source", SERVER.read_text(encoding="utf-8"))
     bool_prop(server_script, "Disabled", False)
     starter_player = item(root, "StarterPlayer", "StarterPlayer")
-    prop(starter_player, "token", "CameraMode", 0)  # Classic, visible avatar
-    prop(starter_player, "float", "CameraMinZoomDistance", 7)
-    prop(starter_player, "float", "CameraMaxZoomDistance", 15)
+    prop(starter_player, "token", "CameraMode", 1)  # Native LockFirstPerson, not a scriptable camera
+    prop(starter_player, "float", "CameraMinZoomDistance", 0.5)
+    prop(starter_player, "float", "CameraMaxZoomDistance", 0.5)
     bool_prop(starter_player, "EnableMouseLockOption", False)  # Shift is sprint, not shift-lock
     player_scripts = item(starter_player, "StarterPlayerScripts", "StarterPlayerScripts")
     client_script = item(player_scripts, "LocalScript", "NocturneClient")
     prop(client_script, "ProtectedString", "Source", CLIENT.read_text(encoding="utf-8"))
     bool_prop(client_script, "Disabled", False)
+    perspective = item(player_scripts, "LocalScript", "NocturnePerspective")
+    prop(perspective, "ProtectedString", "Source", PERSPECTIVE.read_text(encoding="utf-8"))
+    bool_prop(perspective, "Disabled", False)
     replicated = item(root, "ReplicatedStorage", "ReplicatedStorage")
     layout_module = item(replicated, "ModuleScript", "NocturneLayout")
     prop(layout_module, "ProtectedString", "Source", LAYOUT.read_text(encoding="utf-8"))

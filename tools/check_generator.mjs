@@ -22,7 +22,8 @@ local function drainTasks()
         current()
     end
 end
-local observed = {events = {}, monsterPositions = {}}
+local observed = {events = {}, monsterPositions = {}, monsterLooks = {},
+    wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0}
 local function signal()
     local s = {callbacks = {}}
     function s:Connect(f)
@@ -64,7 +65,8 @@ CFrame = {
     Angles = function() return CFrame.new() end,
     lookAt = function(a) return CFrame.new(a) end,
 }
-Color3 = {new = function() return {} end, fromRGB = function() return {} end}
+Color3 = {new = function(r, g, b) return {R=r, G=g, B=b} end,
+    fromRGB = function(r, g, b) return {R=r / 255, G=g / 255, B=b / 255} end}
 UDim = {new = function() return {} end}
 UDim2 = {fromScale = function() return {} end}
 TweenInfo = {new = function() return {} end}
@@ -73,7 +75,9 @@ Enum = setmetatable({}, {__index = function(t, k)
     rawset(t, k, values)
     return values
 end})
+local entropy = 21451
 Random = {new = function(seed)
+    if not seed then entropy = (entropy * 313 + 257) % 2147483647; seed = entropy end
     local r = {value = math.floor(seed) % 2147483647}
     function r:NextNumber(lo, hi)
         self.value = (self.value * 48271) % 2147483647
@@ -133,8 +137,39 @@ function methods:Destroy()
 end
 function methods:PivotTo(cf)
     self.WorldPivot = cf
-    if self.Name == "TheRush" or self.Name == "TheBlindGuest" then
+    if self.Name == "TheRush" or self.Name == "TheBlindGuest" or self.Name == "ThePaleMoth" then
         table.insert(observed.monsterPositions, {name=self.Name, x=cf.Position.X, z=cf.Position.Z})
+        if not observed.monsterLooks[self.Name] then
+            local look = {parts = 0, names = {}, mist = 0, halos = 0, wings = 0, blocks = 0}
+            for _, piece in ipairs(self:GetDescendants()) do
+                if piece:IsA("BasePart") then
+                    look.parts = look.parts + 1
+                    look.names[piece.Name] = (look.names[piece.Name] or 0) + 1
+                    if piece.Shape == Enum.PartType.Block then look.blocks = look.blocks + 1 end
+                    assert(piece.Anchored and piece.CanCollide == false and piece.CanTouch == false,
+                        self.Name .. " has physical phantom limbs")
+                elseif piece._class == "ParticleEmitter" then
+                    look.mist = look.mist + 1
+                elseif piece._class == "Highlight" then
+                    look.halos = look.halos + 1
+                    assert(piece.DepthMode == Enum.HighlightDepthMode.Occluded,
+                        "monster must not be visible through hotel walls")
+                elseif piece._class == "Model" and (piece.Name == "Veiled left wing"
+                    or piece.Name == "Veiled right wing") then
+                    look.wings = look.wings + 1
+                end
+            end
+            observed.monsterLooks[self.Name] = look
+        end
+    elseif self.Name == "Veiled left wing" or self.Name == "Veiled right wing" then
+        observed.wingFrames = observed.wingFrames + 1
+    elseif self.Name == "Searching mask and neck" then
+        observed.maskFrames = observed.maskFrames + 1
+    elseif self.Name == "Left hooked arm" or self.Name == "Right hooked arm" then
+        observed.clawFrames = observed.clawFrames + 1
+    elseif self.Name == "Left walking leg" or self.Name == "Right walking leg"
+        or self.Name == "Left articulated sleeve" or self.Name == "Right articulated sleeve" then
+        observed.limbFrames = observed.limbFrames + 1
     end
 end
 local instMeta = {
@@ -210,6 +245,27 @@ ${layout}
 end)();
 (function()
 ${server}
+-- Different runs must rearrange ACTUAL room types; the same seed is replayable.
+local a, b, repeated = planRooms(154511), planRooms(984451), planRooms(154511)
+local differences, threatDifferences, lastKind = 0, 0, nil
+local kinds = {}
+for index = 0, 99 do
+    local roomA, roomB = a[index], b[index]
+    if roomA.kind ~= roomB.kind then differences = differences + 1 end
+    if roomA.threat ~= roomB.threat then threatDifferences = threatDifferences + 1 end
+    assert(roomA.kind == repeated[index].kind and roomA.threat == repeated[index].threat
+        and roomA.locked == repeated[index].locked and roomA.decorSeed == repeated[index].decorSeed,
+        "room plan changed for the same seed")
+    if not NocturneLayout.IsStair(index) and not NocturneLayout.IsTurn(index, 154511) then
+        assert(roomA.kind ~= lastKind or index == 0, "consecutive rooms repeated")
+        lastKind = roomA.kind
+        kinds[roomA.kind] = true
+    end
+end
+local total = 0
+for _ in pairs(kinds) do total = total + 1 end
+assert(differences > 38 and threatDifferences > 8 and total == 12,
+    "rooms/threats are still a deterministic cycle rather than a seeded shuffled set")
 end)()
 services.Players._players = {}
 local function addPlayer(name)
@@ -247,7 +303,7 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
-assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3", "old invisible-avatar place was loaded")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v5", "old third-person place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 local spawn = world:FindFirstChild("CheckpointSpawn")
 assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
@@ -267,7 +323,7 @@ end
 local remote = services.ReplicatedStorage:FindFirstChild("NocturneRemote")
 local L = NocturneLayout.RoomLength
 local lockCount, turnCount, rushCount, blindCount, mothCount = 0, 0, 0, 0, 0
-local variants = {}
+local variants, signatures = {}, {}
 local function rootOf(p) return p.Character:FindFirstChild("HumanoidRootPart") end
 local function healthOf(p) return p.Character:FindFirstChildOfClass("Humanoid").Health end
 local function countEvent(name, kind)
@@ -291,6 +347,7 @@ for index = 0, 99 do
     assert(room:GetAttribute("EntryY") == NocturneLayout.EntranceY(index))
     assert(room:GetAttribute("ExitY") == NocturneLayout.ExitY(index))
     variants[room:GetAttribute("Variant")] = true
+    signatures[index] = room:GetAttribute("Variant") .. ":" .. tostring(room:GetAttribute("DecorSeed"))
     local wardrobes, treads, solidFlanks, partitions, arches, drawers, walls = 0, 0, 0, 0, 0, 0, 0
     -- Collision belongs to the real structural parts, not to the decorative
     -- non-colliding carpet. Test EACH streamed room so a missing floor in a
@@ -339,11 +396,11 @@ for index = 0, 99 do
             and math.abs(floor.Position.Y + floor.Size.Y / 2 - NocturneLayout.EntranceY(index)) < 0.01,
             "missing walkable subfloor at room " .. index)
     end
-    if NocturneLayout.IsTurn(index) then
+    if NocturneLayout.IsTurn(index, world:GetAttribute("Seed")) then
         turnCount = turnCount + 1
         assert(room:GetAttribute("Variant") == "TURN")
         assert(partitions == 4 and arches == 2, "offset arches are not solid masonry")
-        local side = NocturneLayout.TurnSide(index)
+        local side = NocturneLayout.TurnSide(index, world:GetAttribute("Seed"))
         for _, gate in ipairs({{17, side * 8}, {28, -side * 8}}) do
             local segments = {}
             for _, piece in ipairs(room:GetDescendants()) do
@@ -462,7 +519,7 @@ for index = 0, 99 do
     assert(world:GetAttribute("DoorsOpened") == index + 1, "player trapped by door " .. index + 1)
     assert(prompt.Enabled and prompt.ActionText == "Закрыть" and leaf.CanCollide,
         "hinged door did not restore collision after opening")
-    if index == 0 or NocturneLayout.IsTurn(index) then
+    if index == 0 or NocturneLayout.IsTurn(index, world:GetAttribute("Seed")) then
         prompt.Triggered:Fire(player)
         assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Открыть",
             "visited door cannot close")
@@ -523,17 +580,46 @@ for index = 0, 99 do
         hidePrompt.Triggered:Fire(hidden)
         hidePrompt.Triggered:Fire(hidden)
         assert(hidden:GetAttribute("Hidden"))
+        -- Flee BACK through a shut visited door. The Guest must reopen it,
+        -- follow the stair and turn entrances instead of orbiting room 9.
+        local previousDoor = roomAt(8):FindFirstChild("Door_009"):FindFirstChild("OpenDoor", true)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 3)
+        previousDoor.Triggered:Fire(player)
+        assert(previousDoor.ActionText == "Открыть", "failed to shut the visited door")
+        root.CFrame = CFrame.new(-11, NocturneLayout.EntranceY(index) + 3, index * L + 5)
+        local retreater = addPlayer("RetreatedIntoRoomEight")
+        rootOf(retreater).CFrame = CFrame.new(0, NocturneLayout.EntranceY(8) + 3, 8 * L + 22)
+        local turnRunner = addPlayer("RetreatedAcrossTheTurn")
+        rootOf(turnRunner).CFrame = CFrame.new(0, NocturneLayout.EntranceY(6) + 3, 6 * L + 24)
         drainTasks()
         assert(healthOf(player) == 100 and player:GetAttribute("Crouching"),
             "a silent croucher away from the creature was detected")
         assert(healthOf(loud) == 0, "standing player was not pursued")
         assert(healthOf(contact) == 0, "crouching allowed walking THROUGH the monster")
         assert(healthOf(hidden) == 0, "the Blind Guest did not inspect the occupied wardrobe")
+        assert(previousDoor.ActionText == "Закрыть", "a shut old door shielded the fleeing player")
+        assert(healthOf(retreater) == 0 and healthOf(turnRunner) == 0,
+            "Guest stopped at the first doorway or failed to descend to the earlier turn")
+        local furthestBack = math.huge
+        local crossedTurnGate = false
+        for _, m in ipairs(observed.monsterPositions) do
+            if m.name == "TheBlindGuest" then
+                furthestBack = math.min(furthestBack, m.z)
+                if math.abs(m.z - (6 * L + 28)) < 1.5 then
+                    crossedTurnGate = crossedTurnGate
+                        or math.abs(m.x - NocturneLayout.TurnSide(6, world:GetAttribute("Seed")) * -8) < 2
+                end
+            end
+        end
+        assert(furthestBack < 7 * L and crossedTurnGate,
+            "Guest cut across masonry or never physically entered the earlier turn")
         assert(countEvent("Warning", "BLIND") == 1 and countEvent("Safe", "BLIND") == 1)
         remote.OnServerEvent:Fire(player, "Crouch", false)
         removePlayer(loud)
         removePlayer(contact)
         removePlayer(hidden)
+        removePlayer(retreater)
+        removePlayer(turnRunner)
     end
     if index == 15 then
         -- A switched-off torch beats this creature even when standing close;
@@ -547,31 +633,95 @@ for index = 0, 99 do
         local bright = addPlayer("CrouchedWithTorchOn")
         remote.OnServerEvent:Fire(bright, "Crouch", true)
         rootOf(bright).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 30)
+        local previousBright = addPlayer("FledBackWithLightOn")
+        rootOf(previousBright).CFrame = CFrame.new(0, NocturneLayout.EntranceY(14) + 3, 14 * L + 26)
         drainTasks()
         assert(healthOf(player) == 100, "unlit player was killed by the light-seeker")
         assert(healthOf(bright) == 0, "crouching protected a player shining a torch")
+        assert(healthOf(previousBright) == 0,
+            "light-seeking Moth would not follow the torch back into the prior room")
+        local mothBack = math.huge
+        for _, m in ipairs(observed.monsterPositions) do
+            if m.name == "ThePaleMoth" then mothBack = math.min(mothBack, m.z) end
+        end
+        assert(mothBack < 15 * L - 1, "Moth never crossed the previous doorway")
         assert(countEvent("Warning", "MOTH") == 1 and countEvent("Safe", "MOTH") == 1)
         remote.OnServerEvent:Fire(player, "Torch", true)
         removePlayer(bright)
+        removePlayer(previousBright)
     end
 end
 assert(lockCount >= 8 and turnCount == 10, "insufficient locked rooms or turns")
-assert(rushCount == 8 and blindCount == 8 and mothCount == 8,
-    "three different threats were not interleaved across 100 doors")
+assert(rushCount >= 4 and blindCount >= 4 and mothCount >= 4
+    and rushCount + blindCount + mothCount >= 15,
+    "seeded threat spacing omitted one of the three survival mechanics")
 local kinds = 0
 for _ in pairs(variants) do kinds = kinds + 1 end
-assert(kinds >= 8, "room interiors do not vary")
+assert(kinds >= 11, "room interiors do not vary")
+local scareEvents = 0
+for _, ev in ipairs(observed.events) do
+    if ev.event == "Jumpscare" then
+        scareEvents = scareEvents + 1
+        local name = ev.a == "RUSH" and "TheRush" or ev.a == "BLIND" and "TheBlindGuest"
+            or ev.a == "MOTH" and "ThePaleMoth"
+        assert(name and ev.b and ev.b.Name == name and ev.b:GetAttribute("RecentKill"),
+            "death did not send the REAL attacking creature for the close-up")
+    end
+end
+assert(scareEvents >= 6, "threats no longer trigger their own death scenes")
+local rushLook = observed.monsterLooks.TheRush
+local blindLook = observed.monsterLooks.TheBlindGuest
+local mothLook = observed.monsterLooks.ThePaleMoth
+assert(rushLook and rushLook.parts >= 32 and rushLook.mist >= 5 and rushLook.halos == 1
+    and rushLook.names["Cracked funeral mask"] == 1
+    and rushLook.names["Three hooked talons"] == 6 and observed.clawFrames > 3,
+    "Rush lost its face, moving claws or corridor-wide ash wake")
+assert(blindLook and blindLook.parts >= 65 and blindLook.blocks == 0 and blindLook.halos == 1
+    and blindLook.names["Sculpted ivory eyeless face"] == 1
+    and blindLook.names["Overlapping hanging coat fold"] == 5
+    and blindLook.names["Hand-sewn eyelid stitch"] == 8
+    and observed.maskFrames > 2 and observed.limbFrames > 8,
+    "Blind Guest lost its smooth sculpted face, tailored silhouette or walking gait")
+assert(mothLook and mothLook.parts >= 45 and mothLook.wings == 2 and mothLook.halos == 1
+    and mothLook.names["Soft layered wing"] == 4
+    and mothLook.names["Dark eye on the wing"] == 4 and observed.wingFrames > 3,
+    "Pale Moth lost its layered, animated wings")
 local first = 100 - 8
 assert(not roomAt(first - 1), "old rooms were never culled")
 local backSeal = roomAt(first):FindFirstChild("The corridor closes behind you")
 assert(backSeal and math.abs(backSeal.Position.Y - NocturneLayout.EntranceY(first) - 5.4) < 0.01,
     "the rear doorway is open or sealed at the wrong height")
+-- A solo Retry must use FRESH entropy. Inspect actual newly built parts, not
+-- merely a different seed label, so cosmetic/dresser details really change.
+local oldSeed = world:GetAttribute("Seed")
+player.Character:FindFirstChildOfClass("Humanoid").Health = 0
+remote.OnServerEvent:Fire(player, "Retry")
+local nextWorld = services.Workspace:FindFirstChild("NocturneWorld")
+assert(nextWorld ~= world and nextWorld:GetAttribute("Seed") ~= oldSeed,
+    "solo replay reused the previous run's random seed")
+local nextFirst = nextWorld:FindFirstChild("Room_000_HALL")
+local nextDoor = nextFirst:FindFirstChild("Door_001"):FindFirstChild("OpenDoor", true)
+rootOf(player).CFrame = CFrame.new(0, 3, L - 5)
+nextDoor.Triggered:Fire(player)
+local changed = false
+for _, child in ipairs(nextWorld:GetChildren()) do
+    local index = child:GetAttribute("RoomIndex")
+    if index and index >= 2 and index <= 3 then
+        local signature = child:GetAttribute("Variant") .. ":" .. tostring(child:GetAttribute("DecorSeed"))
+        if signature ~= signatures[index] then changed = true end
+    end
+end
+assert(changed, "replay regenerated exactly the same early room details")
 return world:GetAttribute("DoorsOpened")
 `;
 const state = lauxlib.luaL_newstate();
 lualib.luaL_openlibs(state);
 const status = lauxlib.luaL_dostring(state, to_luastring(mock));
 if (status !== lua.LUA_OK) {
-  throw new Error(`Server generator smoke test failed: ${to_jsstring(lua.lua_tostring(state, -1))}`);
+  const message = to_jsstring(lua.lua_tostring(state, -1));
+  const line = Number(message.match(/:(\d+):/)?.[1] ?? 0);
+  const nearby = mock.split("\n").slice(Math.max(0, line - 4), line + 2)
+    .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
+  throw new Error(`Server generator smoke test failed: ${message}\n${nearby}`);
 }
 console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors, 17 stairs, 10 turns, keys and hinged leaves; Rush, Blind Guest and flashlight-sensitive Moth`);

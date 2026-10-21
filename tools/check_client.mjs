@@ -1,6 +1,6 @@
-// Exercise the real client source with a small Roblox-shaped Lua 5.3 stand-in.
-// This cannot replace a Studio Play test. It catches regressions that leave the
-// avatar locally invisible or the walking camera detached after hiding/respawn.
+// Exercise the HUD separately from the independent perspective bootstrap.
+// This does not replace Studio Play: it checks native camera transitions,
+// crouch/torch messages and the full-screen model-based death scare.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,13 +25,16 @@ local vectorMeta = {
 }
 Vector3 = {new = function(x, y, z) return setmetatable({X=x or 0, Y=y or 0, Z=z or 0}, vectorMeta) end}
 Vector2 = {new = function(x, y) return {X=x, Y=y} end}
+local cfMeta = {__mul = function(a, b) return CFrame.new(a.Position + b.Position) end}
 CFrame = {
     new = function(x, y, z)
-        return {Position = type(x) == "table" and x or Vector3.new(x, y, z),
-            LookVector = Vector3.new(0, 0, -1), RightVector = Vector3.new(1, 0, 0)}
+        return setmetatable({Position = type(x) == "table" and x or Vector3.new(x, y, z),
+            LookVector = Vector3.new(0, 0, -1), RightVector = Vector3.new(1, 0, 0)}, cfMeta)
     end,
+    Angles = function() return CFrame.new() end,
     lookAt = function(from, to)
-        return {Position = from, LookVector = to - from, RightVector = Vector3.new(1, 0, 0)}
+        return setmetatable({Position = from, LookVector = to - from,
+            RightVector = Vector3.new(1, 0, 0)}, cfMeta)
     end,
 }
 Color3 = {new = function(...) return {...} end, fromRGB = function(...) return {...} end}
@@ -67,7 +70,29 @@ end
 function methods:FindFirstChild(name)
     for _, child in ipairs(self:GetChildren()) do if child.Name == name then return child end end
 end
+function methods:FindFirstChildOfClass(class)
+    for _, child in ipairs(self:GetChildren()) do if child._class == class then return child end end
+end
+function methods:GetDescendants()
+    local list = {}
+    for _, child in ipairs(self:GetChildren()) do
+        table.insert(list, child)
+        for _, nested in ipairs(child:GetDescendants()) do table.insert(list, nested) end
+    end
+    return list
+end
+function methods:Clone()
+    local copy = Instance.new(self._class)
+    for key, value in pairs(self) do
+        if key ~= "_children" and key ~= "_class" and key ~= "_parent" then copy[key] = value end
+    end
+    for _, child in ipairs(self:GetChildren()) do child:Clone().Parent = copy end
+    return copy
+end
+function methods:PivotTo(cf) self.WorldPivot = cf end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
+function methods:SetAttribute(name, value) self._attributes[name] = value end
+function methods:GetAttribute(name) return self._attributes[name] end
 function methods:GetAttributeChangedSignal(_) return signal() end
 function methods:IsA(class) return self._class == class or (class == "BasePart" and self._class == "Part") end
 function methods:Destroy() self.Parent = nil end
@@ -84,9 +109,10 @@ local instMeta = {
     end,
 }
 Instance = {new = function(class)
-    return setmetatable({_class=class, _children={}, Name=class,
+    return setmetatable({_class=class, _children={}, _attributes={}, Name=class,
         MouseButton1Click=signal(), MouseButton1Down=signal(), MouseButton1Up=signal(),
-        MouseLeave=signal(), CharacterAdded=signal(), InputBegan=signal(), InputEnded=signal(),
+        MouseLeave=signal(), CharacterAdded=signal(), CharacterAppearanceLoaded=signal(),
+        InputBegan=signal(), InputEnded=signal(),
         InputChanged=signal(), OnClientEvent=signal()}, instMeta)
 end}
 local player = Instance.new("Player")
@@ -126,7 +152,15 @@ local services = {Players=Instance.new("Players"), ReplicatedStorage=replicated,
     RunService=runService, UserInputService=uiService, TweenService=tweenService}
 services.Players.LocalPlayer = player
 game = {GetService=function(_, name) return services[name] end}
-task = {spawn=function(fn) fn() end, delay=function(_, _) end}
+local timers = {}
+task = {spawn=function(fn) fn() end,
+    delay=function(seconds, fn) table.insert(timers, {at=seconds, callback=fn}) end}
+local function drainTimers()
+    table.sort(timers, function(a,b) return a.at < b.at end)
+    local current = timers
+    timers = {}
+    for _, timer in ipairs(current) do timer.callback() end
+end
 function require(module) return module.value end
 layoutModule.value = (function()
 ${layout}
@@ -134,7 +168,7 @@ end)();
 (function()
 ${client}
 end)();
-local function character(name)
+local function character(name, rig)
     local model = Instance.new("Model")
     model.Name = name
     local root = Instance.new("Part")
@@ -149,63 +183,107 @@ local function character(name)
     head.Position = Vector3.new(0, 4.7, 10)
     head.LocalTransparencyModifier = 0
     head.Parent = model
-    local arm = Instance.new("Part")
-    arm.Name = "LeftHand"
-    arm.LocalTransparencyModifier = 0
-    arm.Parent = model
+    local firstArm
+    local names = rig == "R6" and {"Left Arm", "Right Arm"}
+        or {"LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand"}
+    for _, limbName in ipairs(names) do
+        local limb = Instance.new("Part")
+        limb.Name = limbName
+        limb.Archivable = true
+        limb.Transparency = 0
+        limb.LocalTransparencyModifier = 0
+        limb.Parent = model
+        firstArm = firstArm or limb
+    end
     local humanoid = Instance.new("Humanoid")
     humanoid.Name = "Humanoid"
     humanoid.CameraOffset = Vector3.new()
+    humanoid.MoveDirection = Vector3.new()
+    humanoid.RigType = rig == "R6" and Enum.HumanoidRigType.R6 or Enum.HumanoidRigType.R15
     humanoid.Parent = model
     model.Parent = workspace
-    return model, root, head, arm, humanoid
+    return model, root, head, firstArm, humanoid
 end
 local avatar, root, head, arm, humanoid = character("First life")
 player.Character = avatar
 player.CharacterAdded:Fire(avatar)
-assert(player.CameraMode == Enum.CameraMode.Classic, "native camera mode not restored on spawn")
-assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
-    "camera must follow the real Humanoid, not a free-floating origin")
-assert(player.CameraMinZoomDistance >= 7, "camera zoomed inside the hidden avatar")
+assert(player.CameraMode == Enum.CameraMode.LockFirstPerson
+    and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
+    "HUD's camera transition detached from the actual Humanoid")
+local gui = playerGui:FindFirstChild("NocturneHUD")
+local reticle = gui:FindFirstChild("Reticle")
+local scare = gui:FindFirstChild("Creature close-up")
+local modal = gui:FindFirstChild("End card")
+local view = scare:FindFirstChild("Attacking creature")
+local stage = view:FindFirstChild("The approaching face")
+assert(reticle.Visible and scare.Visible == false and modal.Visible == false
+    and view.CurrentCamera and stage, "close-up/first-person UI not initialized")
 local originalCF = root.CFrame
 runService.render(0.016)
-assert(root.CFrame == originalCF and not root.Anchored, "client overrides physical character movement")
-assert(head.LocalTransparencyModifier == 0 and arm.LocalTransparencyModifier == 0,
-    "client hides the real Roblox avatar")
-assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
-    "walking camera became Scriptable")
+assert(root.CFrame == originalCF and not root.Anchored
+    and head.LocalTransparencyModifier == 0 and arm.LocalTransparencyModifier == 0,
+    "HUD interfered with physical avatar or its real limbs")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.C}, false)
-assert(humanoid.CameraOffset.Y == -0.65, "crouch no longer changes the avatar viewpoint")
+assert(humanoid.CameraOffset.Y == -0.65, "crouch no longer lowers the native camera")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
+assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == false,
+    "turning off the light did not signal the Moth survival rule")
 local peek = CFrame.new(1, 5, 21)
 remote.OnClientEvent:Fire("Hide", true, peek)
 runService.render(0.016)
-assert(camera.CameraType == Enum.CameraType.Scriptable and camera.CFrame == peek,
-    "inside the wardrobe the stationary peek camera should open")
-assert(root.CFrame == originalCF, "wardrobe camera moved the actual Roblox avatar")
+assert(camera.CameraType == Enum.CameraType.Scriptable and camera.CFrame == peek
+    and player:GetAttribute("NocturnePeek") and not reticle.Visible,
+    "wardrobe did not cover the real character with a temporary peek")
+assert(root.CFrame == originalCF, "wardrobe viewpoint moved the physical avatar")
 remote.OnClientEvent:Fire("Hide", false)
 runService.render(0.016)
-assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
-    "camera failed to reattach after leaving wardrobe")
-assert(head.LocalTransparencyModifier == 0 and arm.LocalTransparencyModifier == 0)
--- A second life must also recover if the player was still peeking at death.
-remote.OnClientEvent:Fire("Hide", true, peek)
-local nextAvatar, nextRoot, nextHead, nextArm, nextHumanoid = character("Second life")
+assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid
+    and player.CameraMode == Enum.CameraMode.LockFirstPerson
+    and not player:GetAttribute("NocturnePeek") and reticle.Visible,
+    "native first person did not return after the wardrobe")
+local monster = Instance.new("Model")
+monster.Name = "TheBlindGuest"
+local face = Instance.new("Part")
+face.Name = "Sculpted ivory eyeless face"
+face.Parent = monster
+monster.Parent = workspace
+remote.OnClientEvent:Fire("Jumpscare", "BLIND", monster)
+assert(scare.Visible and not modal.Visible and not reticle.Visible
+    and stage:FindFirstChild("TheBlindGuest")
+    and stage:FindFirstChild("TheBlindGuest"):FindFirstChild("Sculpted ivory eyeless face"),
+    "death close-up did not display the attacking monster")
+remote.OnClientEvent:Fire("Death")
+assert(not modal.Visible and scare.Visible,
+    "retry menu erased the monster close-up instantly")
+drainTimers()
+assert(modal.Visible and not scare.Visible, "full-screen scare did not finish before retry screen")
+-- Respawn cancels any old delayed modal and leaves a real R6 character.
+local nextAvatar, nextRoot, nextHead, nextArm, nextHumanoid = character("Second life", "R6")
 player.Character = nextAvatar
 player.CharacterAdded:Fire(nextAvatar)
 runService.render(0.016)
 assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == nextHumanoid
+    and player.CameraMode == Enum.CameraMode.LockFirstPerson
+    and not scare.Visible and not modal.Visible and reticle.Visible
     and nextHead.LocalTransparencyModifier == 0 and nextArm.LocalTransparencyModifier == 0
-    and not nextRoot.Anchored, "respawn left an invisible, detached ghost")
-local replacementCamera = Instance.new("Camera")
-replacementCamera.CFrame = CFrame.new(0, 6, 3)
-replacementCamera.CameraType = Enum.CameraType.Fixed
-replacementCamera.FieldOfView = 70
-replacementCamera.Parent = workspace
-workspace.CurrentCamera = replacementCamera
+    and not nextRoot.Anchored, "HUD respawn left a detached or hidden avatar")
+remote.OnClientEvent:Fire("Jumpscare", "MOTH", nil)
+assert(scare.Visible and stage:FindFirstChild("Last glimpse of MOTH"),
+    "a monster not yet replicated to the client left the jumpscare blank")
+remote.OnClientEvent:Fire("Death")
+drainTimers()
+assert(modal.Visible and not scare.Visible)
+player.CharacterAdded:Fire(nextAvatar)
+local replacement = Instance.new("Camera")
+replacement.CFrame = CFrame.new(0, 6, 3)
+replacement.CameraType = Enum.CameraType.Fixed
+replacement.FieldOfView = 70
+replacement.Parent = workspace
+workspace.CurrentCamera = replacement
 runService.render(0.016)
-assert(replacementCamera.CameraType == Enum.CameraType.Custom
-    and replacementCamera.CameraSubject == nextHumanoid,
-    "camera replacement stopped following the living avatar")
+assert(replacement.CameraType == Enum.CameraType.Custom
+    and replacement.CameraSubject == nextHumanoid,
+    "HUD camera replacement stopped following the living avatar")
 return true
 `;
 const state = lauxlib.luaL_newstate();
@@ -219,4 +297,4 @@ if (status !== lua.LUA_OK) {
     `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
   throw new Error(`Client avatar/camera smoke test failed: ${error}\n${nearby}`);
 }
-console.log("Client smoke test OK: visible Roblox avatar + native camera after spawn, wardrobe exit and respawn");
+console.log("HUD smoke test OK: physical camera/crouch/torch and monster close-up precedes retry menu");

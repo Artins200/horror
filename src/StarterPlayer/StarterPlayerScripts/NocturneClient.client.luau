@@ -1,6 +1,6 @@
--- NOCTURNE / a visible Roblox avatar and the ordinary third-person camera.
--- The engine's camera/controller own movement, occlusion and collision. This
--- script only draws the HUD, places the flashlight and handles interactions.
+-- NOCTURNE / HUD, hiding treatment, light and close-up scares.
+-- The separate NocturnePerspective script owns native first-person and copies
+-- real avatar limbs, even if this larger HUD script cannot start.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -145,12 +145,45 @@ local notice = label(ui, "Interaction status", "", UDim2.new(0.84, 0, 0, 74), UD
 notice.TextWrapped = true
 notice.TextTransparency = 1
 notice.ZIndex = 8
+local reticle = frame(ui, "Reticle", UDim2.fromOffset(3, 3), UDim2.fromScale(0.5, 0.5), PALE, 0.25)
+reticle.AnchorPoint = Vector2.new(0.5, 0.5)
+reticle.ZIndex = 5
 local redWash = frame(ui, "Threat flash", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), RED, 1)
 redWash.ZIndex = 10
 redWash.Active = false
 local darkness = frame(ui, "Threat darkness", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 1)
 darkness.ZIndex = 9
 darkness.Active = false
+
+-- A dying player gets a close-up of the attacking creature, not a brief red
+-- wash hidden immediately behind the retry menu. ViewportFrame never takes
+-- control of the real camera or the physical avatar.
+local scare = frame(ui, "Creature close-up", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0)
+scare.ZIndex = 18
+scare.Visible = false
+scare.Active = true
+local scareView = Instance.new("ViewportFrame")
+scareView.Name = "Attacking creature"
+scareView.Size = UDim2.fromScale(1.14, 1.14)
+scareView.AnchorPoint = Vector2.new(0.5, 0.5)
+scareView.Position = UDim2.fromScale(0.5, 0.5)
+scareView.BackgroundTransparency = 1
+scareView.Ambient = Color3.fromRGB(89, 95, 92)
+scareView.LightColor = Color3.fromRGB(220, 205, 180)
+scareView.LightDirection = Vector3.new(-0.45, -0.3, -1)
+scareView.ZIndex = 19
+scareView.Parent = scare
+local scareWorld = Instance.new("WorldModel")
+scareWorld.Name = "The approaching face"
+scareWorld.Parent = scareView
+local scareCamera = Instance.new("Camera")
+scareCamera.FieldOfView = 52
+scareCamera.Parent = scareView
+scareView.CurrentCamera = scareCamera
+local scareVeil = frame(scare, "Split second red flash", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), RED, 1)
+scareVeil.ZIndex = 20
+local scareToken = 0
 
 -- Two wooden panels leave a narrow slit while hidden. The server actually anchors
 -- the character inside the wardrobe; the overlay is only a camera treatment.
@@ -257,9 +290,9 @@ end
 -- Studio cannot reliably read local built-in sound files. Do not create or
 -- preload failing Sound instances; threats are intentionally signalled visually.
 
--- Leave the actual character completely visible. In particular, never set
--- LocalTransparencyModifier on its parts: a transparent avatar plus a detached
--- first-person camera looks like a flying ghost even on a solid floor.
+-- Keep the real character and its collisions untouched. Roblox's first-person
+-- CameraModule fades the body locally; we display ONLY non-colliding copies of
+-- its own textured limbs. Never fade the whole avatar or move its root here.
 local peekCF = nil
 local root = nil
 local humanoid = nil
@@ -343,6 +376,68 @@ local function setDoor(opened)
 	TweenService:Create(progressFill, TweenInfo.new(0.7, Enum.EasingStyle.Quad),
 		{Size = UDim2.fromScale(opened / 100, 1)}):Play()
 end
+local function fallbackScareFace(kind)
+	local model = Instance.new("Model")
+	model.Name = "Last glimpse of " .. tostring(kind)
+	local color = kind == "MOTH" and Color3.fromRGB(149, 183, 167)
+		or kind == "BLIND" and Color3.fromRGB(195, 194, 177)
+		or Color3.fromRGB(114, 105, 97)
+	local function oval(name, size, cf, tint)
+		local part = Instance.new("Part")
+		part.Name = name
+		part.Size = size
+		part.Shape = Enum.PartType.Ball
+		part.Anchored = true
+		part.CanCollide = false
+		part.Material = Enum.Material.Slate
+		part.Color = tint
+		part.CFrame = cf
+		part.Parent = model
+		return part
+	end
+	local face = oval("Last mask", Vector3.new(2.7, 3.5, 1.45), CFrame.new(0, 2.7, 0), color)
+	model.PrimaryPart = face
+	for _, side in ipairs({-1, 1}) do
+		oval("Hollow eye", Vector3.new(0.7, 0.78, 0.18),
+			CFrame.new(side * 0.67, 3.05, -0.7), DARK)
+		oval("Hairline shadow", Vector3.new(0.27, 1.2, 0.16),
+			CFrame.new(side * 0.7, 2.3, -0.58), RED)
+	end
+	oval("Open jaw", Vector3.new(0.8, 0.8, 0.2), CFrame.new(0, 1.82, -0.73), DARK)
+	return model
+end
+local function showScare(kind, source)
+	scareToken = scareToken + 1
+	local token = scareToken
+	fright = 1
+	reticle.Visible = false
+	scare.Visible = true
+	scareVeil.BackgroundTransparency = 0.1
+	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
+	local monster = source
+	if not monster or not monster:IsA("Model") then
+		local world = Workspace:FindFirstChild("NocturneWorld")
+		local names = {RUSH = "TheRush", BLIND = "TheBlindGuest", MOTH = "ThePaleMoth"}
+		monster = world and world:FindFirstChild(names[kind] or "", true)
+	end
+	local copy = monster and monster:Clone()
+	if not copy then copy = fallbackScareFace(kind) end
+	copy.Parent = scareWorld
+	copy:PivotTo(CFrame.new(0, -0.15, 0))
+	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(65, 101, 87)
+		or kind == "BLIND" and Color3.fromRGB(95, 109, 99)
+		or Color3.fromRGB(124, 53, 49)
+	scareCamera.FieldOfView = 52
+	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, 2.75, -9.5), Vector3.new(0, 2.45, 0))
+	TweenService:Create(scareCamera, TweenInfo.new(0.43, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+		{CFrame = CFrame.lookAt(Vector3.new(0, 2.65, -2.3), Vector3.new(0, 2.5, 0))}):Play()
+	TweenService:Create(scareVeil, TweenInfo.new(0.17), {BackgroundTransparency = 0.86}):Play()
+	task.delay(0.26, function()
+		if token ~= scareToken then return end
+		scareVeil.BackgroundTransparency = 0.15
+		TweenService:Create(scareVeil, TweenInfo.new(0.3), {BackgroundTransparency = 0.93}):Play()
+	end)
+end
 local function showEnd(win)
 	if win then
 		finished = true
@@ -361,6 +456,7 @@ local function showEnd(win)
 		retryButton.Text = "ПОПРОБОВАТЬ СНОВА"
 	end
 	modal.Visible = true
+	reticle.Visible = false
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	UserInputService.MouseIconEnabled = true
 end
@@ -412,7 +508,7 @@ end)
 
 local function restoreCamera()
 	camera = Workspace.CurrentCamera
-	player.CameraMode = Enum.CameraMode.Classic
+	player.CameraMode = Enum.CameraMode.LockFirstPerson
 	if camera then
 		camera.CameraType = Enum.CameraType.Custom
 		if humanoid then camera.CameraSubject = humanoid end
@@ -432,11 +528,13 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		showNotice(string.format("КЛЮЧ НАЙДЕН  ·  ДВЕРЬ %03d", a), GOLD, 3)
 	elseif event == "Hide" then
 		hidden = a
+		player:SetAttribute("NocturnePeek", hidden)
 		setSprint(false)
 		crouching = false
 		if humanoid then humanoid.CameraOffset = Vector3.new(0, 0, 0) end
 		crouchButton.Text = "ПРИСЕСТЬ"
 		crouchButton.Visible = not hidden and isTouch
+		reticle.Visible = not hidden and not dead and not finished
 		if a then
 			-- An anchored character can peek through the wardrobe. Scriptable
 			-- camera is used ONLY here, never while walking the hotel.
@@ -478,10 +576,20 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			warningRoom = -1
 		end
 	elseif event == "Jumpscare" then
-		fright = 1
-		redWash.BackgroundTransparency = 0.05
+		showScare(a, b)
 	elseif event == "Death" then
-		showEnd(false)
+		if scare.Visible then
+			dead = true
+			setSprint(false)
+			local token = scareToken
+			task.delay(1.1, function()
+				if scareToken ~= token or not dead then return end
+				scare.Visible = false
+				showEnd(false)
+			end)
+		else
+			showEnd(false)
+		end
 	elseif event == "Victory" then
 		setDoor(100)
 		showEnd(true)
@@ -498,6 +606,9 @@ local function onCharacter(character)
 	peekCF = nil
 	dead = false
 	finished = false
+	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
+	scare.Visible = false
+	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
 	danger = 0
 	warningKind = nil
 	warningRoom = -1
@@ -512,10 +623,12 @@ local function onCharacter(character)
 	hiddenNote.Visible = false
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
-	-- Spawn as an ordinary, visible Roblox character. CameraSubject follows
-	-- that Humanoid, with Roblox's wall-occluding third-person camera.
-	player.CameraMinZoomDistance = 7
-	player.CameraMaxZoomDistance = 15
+	reticle.Visible = true
+	player:SetAttribute("NocturnePeek", false)
+	-- Native first person remains attached to the real Humanoid. The real
+	-- avatar is never made transparent by THIS script or moved each frame.
+	player.CameraMinZoomDistance = 0.5
+	player.CameraMaxZoomDistance = 0.5
 	restoreCamera()
 	torchMount.Parent = camera
 	remote:FireServer("Torch", flashlightOn)
@@ -526,11 +639,14 @@ if player.Character then task.spawn(onCharacter, player.Character) end
 remote:FireServer("Ready")
 
 -- Roblox's CameraModule drives the camera in every playable room. This
--- render callback never moves, fades, or rotates the character; it only follows
--- the chosen camera with a non-colliding light and updates screen effects.
+-- callback touches only camera-local display parts, never the real character
+-- or HumanoidRootPart; collision stays with Roblox's physical avatar.
 RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value + 1, function(dt)
 	dt = math.min(dt, 0.07)
 	elapsed = elapsed + dt
+	if scare.Visible then
+		scareView.Position = UDim2.new(0.5, math.random(-12, 12), 0.5, math.random(-9, 9))
+	end
 	local current = Workspace.CurrentCamera
 	if current ~= camera then
 		camera = current
@@ -561,8 +677,10 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	end
 	local velocity = root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-	local running = not crouching and horizontalSpeed > 15
-	camera.FieldOfView = camera.FieldOfView + ((hidden and 70 or (running and 80 or 74))
+	local moving = not hidden and not dead and horizontalSpeed > 1.5
+		and humanoid.MoveDirection.Magnitude > 0.05
+	local running = moving and not crouching and horizontalSpeed > 15
+	camera.FieldOfView = camera.FieldOfView + ((hidden and 70 or (running and 79 or 73))
 		+ danger * 2 - camera.FieldOfView) * damp(4, dt)
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
 	origin = origin + camera.CFrame.RightVector * 0.45
