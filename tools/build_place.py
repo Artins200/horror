@@ -269,6 +269,10 @@ def build() -> Path:
     ET.SubElement(root, "External").text = "null"
     ET.SubElement(root, "External").text = "nil"
     workspace = item(root, "Workspace", "Workspace")
+    # Pin the physics settings rather than relying on a serializer or Studio's
+    # class defaults. Procedural floors must exist before the client moves.
+    prop(workspace, "float", "Gravity", 196.2)
+    bool_prop(workspace, "StreamingEnabled", False)
     camera = item(workspace, "Camera", "Camera")
     prop(workspace, "Ref", "CurrentCamera", camera.get("referent"))
     # Look down the first corridor. CFrame uses row-major R00..R22.

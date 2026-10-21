@@ -292,12 +292,15 @@ local function leaveCloset(player, teleport)
 	if root then
 		root.Anchored = false
 		if teleport and hum and hum.Health > 0 then root.CFrame = closet.exitCF end
+		root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+		root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 	end
 	if hum then
+		hum.PlatformStand = false
 		hum.WalkSpeed = CONFIG.WalkSpeed
 		hum.JumpPower = 0
 		hum.JumpHeight = 0
-		hum.AutoRotate = false
+		hum.AutoRotate = true
 	end
 	player:SetAttribute("Hidden", false)
 	remote:FireClient(player, "Hide", false)
@@ -1509,6 +1512,9 @@ local function resetWorld()
 	end
 end
 
+-- Preserve ordinary falling/ground contact even if a Studio template had
+-- zero gravity; the binary place also stores Gravity and disables streaming.
+Workspace.Gravity = 196.2
 configureLighting()
 Players.CharacterAutoLoads = false
 resetWorld()
@@ -1533,7 +1539,12 @@ local function registerPlayer(player)
 		humanoid.WalkSpeed = CONFIG.WalkSpeed
 		humanoid.JumpPower = 0
 		humanoid.JumpHeight = 0
-		humanoid.AutoRotate = false
+		-- Let the Humanoid own its physical assembly and ordinary wall/floor
+		-- contacts. Only the CAMERA turns freely in first person.
+		humanoid.AutoRotate = true
+		root.Anchored = false
+		root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+		root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 		local checkpoint = math.max(0, state.opened - 2)
 		if not state.rooms[checkpoint] then checkpoint = math.max(0, state.opened - CONFIG.KeepBehind) end
 		root.CFrame = CFrame.new(0, Layout.EntranceY(checkpoint) + 3, checkpoint * L + 6)
@@ -1601,10 +1612,13 @@ local function keepInsideHotel(player, root)
 	if math.abs(root.Position.X) <= W / 2 + 1
 		and root.Position.Z >= first * L - 1
 		and root.Position.Z <= lastZ + 2
-		and root.Position.Y >= surfaceY - 3 then return end
+		and root.Position.Y >= surfaceY - 3
+		and root.Position.Y <= surfaceY + 10 then return end
 	local target = math.max(first, math.min(state.opened, CONFIG.Doors - 1))
 	root.CFrame = CFrame.new(0, Layout.EntranceY(target) + 3, target * L + 6)
 		* CFrame.Angles(0, math.pi, 0)
+	root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 end
 
 local accumulator = 0

@@ -27,6 +27,9 @@ class PlaceTests(unittest.TestCase):
         for cls in ("Workspace", "Lighting", "ServerScriptService", "StarterPlayer",
                     "ReplicatedStorage", "SoundService"):
             self.named(cls, cls)
+        workspace = self.named("Workspace", "Workspace")
+        self.assertAlmostEqual(float(workspace.findtext("Properties/float[@name='Gravity']")), 196.2)
+        self.assertEqual(workspace.findtext("Properties/bool[@name='StreamingEnabled']"), "false")
         self.assertEqual(len(self.xml.findall(".//Item[@class='SpawnLocation']")), 1)
         self.assertEqual(len(self.xml.findall(".//Item[@class='Camera']")), 1)
 
@@ -52,6 +55,11 @@ class PlaceTests(unittest.TestCase):
         self.assertGreaterEqual(len(parts), 60)
         names = [part.findtext("Properties/string[@name='Name']") for part in parts]
         self.assertIn("Door 001", names)
+        floor = [part for part in parts
+                 if part.findtext("Properties/string[@name='Name']") == "Herringbone floor"]
+        self.assertEqual(len(floor), 1)
+        self.assertEqual(floor[0].findtext("Properties/bool[@name='CanCollide']"), "true")
+        self.assertEqual(floor[0].findtext("Properties/bool[@name='Anchored']"), "true")
         self.assertEqual(names.count("Wardrobe back"), 2)
         self.assertEqual(names.count("Carved wardrobe leaf"), 4)
         self.assertEqual(names.count("Sliding drawer front"), 3)
@@ -85,6 +93,8 @@ class PlaceTests(unittest.TestCase):
         prev_height = 0.0
         sequence = named("Lower stair landing") + treads + named("Upper stair landing")
         for part in sequence:
+            self.assertEqual(part.findtext("Properties/bool[@name='CanCollide']"), "true")
+            self.assertEqual(part.findtext("Properties/bool[@name='Anchored']"), "true")
             (sx, sy, sz), (_, y, z) = self.box(part)
             near, far = z - sz / 2, z + sz / 2
             walk_y = y + sy / 2
@@ -119,6 +129,15 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("function() startMoth(room, mySession)", self.server)
         self.assertIn("RunService:BindToRenderStep", self.client)
         self.assertIn("Enum.CameraType.Scriptable", self.client)
+
+    def test_character_camera_does_not_override_roblox_physics(self):
+        self.assertIn("Workspace.Gravity = 196.2", self.server)
+        self.assertIn("root.Anchored = false", self.server)
+        self.assertIn("humanoid.AutoRotate = true", self.server)
+        self.assertIn("hum.AutoRotate = true", self.server)
+        self.assertNotRegex(self.client, r"\broot\.CFrame\s*=")
+        self.assertIn("targetPosition.X", self.client)  # follow physics-driven planar position
+        self.assertNotIn("rbxasset://sounds/", self.client)  # avoid missing Studio sound files
 
     def test_keys_crouching_monsters_and_avatar_arms_are_embedded(self):
         self.assertIn("local function makeDresser", self.server)

@@ -8,8 +8,6 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local SoundService = game:GetService("SoundService")
-local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("NocturneRemote")
@@ -278,24 +276,8 @@ if isTouch then
 	hiddenNote.TextSize = 15
 end
 
--- No sound plays with the light flicker: the Rush is announced by light alone.
--- Door, footstep and death sounds are separate from the warning.
-local function sound(name, id, volume)
-	local s = Instance.new("Sound")
-	s.Name = name
-	s.SoundId = id
-	s.Volume = volume
-	s.Parent = SoundService
-	return s
-end
-local doorSound = sound("Oak door", "rbxasset://sounds/impact_generic.mp3", 0.34)
-local scareSound = sound("Jumpscare", "rbxasset://sounds/uuhhh.mp3", 0.65)
-local stepSound = sound("Footsteps", "rbxasset://sounds/impact_generic.mp3", 0.045)
-local function play(s, rate)
-	s.PlaybackSpeed = rate or 1
-	s.TimePosition = 0
-	s:Play()
-end
+-- Studio cannot reliably read local built-in sound files. Do not create or
+-- preload failing Sound instances; threats are intentionally signalled visually.
 
 local yaw, pitch = math.pi, 0
 local targetYaw, targetPitch = math.pi, 0
@@ -304,6 +286,7 @@ local peekPosition = nil
 local cameraPosition = nil
 local root = nil
 local humanoid = nil
+local head = nil
 local hidden = false
 local dead = false
 local finished = false
@@ -316,7 +299,6 @@ local displayedFloor = -1
 local fright = 0
 local shake = 0
 local stride = 0
-local stepTimer = 0
 local elapsed = 0
 local noticeId = 0
 local flashlightOn = true
@@ -539,7 +521,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		if not dead and not finished then modal.Visible = false end
 	elseif event == "Door" then
 		setDoor(a)
-		play(doorSound, 0.69)
 	elseif event == "Locked" then
 		showNotice(string.format("ДВЕРЬ %03d ЗАПЕРТА  ·  КЛЮЧ В ЯЩИКАХ", a), GOLD, 4)
 	elseif event == "Key" then
@@ -594,7 +575,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Jumpscare" then
 		fright = 1
 		shake = 2
-		play(scareSound, 0.67)
 		redWash.BackgroundTransparency = 0.05
 	elseif event == "Death" then
 		showEnd(false)
@@ -607,6 +587,7 @@ end)
 local function onCharacter(character)
 	root = character:WaitForChild("HumanoidRootPart")
 	humanoid = character:WaitForChild("Humanoid")
+	head = character:WaitForChild("Head", 8)
 	hidden = false
 	peekPosition = nil
 	dead = false
@@ -704,13 +685,21 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	if hidden then
 		targetPosition = peekPosition or (root.Position + Vector3.new(0, 2, 0))
 	else
-		targetPosition = root.Position + Vector3.new(sidewaysBob, 1.58 - crouchAmount * 0.95 + bob + breath, 0)
+		-- Follow the avatar's head HEIGHT but the colliding root's X/Z. Lagging
+		-- behind the root made the view cross walls and feel unsupported.
+		local eyeY = head and head.Parent and head.Position.Y or (root.Position.Y + 1.58)
+		targetPosition = Vector3.new(root.Position.X + sidewaysBob,
+			eyeY - crouchAmount * 0.95 + bob + breath, root.Position.Z)
 			+ camera.CFrame.RightVector * lean * 0.22
 	end
 	if not cameraPosition or (targetPosition - cameraPosition).Magnitude > 9 then
 		cameraPosition = targetPosition
 	else
-		cameraPosition = cameraPosition:Lerp(targetPosition, damp(hidden and 22 or 17, dt))
+		-- Smooth stair steps vertically only; planar movement must stay with
+		-- the colliding character, not drift beyond solid wall surfaces.
+		cameraPosition = Vector3.new(targetPosition.X,
+			cameraPosition.Y + (targetPosition.Y - cameraPosition.Y) * damp(hidden and 22 or 17, dt),
+			targetPosition.Z)
 	end
 	-- A little roll when turning or strafing, plus a soft recovery after scares.
 	local strafe = humanoid.MoveDirection:Dot(camera.CFrame.RightVector)
@@ -724,9 +713,9 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	camera.CFrame = targetCF
 	camera.FieldOfView = camera.FieldOfView + ((hidden and 66 or (crouching and 72 or (running and 83 or 76)))
 		+ danger * 2 - camera.FieldOfView) * damp(4, dt)
-	if not hidden and not dead and humanoid.Health > 0 then
-		root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
-	end
+	-- Never write to HumanoidRootPart every render frame. That resets the
+	-- physics assembly before collision resolution, making walls seem porous
+	-- and the player appear to hover. Roblox's Humanoid handles turning.
 	-- Roblox's first-person controller normally fades the whole avatar. Show
 	-- only clones of that player's actual R6/R15 arm MeshParts in the camera.
 	for _, piece in ipairs(player.Character and player.Character:GetDescendants() or {}) do
@@ -761,13 +750,4 @@ RunService:BindToRenderStep("NocturneSmoothFirstPerson", Enum.RenderPriority.Cam
 	local pulse = danger > 0 and (0.11 + 0.085 * math.sin(elapsed * 9)) or 0
 	redWash.BackgroundTransparency = math.clamp(1 - fright * 0.63 - pulse, 0.03, 1)
 	darkness.BackgroundTransparency = math.clamp(1 - danger * 0.13 - (hidden and 0.09 or 0), 0, 1)
-	if moving then
-		stepTimer = stepTimer + dt
-		if stepTimer > (running and 0.37 or 0.55) then
-			stepTimer = 0
-			play(stepSound, running and 1.13 or 0.88)
-		end
-	else
-		stepTimer = 0
-	end
 end)
