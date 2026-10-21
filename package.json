@@ -7,7 +7,7 @@
     "build": "python3 tools/build_place.py && node tools/build_binary.mjs",
     "build:xml": "python3 tools/build_place.py",
     "build:binary": "node tools/build_binary.mjs",
-    "test": "python3 -m unittest discover -s tests -v && node tools/check_sources.mjs && node tools/check_layout.mjs && node tools/check_generator.mjs && node tools/check_client.mjs"
+    "test": "python3 -m unittest discover -s tests -v && node tools/check_sources.mjs && node tools/check_layout.mjs && node tools/check_generator.mjs && node tools/check_client.mjs && node tools/check_perspective.mjs"
   },
   "devDependencies": {
     "fengari": "^0.1.5",

@@ -38,21 +38,38 @@ function Layout.WalkwayY(index, localZ)
 	return base + step * Layout.StoreyRise / Layout.StairSteps
 end
 
--- A dogleg is made inside the sealed shell, not by turning the entire building:
--- the front and back doorways still join the neighbouring rooms at x = 0.
-function Layout.IsTurn(index)
-	return index >= 6 and index % 10 == 6
+-- A dogleg stays within a sealed room; both doorways still meet at x = 0.
+-- Keep the tutorial turn at room 6. Each later group of ten has ONE seeded
+-- candidate, avoiding stairs. This changes the actual route between runs,
+-- while retaining exactly ten walkable turns and 100 connected doorways.
+function Layout.IsTurn(index, seed)
+	if index == 6 then return true end
+	if seed == nil then return index >= 16 and index % 10 == 6 end
+	local group = math.floor(index / 10)
+	if group < 1 or group > 9 then return false end
+	local candidates = {}
+	for candidate = group * 10 + 2, math.min(group * 10 + 9, 99) do
+		if not Layout.IsStair(candidate) and candidate ~= 15 then
+			table.insert(candidates, candidate)
+		end
+	end
+	local n = seed % 1000003 + group * 7919
+	local mixed = (n * 48271 + 12347) % 2147483647
+	return index == candidates[math.floor(mixed / 47) % #candidates + 1]
 end
 
-function Layout.TurnSide(index)
-	return math.floor(index / 10) % 2 == 0 and 1 or -1
+-- Seeded LEFT/RIGHT direction adds more variation without breaking geometry.
+function Layout.TurnSide(index, seed)
+	local n = ((seed or 0) % 1000003) + math.floor(index / 10) * 7919
+	local mixed = (n * 48271 + 12347) % 2147483647
+	return math.floor(mixed / 65536) % 2 == 0 and 1 or -1
 end
 
--- The Rush follows both offset openings instead of cutting through partitions.
+-- Monsters follow both offset openings instead of cutting through partitions.
 -- Values at z=17 and z=28 are the centres of the two archways.
-function Layout.PathX(index, localZ)
-	if not Layout.IsTurn(index) then return 0 end
-	local side = Layout.TurnSide(index)
+function Layout.PathX(index, localZ, seed)
+	if not Layout.IsTurn(index, seed) then return 0 end
+	local side = Layout.TurnSide(index, seed)
 	local stops = {{0, 0}, {12, 8}, {17, 8}, {28, -8}, {33, -8}, {40, 0}, {44, 0}}
 	for i = 2, #stops do
 		if localZ <= stops[i][1] then

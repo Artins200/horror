@@ -4,8 +4,8 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "VisibleAvatar-v3",
-	"Old place loaded: open the NEW 13123.rbxl before testing")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v5",
+	"Old place loaded: open Nocturne-v5.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -71,7 +71,9 @@ for index = 0, 99 do
 		"Disconnected doorway after room " .. index)
 end
 assert(Layout.IsTurn(6) and not Layout.IsStair(6))
-assert(Layout.PathX(6, 17) == 8 and Layout.PathX(6, 28) == -8)
+local side = Layout.TurnSide(6, world:GetAttribute("Seed"))
+assert(Layout.PathX(6, 17, world:GetAttribute("Seed")) == side * 8
+	and Layout.PathX(6, 28, world:GetAttribute("Seed")) == -side * 8)
 local spawn = world:FindFirstChild("CheckpointSpawn")
 assert(spawn and spawn.CanCollide and spawn.Anchored
 	and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - Layout.EntranceY(0)) < 0.01,
