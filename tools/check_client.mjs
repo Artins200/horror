@@ -25,7 +25,12 @@ local vectorMeta = {
 }
 Vector3 = {new = function(x, y, z) return setmetatable({X=x or 0, Y=y or 0, Z=z or 0}, vectorMeta) end}
 Vector2 = {new = function(x, y) return {X=x, Y=y} end}
-local cfMeta = {__mul = function(a, b) return CFrame.new(a.Position + b.Position) end}
+local cfMeta = {
+    __mul = function(a, b) return CFrame.new(a.Position + b.Position) end,
+    __index = {Lerp = function(self, other, alpha)
+        return CFrame.new(self.Position + (other.Position - self.Position) * alpha)
+    end},
+}
 CFrame = {
     new = function(x, y, z)
         return setmetatable({Position = type(x) == "table" and x or Vector3.new(x, y, z),
@@ -472,12 +477,41 @@ local body = Instance.new("Part")
 body.Position = Vector3.new(1, 5, 27)
 body.Parent = monster
 monster.PrimaryPart = body
+-- The server opens and physically moves the avatar after ONE prompt. During
+-- that motion the client keeps the native camera on the real Humanoid, not a
+-- detached fly camera, and cannot accidentally use an item or exit early.
+local beforeEntry = #remote.actions
+remote.OnClientEvent:Fire("WardrobeEnter", true)
+runService.render(0.07)
+assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid
+    and player.CameraMode == Enum.CameraMode.LockFirstPerson
+    and humanoid.CameraOffset.Y < 0 and not reticle.Visible
+    and not gui:FindFirstChild("Leave wardrobe").Visible
+    and not gui:FindFirstChild("Use selected item").Visible
+    and root.CFrame == originalCF,
+    "wardrobe entry replaced native first person or moved the real body on the CLIENT")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.E}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Q}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.ButtonB}, false)
+assert(#remote.actions == beforeEntry,
+    "an entry-in-progress let a second click, exit or item activation interrupt it")
+remote.OnClientEvent:Fire("WardrobeEnter", false) -- server cancelled a half-finished entry
+assert(humanoid.CameraOffset.Y == 0 and reticle.Visible and not root.Anchored
+    and camera.CameraType == Enum.CameraType.Custom,
+    "cancelled entry left a frozen or detached viewpoint")
+remote.OnClientEvent:Fire("WardrobeEnter", true)
+camera.CFrame = CFrame.new(peek.Position + Vector3.new(0, 0, 1.15)) -- real avatar at the back
+local nativeEye = camera.CFrame
 remote.OnClientEvent:Fire("Hide", true, peek)
 runService.render(0.016)
-local left = gui:FindFirstChild("Left wardrobe edge")
+local firstGlide = (camera.CFrame.Position - peek.Position).Magnitude
 assert(camera.CameraType == Enum.CameraType.Scriptable
-    and (camera.CFrame.Position - peek.Position).Magnitude < 0.1
-    and player:GetAttribute("NocturnePeek") and not reticle.Visible
+    and firstGlide > 0.3 and firstGlide < (nativeEye.Position - peek.Position).Magnitude
+    and player:GetAttribute("NocturnePeek") and not reticle.Visible,
+    "final in-closet eye movement snapped or detached from the real avatar")
+for _ = 1, 3 do runService.render(0.07) end
+local left = gui:FindFirstChild("Left wardrobe edge")
+assert((camera.CFrame.Position - peek.Position).Magnitude < 0.1
     and left.Size[1] < 0.2 and camera.FieldOfView < 70,
     "wardrobe hides the actual monster or has no nearby-threat pressure")
 assert(root.CFrame == originalCF, "wardrobe viewpoint moved the physical avatar")

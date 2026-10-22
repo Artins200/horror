@@ -31,7 +31,8 @@ local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
 local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
 local pendingSelection = nil -- do not undo a click with a late inventory snapshot
 local pillEffectUntil = 0
-local hidden, dead, finished = false, false, false
+local hidden, dead, finished, enteringCloset = false, false, false, false
+local entranceAge = 0
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 local function hideRobloxBackpack()
 	pcall(function()
@@ -209,8 +210,8 @@ local function redrawEquipment()
 	equipment.Visible = owned > 0
 	if useButton then
 		local id = SLOT_IDS[selected]
-		useButton.Visible = isTouch and not hidden and not dead and not finished
-			and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT"
+		useButton.Visible = isTouch and not hidden and not enteringCloset
+			and not dead and not finished and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT"
 		useButton.Text = SLOT_GLYPHS[selected] or "◆"
 	end
 end
@@ -418,6 +419,7 @@ local roomLength = 44
 -- Keep the real character and its collisions untouched. The separate native
 -- perspective controller locally reveals its ordinary item-holding arms.
 local peekCF = nil
+local peekFrom, peekBlend = nil, 0
 local root = nil
 local humanoid = nil
 local head = nil
@@ -473,13 +475,13 @@ local function setTorchLights(on)
 end
 
 local function setSprint(on)
-	if on and (crouching or hidden or dead or finished) then return end
+	if on and (crouching or hidden or enteringCloset or dead or finished) then return end
 	if sprinting == on then return end
 	sprinting = on
 	remote:FireServer("Sprint", on)
 end
 local function setCrouch(on)
-	if hidden or dead or finished or crouching == on then return end
+	if hidden or enteringCloset or dead or finished or crouching == on then return end
 	if on then setSprint(false) end
 	crouching = on
 	crouchButton.Text = on and "↑" or "↓"
@@ -489,7 +491,7 @@ local function setCrouch(on)
 	remote:FireServer("Crouch", on)
 end
 local function toggleTorch()
-	if hidden or dead or finished or not hasFlashlight or charge <= 0 then return end
+	if hidden or enteringCloset or dead or finished or not hasFlashlight or charge <= 0 then return end
 	if selected ~= 1 then
 		selected = 1
 		pendingSelection = 1
@@ -500,7 +502,7 @@ local function toggleTorch()
 	remote:FireServer("Use", "FLASHLIGHT")
 end
 selectSlot = function(index, tapped)
-	if hidden or dead or finished or not SLOT_IDS[index]
+	if hidden or enteringCloset or dead or finished or not SLOT_IDS[index]
 		or (counts[SLOT_IDS[index]] or 0) == 0 then return end
 	if tapped and selected == index then
 		remote:FireServer("Use", SLOT_IDS[index])
@@ -521,7 +523,7 @@ local function cycleOwnedSlot(direction)
 	end
 end
 local function useSelected()
-	if hidden or dead or finished then return end
+	if hidden or enteringCloset or dead or finished then return end
 	local id = SLOT_IDS[selected]
 	if id and (counts[id] or 0) > 0 then
 		remote:FireServer("Use", id) -- torch, cross and medicines share the same action
@@ -711,7 +713,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	-- Roblox's default Backpack/PlayerModule may mark number keys or gamepad
 	-- actions as processed even after the stock Backpack is hidden. Do not
 	-- discard our shortcuts; still respect text fields and the pause menu.
-	if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen then return end
+	if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen or enteringCloset then return end
 	if input.KeyCode == Enum.KeyCode.ButtonB then
 		if hidden then remote:FireServer("Exit") else setCrouch(not crouching) end
 		return
@@ -773,7 +775,8 @@ player:GetAttributeChangedSignal("TorchOn"):Connect(function()
 end)
 player:GetAttributeChangedSignal("HasFlashlight"):Connect(function()
 	hasFlashlight = player:GetAttribute("HasFlashlight") == true
-	lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
+	lightButton.Visible = isTouch and hasFlashlight and not hidden
+		and not enteringCloset and not dead and not finished
 end)
 player:GetAttributeChangedSignal("TorchCharge"):Connect(function()
 	charge = player:GetAttribute("TorchCharge") or 0
@@ -809,7 +812,8 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			a.coins or 0, a.notes or 0, a.gold or 0)
 		wallet.Visible = (a.coins or 0) + (a.notes or 0) + (a.gold or 0) > 0
 		healthFill.Size = UDim2.fromScale(math.clamp(a.health or 100, 0, 100) / 100, 1)
-		lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
+		lightButton.Visible = isTouch and hasFlashlight and not hidden
+			and not enteringCloset and not dead and not finished
 		redrawEquipment()
 	elseif event == "State" then
 		roomLength = type(c) == "number" and c or roomLength
@@ -848,7 +852,27 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 	elseif event == "Spider" then
 		if not dead and not finished then spiderImpact:Play(); showSpider(a) end
+	elseif event == "WardrobeEnter" then
+		-- The SERVER moves the anchored, real HumanoidRootPart. Keep Roblox's
+		-- normal first-person camera attached to that character throughout the
+		-- brief step-in; only add a small head dip, never a detached fly camera.
+		enteringCloset = a == true and not hidden and not dead and not finished
+		entranceAge = 0
+		if enteringCloset then
+			setTorchLights(false)
+			setSprint(false)
+			crouching = false
+			crouchButton.Text = "↓"
+		end
+		if humanoid then humanoid.CameraOffset = Vector3.new(0, 0, 0) end
+		reticle.Visible = not enteringCloset and not hidden and not dead and not finished
+		sprintButton.Visible = isTouch and not enteringCloset and not hidden
+		crouchButton.Visible = isTouch and not enteringCloset and not hidden
+		lightButton.Visible = isTouch and hasFlashlight and not enteringCloset and not hidden
+		redrawEquipment()
 	elseif event == "Hide" then
+		enteringCloset = false
+		entranceAge = 0
 		hidden = a
 		if hidden then setTorchLights(false) end
 		player:SetAttribute("NocturnePeek", hidden)
@@ -859,17 +883,18 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		crouchButton.Visible = not hidden and isTouch
 		reticle.Visible = not hidden and not dead and not finished
 		if a then
-			-- An anchored character can peek through the wardrobe. Scriptable
-			-- camera is used ONLY here, never while walking the hotel.
+			-- Only NOW is the real avatar anchored inside. Glide the last stud
+			-- from its native eye position to the real gap between the leaves;
+			-- never use a free camera out in the corridor.
 			peekCF = b
-			if camera and peekCF then
-				camera.CameraType = Enum.CameraType.Scriptable
-				camera.CFrame = peekCF
-			end
+			peekFrom = camera and camera.CFrame or nil
+			peekBlend = 0
+			if camera and peekCF then camera.CameraType = Enum.CameraType.Scriptable end
 			TweenService:Create(leftPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.13, 1)}):Play()
 			TweenService:Create(rightPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.13, 1)}):Play()
 		else
 			peekCF = nil
+			peekFrom = nil
 			restoreCamera()
 			TweenService:Create(leftPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
 			TweenService:Create(rightPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
@@ -919,7 +944,11 @@ local function onCharacter(character)
 	setTorchLights(false)
 	hideRobloxBackpack()
 	hidden = false
+	enteringCloset = false
+	entranceAge = 0
 	peekCF = nil
+	peekFrom = nil
+	peekBlend = 0
 	dead = false
 	finished = false
 	pendingSelection = nil
@@ -972,6 +1001,7 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	if current ~= camera then
 		camera = current
 		torchMount.Parent = camera
+		peekFrom = nil -- a replacement Camera has no previous native eye position
 		if hidden and peekCF and camera then
 			camera.CameraType = Enum.CameraType.Scriptable
 		elseif humanoid then
@@ -979,6 +1009,13 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if not camera or not root or not humanoid or not root.Parent then return end
+	if enteringCloset and not hidden then
+		entranceAge = entranceAge + dt
+		-- CameraOffset is on the actual Humanoid: the native camera follows its
+		-- server-tweened body as it steps through the real hinged leaves.
+		humanoid.CameraOffset = Vector3.new(0,
+			-0.18 * math.sin(math.min(entranceAge / 0.82, 1) * math.pi), 0)
+	end
 	if hidden then
 		visualPressure = visualPressure + (closetPressure - visualPressure) * damp(6, dt)
 	else
@@ -1010,10 +1047,18 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 		local breath = math.sin(elapsed * (2.2 + pressure * 3.2))
 		camera.CameraType = Enum.CameraType.Scriptable
-		camera.CFrame = peekCF * CFrame.new(
+		local target = peekCF * CFrame.new(
 			breath * (0.013 + pressure * 0.041) + math.sin(elapsed * 17) * pressure * 0.008,
 			math.sin(elapsed * 1.2) * 0.012, 0)
 			* CFrame.Angles(0, math.sin(elapsed * 0.9) * 0.009 * (1 + pressure), 0)
+		if peekFrom then
+			peekBlend = math.min(1, peekBlend + dt / 0.18)
+			local eased = peekBlend * peekBlend * (3 - 2 * peekBlend)
+			camera.CFrame = peekFrom:Lerp(target, eased)
+			if peekBlend >= 1 then peekFrom = nil end
+		else
+			camera.CFrame = target
+		end
 		leftPanel.BackgroundTransparency = math.clamp(0.14 - pressure * (0.105 + breath * 0.018), 0.01, 0.14)
 		rightPanel.BackgroundTransparency = leftPanel.BackgroundTransparency
 	elseif camera.CameraType == Enum.CameraType.Scriptable then
@@ -1024,8 +1069,11 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local moving = not hidden and not dead and horizontalSpeed > 1.5
 		and humanoid.MoveDirection.Magnitude > 0.05
 	local running = moving and not crouching and horizontalSpeed > 15
-	local targetFOV = hidden and (70 - pressure * 9) or (running and 79 or 73)
-	if not hidden and os.clock() < pillEffectUntil then targetFOV = targetFOV + 5 end
+	local targetFOV = hidden and (70 - pressure * 9)
+		or enteringCloset and 70 or (running and 79 or 73)
+	if not hidden and not enteringCloset and os.clock() < pillEffectUntil then
+		targetFOV = targetFOV + 5
+	end
 	camera.FieldOfView = camera.FieldOfView + (targetFOV - camera.FieldOfView) * damp(4, dt)
 	local held = player.Character and player.Character:FindFirstChild("HeldItem")
 	local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"
@@ -1044,5 +1092,5 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	end
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
 	setTorchLights(lens ~= nil and flashlightOn and hasFlashlight and charge > 0
-		and not hidden and not dead and not finished)
+		and not enteringCloset and not hidden and not dead and not finished)
 end)

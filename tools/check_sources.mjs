@@ -14,7 +14,7 @@ const sourceFiles = [
 ];
 for (const filename of [...sourceFiles, "tests/StudioSmokeTest.server.luau",
   "tests/StudioAvatarCheck.client.luau", "tests/StudioItemCheck.client.luau",
-  "tests/StudioEchoCheck.server.luau"]) {
+  "tests/StudioEchoCheck.server.luau", "tests/StudioWardrobeCheck.client.luau"]) {
   const source = fs.readFileSync(path.join(root, filename), "utf8");
   luaparse.parse(source, { luaVersion: "5.3", locations: true });
   console.log(`Lua syntax OK: ${filename}`);

@@ -87,6 +87,7 @@ local state = {
 	seed = 0,
 	plan = {},
 	hidden = {},
+	entering = {}, -- a reserved wardrobe while the REAL avatar steps inside
 	keys = {}, -- door index carried by each player; the drawer key is not spent on pickup
 	players = {},
 	clock = 0,
@@ -358,11 +359,11 @@ local function hingeDoor(parent, doorNumber, z, floorY)
 	return assembly, leaf, prompt, hinge
 end
 
-local function tweenPivot(model, from, to, duration, finished)
+local function tweenPivot(model, from, to, duration, finished, active)
 	local value = Instance.new("CFrameValue")
 	value.Value = from
 	local connection = value.Changed:Connect(function(cf)
-		if model.Parent then model:PivotTo(cf) end
+		if model.Parent and (not active or active()) then model:PivotTo(cf) end
 	end)
 	local tween = TweenService:Create(value,
 		TweenInfo.new(duration, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Value = to})
@@ -526,15 +527,16 @@ local function maybeSpider(player, roomIndex, rolled, cf)
 	spiderJump(player, cf)
 end
 
--- The two leaves are real hinged models. An open wardrobe is only a usable
--- hiding place after its doors have finished swinging; no static fake slats.
-local function swingCloset(closet, opening)
+-- The two real hinged leaves open for the same interaction that takes the
+-- character inside; there is no separate open/close prompt. A superseded
+-- tween cannot pull the leaves back across someone entering or exiting.
+local function swingCloset(closet, opening, finished)
 	if closet.epoch ~= session or not closet.model.Parent then return end
 	closet.motion = (closet.motion or 0) + 1
 	local motion = closet.motion
+	closet.moving = true
 	if closet.creak then closet.creak:Play() end
 	closet.prompt.Enabled = false
-	closet.closePrompt.Enabled = false
 	closet.barrier.CanCollide = false
 	for _, leaf in ipairs(closet.leaves) do
 		setModelCollision(leaf.model, false)
@@ -542,18 +544,19 @@ local function swingCloset(closet, opening)
 	local pending = #closet.leaves
 	for _, leaf in ipairs(closet.leaves) do
 		local angle = -leaf.side * math.rad(94)
-		local from = leaf.hinge * CFrame.Angles(0, closet.open and angle or 0, 0)
+		local from = leaf.model:GetPivot() -- also works if a previous swing was interrupted
 		local to = leaf.hinge * CFrame.Angles(0, opening and angle or 0, 0)
-		tweenPivot(leaf.model, from, to, 0.46, function()
+		tweenPivot(leaf.model, from, to, 0.36, function()
 			pending = pending - 1
 			if pending ~= 0 or closet.motion ~= motion or not closet.model.Parent then return end
 			closet.open = opening
+			closet.moving = false
 			closet.model:SetAttribute("Open", opening)
 			closet.barrier.CanCollide = not opening
 			for _, part in ipairs(closet.leaves) do setModelCollision(part.model, not opening) end
 			closet.prompt.Enabled = not closet.occupant
-			closet.closePrompt.Enabled = opening and not closet.occupant
-		end)
+			if finished then finished() end
+		end, function() return closet.motion == motion end)
 	end
 end
 
@@ -565,12 +568,14 @@ local function leaveCloset(player, teleport)
 	if closet.occupant == player then closet.occupant = nil end
 	if teleport and closet.model.Parent then
 		swingCloset(closet, true)
-		task.delay(1.4, function()
-			if closet.epoch == session and not closet.occupant and closet.model.Parent then
-				swingCloset(closet, false)
+		local exitMotion = closet.motion
+		task.delay(1.25, function()
+			if closet.epoch == session and closet.motion == exitMotion
+				and not closet.occupant and closet.model.Parent then
+				swingCloset(closet, false) -- no second press to shut the wardrobe
 			end
 		end)
-	elseif closet.model.Parent then
+	elseif closet.model.Parent and not closet.moving then
 		closet.prompt.Enabled = true
 	end
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -594,43 +599,101 @@ local function leaveCloset(player, teleport)
 	remote:FireClient(player, "Hide", false)
 end
 
+-- Death, a reset, a culled room or a disconnect can interrupt the step-in.
+-- Cancel its physical tween and release the reservation so nobody remains
+-- anchored outside (or leaves a permanently occupied wardrobe behind).
+local function cancelClosetEntry(player)
+	local entry = state.entering[player]
+	if not entry then return end
+	state.entering[player] = nil
+	local closet = entry.closet
+	if entry.tween then entry.tween:Cancel() end
+	if closet.occupant == player then closet.occupant = nil end
+	if closet.model.Parent then swingCloset(closet, false) end
+	if entry.root.Parent then
+		entry.root.Anchored = false
+		entry.root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+		entry.root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+	end
+	if entry.hum.Parent then
+		entry.hum.AutoRotate = true
+		entry.hum.WalkSpeed = CONFIG.WalkSpeed
+	end
+	player:SetAttribute("EnteringWardrobe", false)
+	remote:FireClient(player, "WardrobeEnter", false)
+end
+
 local function enterCloset(player, closet)
 	local info = state.players[player]
-	if closet.occupant or state.hidden[player] or closet.epoch ~= session or not info
-		or (info.closetCooldown or 0) > state.clock then return end
+	if closet.occupant or closet.moving or not closet.prompt.Enabled
+		or state.hidden[player] or state.entering[player] or closet.epoch ~= session
+		or not info or (info.closetCooldown or 0) > state.clock then return end
 	local root, hum = playerRoot(player)
-	if not root or (root.Position - closet.front).Magnitude > 11 then return end
-	if player:GetAttribute("Finished") then return end
-	if not closet.open then
-		swingCloset(closet, true)
-		recordNoise(closet.front, 58)
-		if not closet.spiderChecked then
-			closet.spiderChecked = true
-			maybeSpider(player, closet.roomIndex, closet.spiderRoll,
-				closet.rootCF * CFrame.new(0, 1, -1.8))
-		end
-		return
-	end
-	closet.occupant = player
+	if not root or not closet.model.Parent or player:GetAttribute("Finished") then return end
+	-- A prompt across the back/side wall must not pull a player THROUGH it.
+	local relative = closet.rootCF:PointToObjectSpace(root.Position)
+	if math.abs(relative.X) > 5.8 or relative.Z > -1.55 or relative.Z < -7.1
+		or math.abs(relative.Y) > 2.5 then return end
+	local entry = {closet = closet, root = root, hum = hum}
+	state.entering[player] = entry
+	closet.occupant = player -- reserve on the FIRST press, before opening
 	closet.inspected = false
 	closet.prompt.Enabled = false
-	closet.closePrompt.Enabled = false
-	state.hidden[player] = {closet = closet, seconds = 0}
 	info.sprinting = false
 	info.crouching = false
 	info.torchOn = false
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("ClosetPressure", 0)
 	syncInventory(player)
-	recordNoise(closet.front, 47)
-	root.CFrame = closet.rootCF
+	root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 	root.Anchored = true
+	hum.AutoRotate = false
 	hum.WalkSpeed = 0
 	hum.JumpPower = 0
 	hum.JumpHeight = 0
-	player:SetAttribute("Hidden", true)
-	swingCloset(closet, false)
-	remote:FireClient(player, "Hide", true, closet.cameraCF)
+	player:SetAttribute("EnteringWardrobe", true)
+	remote:FireClient(player, "WardrobeEnter", true)
+	recordNoise(closet.front, 58)
+	if not closet.spiderChecked then
+		closet.spiderChecked = true
+		maybeSpider(player, closet.roomIndex, closet.spiderRoll,
+			closet.rootCF * CFrame.new(0, 1, -1.8))
+	end
+	local function active()
+		return state.entering[player] == entry and closet.occupant == player
+			and closet.epoch == session and closet.model.Parent and root.Parent and hum.Health > 0
+	end
+	local function animateRoot(target, duration, finished)
+		if not active() then return end
+		local tween = TweenService:Create(root,
+			TweenInfo.new(duration, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut),
+			{CFrame = target})
+		entry.tween = tween
+		tween.Completed:Connect(function(playback)
+			if playback == Enum.PlaybackState.Completed and active() then finished() end
+		end)
+		tween:Play()
+	end
+	local function finishEntry()
+		if not active() then return end
+		root.CFrame = closet.rootCF -- only a final alignment INSIDE the wardrobe
+		state.entering[player] = nil
+		state.hidden[player] = {closet = closet, seconds = 0}
+		player:SetAttribute("Hidden", true)
+		player:SetAttribute("EnteringWardrobe", false)
+		recordNoise(closet.front, 47)
+		remote:FireClient(player, "Hide", true, closet.cameraCF)
+		swingCloset(closet, false) -- close automatically after the avatar is inside
+	end
+	local function stepInside()
+		if not active() then return end
+		local distance = (root.Position - closet.entryCF.Position).Magnitude
+		animateRoot(closet.entryCF, math.clamp(distance / 13, 0.14, 0.32), function()
+			animateRoot(closet.rootCF, 0.42, finishEntry)
+		end)
+	end
+	if closet.open then stepInside() else swingCloset(closet, true, stepInside) end
 end
 
 local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
@@ -687,28 +750,19 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "HideInside"
 	iconPrompt(prompt)
-	prompt.HoldDuration = 0.22
-	prompt.MaxActivationDistance = 8
-	prompt.RequiresLineOfSight = false
+	prompt.HoldDuration = 0 -- ONE tap/click opens, enters and closes
+	prompt.MaxActivationDistance = 5.5 -- every visible approach is also accepted by the server
+	prompt.RequiresLineOfSight = true -- never show an icon through the back/side wall
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.Parent = handles[-1]
-	local closePrompt = Instance.new("ProximityPrompt")
-	closePrompt.Name = "CloseWardrobe"
-	iconPrompt(closePrompt)
-	closePrompt.HoldDuration = 0.22
-	closePrompt.MaxActivationDistance = 8
-	closePrompt.RequiresLineOfSight = false
-	closePrompt.KeyboardKeyCode = Enum.KeyCode.E
-	closePrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
-	closePrompt.Enabled = false
-	closePrompt.Parent = handles[1]
 	local closet = {
-		model = model, barrier = barrier, leaves = leaves, prompt = prompt, closePrompt = closePrompt,
+		model = model, barrier = barrier, leaves = leaves, prompt = prompt,
 		creak = soundAt(handles[-1], "Wardrobe wood and hinges", "action_get_up.mp3",
 			0.38, 0.62, 48),
 		roomIndex = room.index, front = (cf * CFrame.new(0, 4, -1.6)).Position,
 		rootCF = cf * CFrame.new(0, 3, 0.1),
+		entryCF = cf * CFrame.new(0, 3, -2.55) * CFrame.Angles(0, math.pi, 0),
 		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
 		exitCF = cf * CFrame.new(0, 3, -3.45),
 		epoch = session,
@@ -717,11 +771,6 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 		occupant = nil, open = false,
 	}
 	prompt.Triggered:Connect(function(player) enterCloset(player, closet) end)
-	closePrompt.Triggered:Connect(function(player)
-		local root = playerRoot(player)
-		if closet.open and not closet.occupant and root
-			and (root.Position - closet.front).Magnitude < 11 then swingCloset(closet, false) end
-	end)
 	table.insert(room.closets, closet)
 end
 
@@ -1125,7 +1174,7 @@ local function makeDresser(room, rng)
 				if room.epoch ~= session or room.unlocked or not takePrompt.Enabled
 					or state.keys[player] then return end
 				local root = playerRoot(player)
-				if not root or state.hidden[player]
+				if not root or state.hidden[player] or state.entering[player]
 					or (root.Position - bow.Position).Magnitude > 10 then return end
 				if not holdKey(player, key) then return end
 				takePrompt.Enabled = false
@@ -1157,7 +1206,7 @@ local function makeDresser(room, rng)
 				if room.epoch ~= session or claimed or not lootPrompt.Enabled
 					or not loot.Parent or not loot.PrimaryPart then return end
 				local root = playerRoot(player)
-				if not root or state.hidden[player]
+				if not root or state.hidden[player] or state.entering[player]
 					or (root.Position - loot.PrimaryPart.Position).Magnitude > 9 then return end
 				-- Reserve BEFORE giving the prize: two simultaneous prompts cannot
 				-- both pass. If a full inventory refuses it, release the cache.
@@ -1175,7 +1224,7 @@ local function makeDresser(room, rng)
 		openPrompt.Triggered:Connect(function(player)
 			if opened or room.epoch ~= session or not openPrompt.Enabled then return end
 			local root = playerRoot(player)
-			if not root or state.hidden[player]
+			if not root or state.hidden[player] or state.entering[player]
 				or (root.Position - handle.Position).Magnitude > 10 then return end
 			opened = true
 			openPrompt.Enabled = false
@@ -1256,7 +1305,8 @@ local function makeShop(room)
 		prompt.Triggered:Connect(function(player)
 			local root = playerRoot(player)
 			local info = state.players[player]
-			if room.epoch ~= session or not root or not info or state.hidden[player]
+			if room.epoch ~= session or not root or not info
+				or state.hidden[player] or state.entering[player]
 				or state.opened < 51 or (root.Position - plaque.Position).Magnitude > 10
 				or info.items[id] > 0 then return end -- no charge for a duplicate
 			if not pay(info, PRICES[id]) then return end
@@ -2181,6 +2231,10 @@ local function pruneRooms()
 			* CFrame.Angles(0, math.pi, 0)
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
+		local entering = state.entering[player]
+		if entering and entering.closet.rootCF.Position.Z < first * L then
+			cancelClosetEntry(player)
+		end
 		local hiding = state.hidden[player]
 		if hiding and hiding.closet.rootCF.Position.Z < first * L then leaveCloset(player, false) end
 		local root = playerRoot(player)
@@ -2215,7 +2269,7 @@ local function pruneRooms()
 end
 
 openDoor = function(player, index)
-	if state.hidden[player] then return end
+	if state.hidden[player] or state.entering[player] then return end
 	local room = state.rooms[index]
 	if not room or room.epoch ~= session or room.busy or not room.prompt.Enabled then return end
 	local root = playerRoot(player)
@@ -3447,6 +3501,7 @@ end
 local function resetWorld()
 	for player in pairs(state.keys) do putBackKey(player) end
 	session = session + 1
+	for player in pairs(state.entering) do cancelClosetEntry(player) end
 	for player in pairs(state.hidden) do leaveCloset(player, false) end
 	if state.world then state.world:Destroy() end
 	local old = Workspace:FindFirstChild("NocturneWorld")
@@ -3456,6 +3511,7 @@ local function resetWorld()
 	state.world.Parent = Workspace
 	state.rooms = {}
 	state.hidden = {}
+	state.entering = {}
 	state.keys = {}
 	state.clock = 0
 	state.noises = {}
@@ -3482,13 +3538,13 @@ local function resetWorld()
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
 	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
-	state.world:SetAttribute("GenerationBuild", "ReturnEchoBrightTorch-v12")
+	state.world:SetAttribute("GenerationBuild", "SinglePressWardrobe-v13")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v12] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v13] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -3511,6 +3567,7 @@ local function resetWorld()
 	for _, player in ipairs(Players:GetPlayers()) do
 		player.RespawnLocation = spawn
 		player:SetAttribute("Hidden", false)
+		player:SetAttribute("EnteringWardrobe", false)
 		player:SetAttribute("Finished", false)
 		player:SetAttribute("HeldKey", nil)
 		player:SetAttribute("KeyTurning", false)
@@ -3535,11 +3592,13 @@ local function registerPlayer(player)
 	player:SetAttribute("Stamina", 100)
 	syncInventory(player)
 	player:SetAttribute("Hidden", false)
+	player:SetAttribute("EnteringWardrobe", false)
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("Finished", false)
 	player:SetAttribute("HeldKey", nil)
 	player:SetAttribute("KeyTurning", false)
 	player.CharacterAdded:Connect(function(character)
+		cancelClosetEntry(player) -- a new life cannot inherit an old entrance tween
 		local humanoid = character:WaitForChild("Humanoid", 12)
 		local root = character:WaitForChild("HumanoidRootPart", 12)
 		if not humanoid or not root then return end
@@ -3554,6 +3613,7 @@ local function registerPlayer(player)
 		player:SetAttribute("Stamina", 100)
 		syncInventory(player)
 		player:SetAttribute("Hidden", false)
+		player:SetAttribute("EnteringWardrobe", false)
 		player:SetAttribute("Crouching", false)
 		humanoid.WalkSpeed = CONFIG.WalkSpeed
 		humanoid.JumpPower = 0
@@ -3575,6 +3635,7 @@ local function registerPlayer(player)
 		remote:FireClient(player, "State", state.opened, state.seed, L)
 		humanoid.Died:Connect(function()
 			putBackKey(player)
+			cancelClosetEntry(player)
 			leaveCloset(player, false)
 			info.health = 0
 			info.torchOn = false
@@ -3595,6 +3656,7 @@ Players.PlayerAdded:Connect(registerPlayer)
 for _, player in ipairs(Players:GetPlayers()) do task.spawn(registerPlayer, player) end
 Players.PlayerRemoving:Connect(function(player)
 	putBackKey(player)
+	cancelClosetEntry(player)
 	leaveCloset(player, false)
 	state.players[player] = nil
 end)
@@ -3602,6 +3664,7 @@ end)
 remote.OnServerEvent:Connect(function(player, action, argument)
 	local info = state.players[player]
 	if not info then return end
+	if state.entering[player] and action ~= "Ready" then return end
 	if action == "Ready" then
 		remote:FireClient(player, "State", state.opened, state.seed, L)
 		syncInventory(player)
@@ -3784,7 +3847,7 @@ RunService.Heartbeat:Connect(function(dt)
 				leaveCloset(player, true)
 				damagePlayer(player, 19)
 			end
-		elseif humanoid and not player:GetAttribute("Finished") then
+		elseif humanoid and not player:GetAttribute("Finished") and not state.entering[player] then
 			keepInsideHotel(player, root)
 			local gap = leader and (leaderZ - root.Position.Z) / L or 0
 			local catchup = gap >= 5 and 7 or gap >= 2.5 and 3 or 0
@@ -3841,4 +3904,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v12] distinct returning Echo and a brighter real hand torch in 100 enclosed rooms.")
+print("[NOCTURNE v13] one-press physical wardrobe entry, returning Echo and a bright hand torch.")

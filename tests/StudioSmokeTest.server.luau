@@ -5,8 +5,8 @@ assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-	and world:GetAttribute("GenerationBuild") == "ReturnEchoBrightTorch-v12",
-	"Old place loaded: open Nocturne-v12.rbxl in a NEW Studio tab")
+	and world:GetAttribute("GenerationBuild") == "SinglePressWardrobe-v13",
+	"Old place loaded: open Nocturne-v13.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -42,7 +42,7 @@ for index = 0, 1 do
 			COFFERED = "Deep coffered cross-vault"}
 		assert(not required[shape] or room:FindFirstChild(required[shape]),
 			"A random architecture label did not build a visible structure")
-		print("NOCTURNE v12 seed", world:GetAttribute("Seed"), "first room",
+		print("NOCTURNE v13 seed", world:GetAttribute("Seed"), "first room",
 			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
 	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
@@ -51,7 +51,10 @@ for index = 0, 1 do
 		local wardrobe = room:FindFirstChild(name)
 		assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
 			"Wardrobe has no moving leaves")
-		assert(wardrobe:FindFirstChild("HideInside", true), "Wardrobe has no interaction")
+		local hidePrompt = wardrobe:FindFirstChild("HideInside", true)
+		assert(hidePrompt and hidePrompt.HoldDuration == 0
+			and not wardrobe:FindFirstChild("CloseWardrobe", true),
+			"Wardrobe requires extra presses to open or close instead of one to enter")
 	end
 	if not Layout.IsStair(index) then
 		local floor = room:FindFirstChild("Continuous wooden subfloor")

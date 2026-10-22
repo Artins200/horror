@@ -23,6 +23,7 @@ local function drainTasks()
     end
 end
 local observed = {events = {}, monsterPositions = {}, monsterLooks = {}, sounds = {},
+    wardrobeSteps = {}, pendingWardrobeTweens = {}, pauseWardrobeTween = false,
     echoPhases = {}, echoArmFrames = 0, echoVeilFrames = 0, echoJawFrames = 0,
     wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0,
     jawFrames = 0, graceElapsed = 0, sconceChanges = 0}
@@ -61,7 +62,10 @@ Vector3 = {new = function(x, y, z) return setmetatable({X=x or 0,Y=y or 0,Z=z or
 Vector2 = {new = function(x, y) return {X=x,Y=y} end}
 local cfMeta = {
     __mul = function(a, b) return CFrame.new(a.Position + b.Position) end,
-    __index = {PointToWorldSpace = function(self, v) return self.Position + v end},
+    __index = {
+        PointToWorldSpace = function(self, v) return self.Position + v end,
+        PointToObjectSpace = function(self, v) return v - self.Position end,
+    },
 }
 CFrame = {
     new = function(x, y, z)
@@ -294,10 +298,28 @@ function services.ReplicatedStorage:WaitForChild(name)
 end
 function require(module) return module end
 function services.TweenService:Create(instance, _, props)
-    local tween = {Completed=signal()}
-    function tween:Play()
+    local tween = {Completed=signal(), cancelled=false}
+    function tween:Finish()
+        if self.cancelled then return end
         if props.Value then instance.Value = props.Value; instance.Changed:Fire(props.Value) end
-        self.Completed:Fire()
+        if props.CFrame then instance.CFrame = props.CFrame end
+        self.Completed:Fire(Enum.PlaybackState.Completed)
+    end
+    function tween:Play()
+        if instance.Name == "HumanoidRootPart" and props.CFrame then
+            table.insert(observed.wardrobeSteps, {root=instance, from=instance.CFrame,
+                to=props.CFrame, doorOpen=observed.trackedWardrobe
+                    and observed.trackedWardrobe:GetAttribute("Open")})
+            if observed.pauseWardrobeTween then
+                table.insert(observed.pendingWardrobeTweens, self)
+                return
+            end
+        end
+        self:Finish()
+    end
+    function tween:Cancel()
+        self.cancelled = true
+        self.Completed:Fire(Enum.PlaybackState.Cancelled)
     end
     return tween
 end
@@ -510,7 +532,7 @@ local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-    and world:GetAttribute("GenerationBuild") == "ReturnEchoBrightTorch-v12", "old place was loaded")
+    and world:GetAttribute("GenerationBuild") == "SinglePressWardrobe-v13", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
     "hotel walls no longer have physical audio reverb")
@@ -938,18 +960,41 @@ for index = 0, 99 do
         for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
             local wardrobe = room:FindFirstChild(name)
             local hidePrompt = wardrobe:FindFirstChild("HideInside", true)
-            local closePrompt = wardrobe:FindFirstChild("CloseWardrobe", true)
+            assert(hidePrompt and hidePrompt.HoldDuration == 0
+                and hidePrompt.MaxActivationDistance <= 6 and hidePrompt.RequiresLineOfSight
+                and not wardrobe:FindFirstChild("CloseWardrobe", true),
+                "entering the wardrobe still needs separate presses or prompts through walls")
             local root = rootOf(player)
             root.CFrame = CFrame.new(hidePrompt.Parent.Position)
-            hidePrompt.Triggered:Fire(player)
-            assert(not player:GetAttribute("Hidden") and wardrobe:GetAttribute("Open")
-                and hidePrompt.Enabled and hidePrompt.ActionText == "" and hidePrompt.ObjectText == "",
-                "opening the wardrobe must not teleport or show a textual hint")
-            assert(closePrompt.Enabled, "an open wardrobe should have a close interaction")
-            hidePrompt.Triggered:Fire(player)
-            assert(player:GetAttribute("Hidden") and root.Anchored, "wardrobe did not hide player")
-            assert(not wardrobe:GetAttribute("Open") and hidePrompt.ActionText == "",
-                "leaves did not swing shut with a real viewing gap")
+            local stepsBefore, eventsBefore = #observed.wardrobeSteps, #observed.events
+            observed.trackedWardrobe = wardrobe
+            hidePrompt.Triggered:Fire(player) -- exactly ONE interaction
+            local closetState = observed.state.rooms[index].closets[name == "Wardrobe_A" and 1 or 2]
+            assert(player:GetAttribute("Hidden") and not player:GetAttribute("EnteringWardrobe")
+                and root.Anchored and closetState.occupant == player
+                and (root.Position - closetState.rootCF.Position).Magnitude < 0.01,
+                "one wardrobe press failed to move the real avatar inside")
+            assert(not wardrobe:GetAttribute("Open") and not hidePrompt.Enabled
+                and hidePrompt.ActionText == "" and hidePrompt.ObjectText == "",
+                "the automatic entrance failed to close or brought back a hint")
+            local firstStep = observed.wardrobeSteps[stepsBefore + 1]
+            local lastStep = observed.wardrobeSteps[stepsBefore + 2]
+            assert(firstStep and lastStep and firstStep.root == root and lastStep.root == root
+                and firstStep.doorOpen and lastStep.doorOpen
+                and (firstStep.from.Position - firstStep.to.Position).Magnitude > 0.1
+                and (lastStep.from.Position - lastStep.to.Position).Magnitude > 0.1,
+                "the physical character teleported instead of stepping through OPEN doors")
+            local sequence = {}
+            for i = eventsBefore + 1, #observed.events do
+                local ev = observed.events[i]
+                if ev.player == player and (ev.event == "WardrobeEnter" or ev.event == "Hide") then
+                    table.insert(sequence, {ev.event, ev.a})
+                end
+            end
+            assert(#sequence == 2 and sequence[1][1] == "WardrobeEnter"
+                and sequence[1][2] == true and sequence[2][1] == "Hide"
+                and sequence[2][2] == true,
+                "entry animation was skipped or Hide arrived before the body was inside")
             local left = wardrobe:FindFirstChild("Left hinged leaf"):FindFirstChild("Lower oak wardrobe panel")
             local right = wardrobe:FindFirstChild("Right hinged leaf"):FindFirstChild("Lower oak wardrobe panel")
             assert(left and right and right.Position.X - right.Size.X / 2
@@ -966,7 +1011,6 @@ for index = 0, 99 do
                 local victim = addPlayer("StayedHiddenTooLong")
                 rootOf(victim).CFrame = CFrame.new(hidePrompt.Parent.Position)
                 hidePrompt.Triggered:Fire(victim)
-                hidePrompt.Triggered:Fire(victim)
                 assert(victim:GetAttribute("Hidden"), "second teammate cannot use the wardrobe")
                 for tick = 1, 37 do
                     services.RunService.Heartbeat:Fire(0.4)
@@ -978,9 +1022,65 @@ for index = 0, 99 do
                     "hiding forever did not cloud vision, eject and inflict lasting damage")
                 rootOf(victim).CFrame = CFrame.new(hidePrompt.Parent.Position)
                 hidePrompt.Triggered:Fire(victim)
-                hidePrompt.Triggered:Fire(victim)
-                assert(not victim:GetAttribute("Hidden"), "exhausted player can instantly rehide")
+                assert(not victim:GetAttribute("Hidden")
+                    and not victim:GetAttribute("EnteringWardrobe"),
+                    "exhausted player can instantly rehide")
                 removePlayer(victim)
+                local fromBehind = addPlayer("ThroughWardrobeWall")
+                rootOf(fromBehind).CFrame = closetState.rootCF * CFrame.new(0, 0, 3)
+                hidePrompt.Triggered:Fire(fromBehind)
+                assert(not observed.state.entering[fromBehind]
+                    and not fromBehind:GetAttribute("Hidden") and hidePrompt.Enabled,
+                    "an exploited prompt pulled a player through the wardrobe's back wall")
+                removePlayer(fromBehind)
+                -- Hold the first REAL avatar tween: a second player or a
+                -- repeated press cannot steal the cabinet while doors open.
+                local entrant = addPlayer("EnteringWardrobe")
+                local rival = addPlayer("WardrobeIsOccupied")
+                rootOf(entrant).CFrame = CFrame.new(hidePrompt.Parent.Position)
+                rootOf(rival).CFrame = CFrame.new(hidePrompt.Parent.Position)
+                observed.pauseWardrobeTween = true
+                hidePrompt.Triggered:Fire(entrant)
+                assert(entrant:GetAttribute("EnteringWardrobe")
+                    and not entrant:GetAttribute("Hidden") and rootOf(entrant).Anchored
+                    and not hidePrompt.Enabled and wardrobe:GetAttribute("Open")
+                    and #observed.pendingWardrobeTweens == 1,
+                    "the first press did not reserve and start the physical entrance")
+                local heldStep = table.remove(observed.pendingWardrobeTweens, 1)
+                hidePrompt.Triggered:Fire(entrant)
+                hidePrompt.Triggered:Fire(rival)
+                remote.OnServerEvent:Fire(entrant, "Exit")
+                assert(observed.state.entering[entrant] and not observed.state.entering[rival]
+                    and not rival:GetAttribute("Hidden") and #observed.pendingWardrobeTweens == 0,
+                    "a spammed prompt or exit interrupted the entrance")
+                -- Death/disconnect cancels the tween before it can snap the
+                -- avatar back into a deleted or teammate-owned wardrobe.
+                removePlayer(entrant)
+                observed.pauseWardrobeTween = false
+                heldStep:Finish()
+                assert(not rootOf(entrant).Anchored and not observed.state.entering[entrant]
+                    and not observed.state.rooms[index].closets[1].occupant
+                    and not wardrobe:GetAttribute("Open") and hidePrompt.Enabled,
+                    "disconnect during entrance left a frozen avatar or blocked cabinet")
+                hidePrompt.Triggered:Fire(rival)
+                assert(rival:GetAttribute("Hidden") and rootOf(rival).Anchored,
+                    "reserved wardrobe did not become usable again after cancellation")
+                remote.OnServerEvent:Fire(rival, "Exit")
+                removePlayer(rival)
+                local doomed = addPlayer("KilledDuringWardrobeEntry")
+                rootOf(doomed).CFrame = CFrame.new(hidePrompt.Parent.Position)
+                observed.pauseWardrobeTween = true
+                hidePrompt.Triggered:Fire(doomed)
+                local interrupted = table.remove(observed.pendingWardrobeTweens, 1)
+                assert(interrupted and doomed:GetAttribute("EnteringWardrobe"))
+                doomed.Character:FindFirstChildOfClass("Humanoid").Health = 0
+                doomed.Character:FindFirstChildOfClass("Humanoid").Died:Fire()
+                observed.pauseWardrobeTween = false
+                interrupted:Finish()
+                assert(not observed.state.entering[doomed] and not rootOf(doomed).Anchored
+                    and not wardrobe:GetAttribute("Open") and hidePrompt.Enabled,
+                    "death during the entrance left the wardrobe or avatar stuck")
+                removePlayer(doomed)
             end
         end
     end
@@ -1351,8 +1451,8 @@ for index = 0, 99 do
         assert(#deferred == 1, "seeded Rush did not schedule its physical warning")
         local closet = room:FindFirstChild("Wardrobe_A"):FindFirstChild("HideInside", true)
         root.CFrame = CFrame.new(closet.Parent.Position)
-        closet.Triggered:Fire(player)
-        closet.Triggered:Fire(player)
+        closet.Triggered:Fire(player) -- one press must shield the runner
+        assert(player:GetAttribute("Hidden"), "Rush escape still needed a SECOND cabinet press")
         local runner = addPlayer("RunnerPastOneDoor")
         rootOf(runner).CFrame = CFrame.new(0, NocturneLayout.WalkwayY(index + 1, 19) + 3,
             (index + 1) * L + 19)

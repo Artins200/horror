@@ -167,6 +167,20 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("Enum.CameraType.Custom", self.client)
         self.assertIn("Enum.CameraType.Scriptable", self.client)  # only while hiding
 
+    def test_one_press_wardrobe_entry_moves_the_avatar_before_hiding(self):
+        self.assertIn('prompt.Name = "HideInside"', self.server)
+        self.assertIn('prompt.HoldDuration = 0 -- ONE tap/click opens, enters and closes', self.server)
+        self.assertNotIn('closePrompt.Name = "CloseWardrobe"', self.server)
+        self.assertIn('closet.occupant = player -- reserve on the FIRST press', self.server)
+        self.assertIn('TweenService:Create(root,', self.server)
+        self.assertIn('animateRoot(closet.rootCF, 0.42, finishEntry)', self.server)
+        self.assertIn('remote:FireClient(player, "WardrobeEnter", true)', self.server)
+        self.assertIn('remote:FireClient(player, "Hide", true, closet.cameraCF)', self.server)
+        self.assertIn('cancelClosetEntry(player)', self.server)
+        self.assertIn('elseif event == "WardrobeEnter" then', self.client)
+        self.assertIn('humanoid.CameraOffset = Vector3.new(0,', self.client)
+        self.assertNotIn('camera.CFrame = root.CFrame', self.client)
+
     def test_character_camera_does_not_override_roblox_physics(self):
         self.assertIn("Workspace.Gravity = 196.2", self.server)
         self.assertIn("root.Anchored = false", self.server)
@@ -174,7 +188,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
         self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "ReturnEchoBrightTorch-v12")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "SinglePressWardrobe-v13")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -356,7 +370,7 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v12.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v13.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
 
 
