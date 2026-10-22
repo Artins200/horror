@@ -62,6 +62,12 @@ class PlaceTests(unittest.TestCase):
         self.assertGreaterEqual(float(lighting.findtext(
             "Properties/float[@name='ExposureCompensation']")), 0)
         self.assertGreater(float(lighting.findtext("Properties/float[@name='FogEnd']")), 100)
+        self.assertAlmostEqual(float(lighting.findtext("Properties/float[@name='Brightness']")), 1.12)
+        self.assertAlmostEqual(float(self.named("Atmosphere", "CorridorHaze").findtext(
+            "Properties/float[@name='Density']")), 0.22)
+        self.assertAlmostEqual(float(self.named("ColorCorrectionEffect", "ColdShadowsWarmLights")
+            .findtext("Properties/float[@name='Contrast']")), 0.17)
+        self.assertIsNotNone(self.named("DepthOfFieldEffect", "HotelDepth"))
 
     def test_editor_preview_has_door_wardrobes_and_lights(self):
         preview = self.named("Model", "StudioPreview")
@@ -83,6 +89,13 @@ class PlaceTests(unittest.TestCase):
         self.assertEqual(names.count("Lower wardrobe panel"), 4)
         self.assertEqual(names.count("Spaced wardrobe louvre"), 28)
         self.assertEqual(names.count("Sliding drawer front"), 3)
+        self.assertEqual(names.count("Inlaid floorboard joint"), 6)
+        self.assertEqual(names.count("Pressed metal ceiling rosette"), 1)
+        self.assertGreaterEqual(names.count("Smoked glass lamp shade"), 4)
+        for detail in ("Inlaid floorboard joint", "Engraved panel edge",
+                       "Pressed metal ceiling rosette", "Smoked glass lamp shade"):
+            part = next(p for p in parts if p.findtext("Properties/string[@name='Name']") == detail)
+            self.assertEqual(part.findtext("Properties/bool[@name='CanCollide']"), "false")
         self.assertGreaterEqual(len(preview.findall(".//Item[@class='PointLight']")), 4)
         self.assertIsNotNone(self.named("Atmosphere", "CorridorHaze"))
 
@@ -158,8 +171,8 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v8")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "LootShopThreats-v8")', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v9")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "SparseLootCompactHUD-v9")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -199,6 +212,19 @@ class PlaceTests(unittest.TestCase):
         self.assertNotIn('if index == 5 then threat', self.server)
         self.assertNotIn('BlindLifetime', self.server)
         self.assertIn('local function redrawEquipment()', self.client)
+        self.assertIn('local function cycleOwnedSlot(direction)', self.client)
+        self.assertIn('equipment.Visible = owned > 0', self.client)
+        self.assertIn('slot.tile.Visible = hasItem', self.client)
+        self.assertIn('wallet.Visible = (a.coins or 0)', self.client)
+        self.assertIn('if amount ~= 1 or info.items[kind] > 0 then return false end', self.server)
+        self.assertIn('or info.items[id] > 0 then return end -- no charge for a duplicate', self.server)
+        self.assertIn('and info.items[SLOTS[argument]] > 0 then', self.server)
+        self.assertIn('DRAWER_SPIDER_CHANCE = 0.01', self.server)
+        self.assertIn('WARDROBE_SPIDER_CHANCE = 0.006', self.server)
+        self.assertIn('if roll < 0.475 then return "MEDKIT", 1 end', self.server)
+        self.assertIn('Smoked glass lamp shade', self.server)
+        self.assertIn('Dust in the lamplight', self.server)
+        self.assertIn('Pressed metal ceiling rosette', self.server)
         self.assertIn('StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)', self.client)
         self.assertIn('if event == "Inventory" then', self.client)
         self.assertIn('elseif event == "Spider"', self.client)
@@ -234,7 +260,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('model:SetAttribute("Dark", plan.dark)', self.server)
         self.assertIn('bulb.Material = Enum.Material.Glass', self.server)
         self.assertIn('light.Name = "Blackout floor glow"', self.server)
-        self.assertIn('Lighting.Ambient = Color3.fromRGB(31, 37, 43)', self.server)
+        self.assertIn('Lighting.Ambient = Color3.fromRGB(38, 42, 45)', self.server)
         self.assertIn('MothGraceSeconds = 4', self.server)
         self.assertIn('task.wait(CONFIG.MothGraceSeconds / 8)', self.server)
         self.assertNotIn('remote:FireAllClients("Warning"', self.server)
@@ -262,8 +288,8 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
-        self.assertNotEqual(binary, (ROOT / "Nocturne-v7.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v9.rbxl").read_bytes())
+        self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
 
 
 if __name__ == "__main__":

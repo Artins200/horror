@@ -148,6 +148,7 @@ function runService:BindToRenderStep(_, _, callback) self.render = callback end
 local uiService = Instance.new("UserInputService")
 uiService.TouchEnabled = false
 uiService.MouseEnabled = true
+if uiService.TouchEnabled then camera.ViewportSize = {X=380,Y=780} end
 function uiService:GetFocusedTextBox() return nil end
 local tweenService = Instance.new("TweenService")
 function tweenService:Create(target, _, props)
@@ -243,6 +244,8 @@ assert(bar and wallet and bar:FindFirstChild("Slot FLASHLIGHT")
     and starterGui.disabled[Enum.CoreGuiType.Backpack]
     and starterGui.disabled[Enum.CoreGuiType.Health],
     "default Roblox Backpack/Health was not replaced by the custom hotbar")
+assert(not bar.Visible and not wallet.Visible and not bar:FindFirstChild("Slot PILL").Visible,
+    "an empty hotbar or wallet covers the corridor at spawn")
 assert(lighting:FindFirstChild("Wardrobe eyestrain")
     and lighting:FindFirstChild("Wardrobe desaturation"),
     "long hiding has no client-only visual effects")
@@ -257,15 +260,45 @@ local beforeLight = #remote.actions
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(#remote.actions == beforeLight and not gui:FindFirstChild("Mobile torch").Visible,
     "F created a flashlight before the player found or bought one")
-remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=2,CRUCIFIX=1,BANDAGE=3,MEDKIT=1},
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=0,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=1,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(wallet.Visible and not bar.Visible
+    and (not uiService.TouchEnabled or (wallet.Position[1] == 16 and wallet.Position[2] == 55
+        and gui:FindFirstChild("Health track").Position[2] == 84
+        and gui:FindFirstChild("Stamina track").Position[2] == 99)),
+    "taking money exposed an empty inventory or phone status covered the controls")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=1,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=2,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(bar.Visible and bar.Size[1] == (uiService.TouchEnabled and 54 or 52)
+    and bar.Size[2] < 60 and bar.Size[1] < camera.ViewportSize.X
+    and bar:FindFirstChild("Slot PILL").Visible
+    and not bar:FindFirstChild("Slot FLASHLIGHT").Visible
+    and not bar:FindFirstChild("Slot MEDKIT").Visible
+    and gui:FindFirstChild("Use selected item").Visible == uiService.TouchEnabled,
+    "hotbar did not shrink to only the collected item or lost touch controls")
+local beforeEmpty = #remote.actions
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Five}, false)
+assert(#remote.actions == beforeEmpty, "number keys select invisible, unowned slots")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.DPadRight}, false)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
+    "gamepad cycling does not skip missing inventory types")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=0,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=1,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(not bar.Visible and wallet.Visible and not gui:FindFirstChild("Use selected item").Visible,
+    "inventory or unused touch action stayed onscreen after the last item vanished")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
     selected=1,charge=100,health=72,coins=12,notes=2,gold=1})
 player:SetAttribute("HasFlashlight", true)
 player:SetAttribute("TorchCharge", 100)
 player:SetAttribute("Health", 72)
 assert(wallet.Text:find("12") and wallet.Text:find("2") and wallet.Text:find("1")
-    and bar:FindFirstChild("Slot PILL"):FindFirstChild("Count").Text == "×2"
-    and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible,
-    "wallet, selected hotbar or battery display did not reflect server snapshot")
+    and bar.Visible and bar.Size[1] == (uiService.TouchEnabled and 246 or 236)
+    and bar.Size[2] < 60 and bar.Size[1] < camera.ViewportSize.X
+    and bar:FindFirstChild("Slot PILL").Visible
+    and not bar:FindFirstChild("Slot PILL"):FindFirstChild("Count")
+    and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible
+    and gui:FindFirstChild("Mobile torch").Visible == uiService.TouchEnabled,
+    "five unique items, money or the compact battery indicator did not render")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == true,
     "found torch did not request server-owned light")
@@ -422,15 +455,22 @@ drainTimers()
 assert(modal.Visible and not scare.Visible, "fallback finale never completed")
 return true
 `;
-const state = lauxlib.luaL_newstate();
-lualib.luaL_openlibs(state);
-const status = lauxlib.luaL_dostring(state, to_luastring(mock));
-if (status !== lua.LUA_OK) {
-  const error = to_jsstring(lua.lua_tostring(state, -1));
-  const atLine = Number(error.match(/:(\d+):/)?.[1] ?? 0);
-  const lines = mock.split("\n");
-  const nearby = lines.slice(Math.max(0, atLine - 4), atLine + 2).map((s, i) =>
-    `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
-  throw new Error(`Client avatar/camera smoke test failed: ${error}\n${nearby}`);
+for (const device of ["desktop", "phone"]) {
+  const source = device === "phone" ? mock.replace(
+    "uiService.TouchEnabled = false\nuiService.MouseEnabled = true",
+    "uiService.TouchEnabled = true\nuiService.MouseEnabled = false",
+  ) : mock;
+  if (device === "phone" && source === mock) throw new Error("Phone mock was not enabled");
+  const state = lauxlib.luaL_newstate();
+  lualib.luaL_openlibs(state);
+  const status = lauxlib.luaL_dostring(state, to_luastring(source));
+  if (status !== lua.LUA_OK) {
+    const error = to_jsstring(lua.lua_tostring(state, -1));
+    const atLine = Number(error.match(/:(\d+):/)?.[1] ?? 0);
+    const lines = source.split("\n");
+    const nearby = lines.slice(Math.max(0, atLine - 4), atLine + 2).map((s, i) =>
+      `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
+    throw new Error(`${device} HUD/avatar smoke test failed: ${error}\n${nearby}`);
+  }
+  console.log(`${device} HUD OK: empty bar hidden, only owned slots, compact wallet/touch actions`);
 }
-console.log("HUD smoke test OK: custom wallet/hotbar, earned torch, hiding effects/spider, physical camera and scares");

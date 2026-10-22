@@ -55,6 +55,12 @@ local SLOTS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}
 local PRICES = {FLASHLIGHT = 25, PILL = 12, CRUCIFIX = 60, BANDAGE = 10, MEDKIT = 32}
 local VALUE = {COIN = 1, NOTE = 10, GOLD = 60}
 local HEAL = {BANDAGE = 25, MEDKIT = 65}
+-- Interactions stay reproducible for a seed, but a spider should be a surprise,
+-- not something that happens in every few rooms. A hit also has a per-player
+-- room cooldown so two nearby cabinets cannot chain-jumpscare the same person.
+local DRAWER_SPIDER_CHANCE = 0.01
+local WARDROBE_SPIDER_CHANCE = 0.006
+local SPIDER_ROOM_COOLDOWN = 12
 
 local function emptyItems()
 	return {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
@@ -130,6 +136,14 @@ local function roomBlock(room, name, sx, sy, sz, x, relativeY, z, color, materia
 	return block(room.model, name, sx, sy, sz, x, room.entryY + relativeY, z, color, material)
 end
 
+local function roomDetail(room, name, sx, sy, sz, x, relativeY, z, color, material)
+	local detail = roomBlock(room, name, sx, sy, sz, x, relativeY, z, color, material)
+	detail.CanCollide = false
+	detail.CanQuery = false
+	detail.CastShadow = false
+	return detail
+end
+
 local function railBetween(parent, name, a, b, radius, color)
 	local midpoint = (a + b) / 2
 	local direction = b - a
@@ -142,9 +156,34 @@ end
 local function addLight(parent, position, room, brightness, color)
 	local fixture = newPart(parent, "Oxidised brass sconce", Vector3.new(1.2, 0.32, 1.2),
 		CFrame.new(position), C.brassDark, Enum.Material.Metal)
+	-- Glass, a narrow metal crown and a wall mount catch the warm pool of light.
+	-- These are non-colliding details; the fixture still uses ONE PointLight.
+	local crown = newPart(parent, "Hammered brass lamp crown", Vector3.new(0.12, 1.27, 1.27),
+		CFrame.new(position + Vector3.new(0, 0.18, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		C.brass, Enum.Material.Metal, 0, false)
+	crown.Shape = Enum.PartType.Cylinder
+	crown.CanQuery = false
+	local shade = newPart(parent, "Smoked glass lamp shade", Vector3.new(1.1, 0.82, 1.1),
+		CFrame.new(position + Vector3.new(0, -0.36, 0)), Color3.fromRGB(184, 139, 93),
+		Enum.Material.Glass, 0.66, false)
+	shade.Shape = Enum.PartType.Ball
+	shade.CastShadow = false
+	shade.CanQuery = false
+	if math.abs(position.X) > W / 2 - 3 then
+		local side = position.X < 0 and -1 or 1
+		local plate = newPart(parent, "Sconce wall escutcheon", Vector3.new(0.14, 1.92, 0.94),
+			CFrame.new(side * (W / 2 - 0.91), position.Y + 0.2, position.Z),
+			C.brassDark, Enum.Material.Metal, 0, false)
+		plate.CanQuery = false
+		local arm = newPart(parent, "Sconce forged arm", Vector3.new(1.6, 0.11, 0.12),
+			CFrame.new(side * (W / 2 - 1.7), position.Y + 0.12, position.Z),
+			C.brass, Enum.Material.Metal, 0, false)
+		arm.CanQuery = false
+	end
 	local bulb = newPart(parent, "Warm filament", Vector3.new(0.48, 0.42, 0.48),
 		CFrame.new(position + Vector3.new(0, -0.3, 0)), color or C.lamp, Enum.Material.Neon, 0, false)
 	bulb.Shape = Enum.PartType.Ball
+	bulb.CanQuery = false
 	local light = Instance.new("PointLight")
 	light.Color = color or C.lamp
 	light.Brightness = (brightness or 1.6) * (room.lightPower or 1)
@@ -152,7 +191,20 @@ local function addLight(parent, position, room, brightness, color)
 	-- One shadow-casting sconce per room keeps mobile lighting affordable.
 	light.Shadows = #room.lamps == 0
 	light.Parent = bulb
-	local lamp = {light = light, bulb = bulb, brightness = light.Brightness,
+	local dust = Instance.new("ParticleEmitter")
+	dust.Name = "Dust in the lamplight"
+	dust.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	dust.Color = ColorSequence.new(Color3.fromRGB(237, 205, 166))
+	dust.Transparency = NumberSequence.new(0.89, 1)
+	dust.Size = NumberSequence.new(0.11, 0.24)
+	dust.Rate = 0.17
+	dust.Lifetime = NumberRange.new(3.5, 5.2)
+	dust.Speed = NumberRange.new(0.08, 0.21)
+	dust.SpreadAngle = Vector2.new(85, 85)
+	dust.LightEmission = 0.1
+	dust.Enabled = not room.dark
+	dust.Parent = bulb
+	local lamp = {light = light, bulb = bulb, dust = dust, brightness = light.Brightness,
 		color = light.Color, normallyOn = not room.dark}
 	table.insert(room.lamps, lamp)
 	if room.dark then
@@ -169,6 +221,7 @@ local function setLamp(lamp, on, tint, intensity)
 	lamp.light.Enabled = on
 	lamp.light.Color = tint or lamp.color
 	lamp.light.Brightness = lamp.brightness * (intensity or 1)
+	lamp.dust.Enabled = on
 	lamp.bulb.Material = on and Enum.Material.Neon or Enum.Material.Glass
 	lamp.bulb.Color = on and (tint or lamp.color) or Color3.fromRGB(37, 42, 44)
 	lamp.bulb.Transparency = on and 0 or 0.32
@@ -316,8 +369,16 @@ end
 local function syncInventory(player)
 	local info = state.players[player]
 	if not info then return end
+	-- Keep selection on an actually owned item. When the last item is used up,
+	-- the hotbar disappears; obtaining a new one selects it automatically.
+	if info.items[SLOTS[info.selected]] == 0 then
+		for index, id in ipairs(SLOTS) do
+			if info.items[id] > 0 then info.selected = index; break end
+		end
+	end
+	if info.selected ~= 1 or info.items.FLASHLIGHT == 0 then info.torchOn = false end
 	player:SetAttribute("HasFlashlight", info.items.FLASHLIGHT > 0)
-	player:SetAttribute("TorchOn", info.torchOn and info.items.FLASHLIGHT > 0)
+	player:SetAttribute("TorchOn", info.torchOn)
 	player:SetAttribute("TorchCharge", math.ceil(info.charge))
 	player:SetAttribute("Health", math.ceil(info.health))
 	player:SetAttribute("SelectedItem", SLOTS[info.selected])
@@ -336,9 +397,18 @@ local function award(player, kind, amount)
 		local field = ({COIN = "coins", NOTE = "notes", GOLD = "gold"})[kind]
 		info[field] = info[field] + amount
 	elseif info.items[kind] ~= nil then
-		if kind == "FLASHLIGHT" and info.items.FLASHLIGHT > 0 then return false end
-		info.items[kind] = info.items[kind] + amount
+		-- One per TYPE, not one item in total. A refused drawer stays available
+		-- to this player after the held copy is consumed, lost or discharged.
+		if amount ~= 1 or info.items[kind] > 0 then return false end
+		local selectedID = SLOTS[info.selected]
+		local selectedWasEmpty = info.items[selectedID] == 0
+		info.items[kind] = 1
 		if kind == "FLASHLIGHT" then info.charge = 100 end
+		if selectedWasEmpty then
+			for index, id in ipairs(SLOTS) do
+				if id == kind then info.selected = index; break end
+			end
+		end
 	else
 		return false
 	end
@@ -399,6 +469,13 @@ local function spiderJump(player, cf)
 	tweenPivot(spider, cf, cf * CFrame.new(0, 2.1, -2.5), 0.37, function()
 		task.delay(1.3, function() if spider.Parent then spider:Destroy() end end)
 	end)
+end
+
+local function maybeSpider(player, roomIndex, rolled, cf)
+	local info = state.players[player]
+	if not rolled or not info or roomIndex < (info.nextSpiderRoom or 0) then return end
+	info.nextSpiderRoom = roomIndex + SPIDER_ROOM_COOLDOWN
+	spiderJump(player, cf)
 end
 
 -- The two leaves are real hinged models. An open wardrobe is only a usable
@@ -480,7 +557,8 @@ local function enterCloset(player, closet)
 		recordNoise(closet.front, 58)
 		if not closet.spiderChecked then
 			closet.spiderChecked = true
-			if closet.spiderRoll then spiderJump(player, closet.rootCF * CFrame.new(0, 1, -1.8)) end
+			maybeSpider(player, closet.roomIndex, closet.spiderRoll,
+				closet.rootCF * CFrame.new(0, 1, -1.8))
 		end
 		return
 	end
@@ -578,12 +656,13 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	closePrompt.Parent = handles[1]
 	local closet = {
 		model = model, barrier = barrier, leaves = leaves, prompt = prompt, closePrompt = closePrompt,
-		front = (cf * CFrame.new(0, 4, -1.6)).Position,
+		roomIndex = room.index, front = (cf * CFrame.new(0, 4, -1.6)).Position,
 		rootCF = cf * CFrame.new(0, 3, 0.1),
 		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
 		exitCF = cf * CFrame.new(0, 3, -3.45),
 		epoch = session,
-		spiderRoll = Random.new(state.seed + room.index * 197 + (serial == "A" and 13 or 71)):NextNumber() < 0.08,
+		spiderRoll = Random.new(state.seed + room.index * 197
+			+ (serial == "A" and 13 or 71)):NextNumber() < WARDROBE_SPIDER_CHANCE,
 		occupant = nil, open = false,
 	}
 	prompt.Triggered:Connect(function(player) enterCloset(player, closet) end)
@@ -665,15 +744,17 @@ end
 -- Drawer contents are seeded once on the server, but each teammate can take a
 -- given cache once. The props move WITH the real drawer and are never client gifts.
 local function rollLoot(rng)
+	-- Over half the drawers are empty. Cash is more common than equipment;
+	-- the latter drops in only 13.5% of unlocked, non-key drawers.
 	local roll = rng:NextNumber()
-	if roll < 0.24 then return "COIN", rng:NextInteger(2, 6) end
-	if roll < 0.42 then return "NOTE", rng:NextInteger(1, 2) end
-	if roll < 0.45 then return "GOLD", 1 end
-	if roll < 0.48 then return "FLASHLIGHT", 1 end -- genuinely rare
-	if roll < 0.59 then return "PILL", 1 end
-	if roll < 0.64 then return "CRUCIFIX", 1 end
-	if roll < 0.76 then return "BANDAGE", 1 end
-	if roll < 0.80 then return "MEDKIT", 1 end
+	if roll < 0.19 then return "COIN", rng:NextInteger(2, 6) end
+	if roll < 0.33 then return "NOTE", rng:NextInteger(1, 2) end
+	if roll < 0.34 then return "GOLD", 1 end
+	if roll < 0.352 then return "FLASHLIGHT", 1 end
+	if roll < 0.397 then return "PILL", 1 end
+	if roll < 0.415 then return "CRUCIFIX", 1 end
+	if roll < 0.46 then return "BANDAGE", 1 end
+	if roll < 0.475 then return "MEDKIT", 1 end
 	return nil, 0
 end
 
@@ -862,7 +943,7 @@ local function makeDresser(room, rng)
 				recordNoise(root.Position, 29)
 			end)
 		end
-		local spiderRoll = rng:NextNumber() < 0.075
+		local spiderRoll = rng:NextNumber() < DRAWER_SPIDER_CHANCE
 		local opened = false
 		openPrompt.Triggered:Connect(function(player)
 			if opened or room.epoch ~= session or not openPrompt.Enabled then return end
@@ -872,7 +953,7 @@ local function makeDresser(room, rng)
 			opened = true
 			openPrompt.Enabled = false
 			recordNoise(handle.Position, 65)
-			if spiderRoll then spiderJump(player, pivot * CFrame.new(0, 0.5, -1.4)) end
+			maybeSpider(player, room.index, spiderRoll, pivot * CFrame.new(0, 0.5, -1.4))
 			tweenPivot(drawer, pivot, pivot * CFrame.new(0, 0, -1.25), 0.5, function()
 				if room.epoch ~= session then return end
 				if lootPrompt and loot and loot.Parent then lootPrompt.Enabled = true end
@@ -949,8 +1030,7 @@ local function makeShop(room)
 			local info = state.players[player]
 			if room.epoch ~= session or not root or not info or state.hidden[player]
 				or state.opened < 51 or (root.Position - plaque.Position).Magnitude > 10
-				or (id == "FLASHLIGHT" and info.items.FLASHLIGHT > 0)
-				or info.items[id] >= 9 then return end
+				or info.items[id] > 0 then return end -- no charge for a duplicate
 			if not pay(info, PRICES[id]) then return end
 			award(player, id, 1)
 		end)
@@ -964,8 +1044,14 @@ local function makePainting(room, side, z, accent)
 		C.brassDark, Enum.Material.Metal)
 	roomBlock(room, "Oil painting", 0.28, 4.45, 4.65, x - side * 0.15, 8.4, z,
 		accent, Enum.Material.SmoothPlastic)
-	roomBlock(room, "Painting horizon", 0.29, 0.18, 3.6, x - side * 0.3, 7.3, z,
+	roomDetail(room, "Painted distant ridge", 0.08, 0.62, 3.9,
+		x - side * 0.32, 7.65, z - 0.05, Color3.fromRGB(33, 44, 50), Enum.Material.SmoothPlastic)
+	roomDetail(room, "Painting horizon", 0.08, 0.18, 3.6, x - side * 0.36, 7.3, z,
 		C.woodDark, Enum.Material.SmoothPlastic)
+	local moon = roomDetail(room, "Distant moon in oil", 0.14, 0.72, 0.72,
+		x - side * 0.35, 9.27, z + 1.05, Color3.fromRGB(171, 168, 146),
+		Enum.Material.SmoothPlastic)
+	moon.Shape = Enum.PartType.Ball
 end
 
 local function furnish(room, rng)
@@ -1185,41 +1271,41 @@ end
 
 local function configureLighting()
 	Lighting.ClockTime = 0
-	Lighting.Brightness = 0.9
-	-- A blacked-out room is gloomy, not unrenderable. Physical low-level guide
-	-- lamps below illuminate the floor even with the hand torch switched off.
-	Lighting.Ambient = Color3.fromRGB(31, 37, 43)
-	Lighting.OutdoorAmbient = Color3.fromRGB(15, 21, 27)
-	Lighting.FogColor = Color3.fromRGB(19, 27, 33)
+	Lighting.Brightness = 1.12
+	-- Preserve the readable blackout floor; increase material contrast instead
+	-- of making the whole corridor darker or obscuring it with grey fog.
+	Lighting.Ambient = Color3.fromRGB(38, 42, 45)
+	Lighting.OutdoorAmbient = Color3.fromRGB(19, 25, 30)
+	Lighting.FogColor = Color3.fromRGB(20, 26, 32)
 	Lighting.FogStart = 19
-	Lighting.FogEnd = 112
+	Lighting.FogEnd = 120
 	Lighting.GlobalShadows = true
-	Lighting.EnvironmentDiffuseScale = 0.4
-	Lighting.EnvironmentSpecularScale = 0.25
-	Lighting.ExposureCompensation = 0
+	Lighting.EnvironmentDiffuseScale = 0.48
+	Lighting.EnvironmentSpecularScale = 0.29
+	Lighting.ExposureCompensation = 0.06
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Name = "CorridorHaze"
-	atmosphere.Density = 0.28
-	atmosphere.Haze = 1.8
-	atmosphere.Color = Color3.fromRGB(108, 128, 137)
-	atmosphere.Decay = Color3.fromRGB(34, 24, 27)
+	atmosphere.Density = 0.22
+	atmosphere.Haze = 1.3
+	atmosphere.Color = Color3.fromRGB(116, 131, 137)
+	atmosphere.Decay = Color3.fromRGB(43, 33, 31)
 	atmosphere.Parent = Lighting
 	local grading = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
 	grading.Name = "ColdShadowsWarmLights"
-	grading.TintColor = Color3.fromRGB(225, 233, 237)
-	grading.Contrast = 0.12
-	grading.Saturation = -0.24
+	grading.TintColor = Color3.fromRGB(233, 235, 231)
+	grading.Contrast = 0.17
+	grading.Saturation = -0.13
 	grading.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.37
-	bloom.Size = 26
-	bloom.Threshold = 1.6
+	bloom.Intensity = 0.23
+	bloom.Size = 19
+	bloom.Threshold = 1.8
 	bloom.Parent = Lighting
 	local dof = Lighting:FindFirstChildOfClass("DepthOfFieldEffect") or Instance.new("DepthOfFieldEffect")
-	dof.FarIntensity = 0.2
-	dof.NearIntensity = 0.04
-	dof.FocusDistance = 22
-	dof.InFocusRadius = 18
+	dof.FarIntensity = 0.16
+	dof.NearIntensity = 0.03
+	dof.FocusDistance = 24
+	dof.InFocusRadius = 17
 	dof.Parent = Lighting
 	SoundService.AmbientReverb = Enum.ReverbType.Hallway
 end
@@ -1392,6 +1478,18 @@ local function flatRoom(room, rng)
 		C.wood, Enum.Material.WoodPlanks)
 	roomBlock(room, "Continuous interior ceiling", W, 0.9, L, 0, H + 0.45, z + L / 2,
 		C.woodDark, Enum.Material.Wood)
+	-- Fine inlaid planks read under the sconces, without raised edges that
+	-- could change the height of the real walkable floor or block a raycast.
+	for _, x in ipairs({-12.8, -10.4, -8.0, 8.0, 10.4, 12.8}) do
+		roomDetail(room, "Inlaid floorboard joint", 0.035, 0.012, L - 1.6,
+			x, 0.009, z + L / 2, C.woodDark, Enum.Material.Wood)
+	end
+	for _, dz in ipairs({6, 14, 30, 38}) do
+		for _, side in ipairs({-1, 1}) do
+			roomDetail(room, "Transverse parquet joint", 5.6, 0.012, 0.035,
+				side * 10.4, 0.009, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+	end
 	for _, side in ipairs({-1, 1}) do
 		roomBlock(room, "Load-bearing corridor wall", 0.8, H, L, side * (W / 2 - 0.4),
 			H / 2, z + L / 2, wallColor, Enum.Material.Concrete)
@@ -1410,6 +1508,11 @@ local function flatRoom(room, rng)
 				side * (W / 2 - 0.84), 7.65, z + dz, color, Enum.Material.Concrete)
 			roomBlock(room, "Gilt wall moulding", 0.17, 0.13, 7.2,
 				side * (W / 2 - 0.89), 10.75, z + dz, style.trim, Enum.Material.Metal)
+			for _, endZ in ipairs({-3.25, 3.25}) do
+				roomDetail(room, "Engraved panel edge", 0.075, 5.7, 0.065,
+					side * (W / 2 - 1), 7.65, z + dz + endZ,
+					style.trim, Enum.Material.Metal)
+			end
 		end
 		for _, dz in ipairs({12, 32}) do
 			addLight(model, Vector3.new(side * (W / 2 - 2.5), y + 11.5,
@@ -1421,6 +1524,10 @@ local function flatRoom(room, rng)
 		roomBlock(room, "Joined ceiling joist", W - 1.2, 0.36, 0.4,
 			0, H - 0.12, z + dz, C.brassDark, Enum.Material.Metal)
 	end
+	local rosette = roomDetail(room, "Pressed metal ceiling rosette", 0.12, 2.7, 2.7,
+		0, H - 0.42, z + L / 2, style.trim, Enum.Material.Metal)
+	rosette.Shape = Enum.PartType.Cylinder
+	rosette.CFrame = rosette.CFrame * CFrame.Angles(0, 0, math.pi / 2)
 	if room.kind == "TURN" then
 		local side = Layout.TurnSide(room.index, state.seed)
 		local stops = {{0, 3}, {side * 8, 17}, {-side * 8, 28}, {0, 41}}
@@ -2913,6 +3020,7 @@ local function resetWorld()
 		info.coins, info.notes, info.gold = 0, 0, 0
 		info.charge, info.health, info.selected = 0, 100, 1
 		info.torchOn, info.pillUntil, info.closetCooldown = false, 0, 0
+		info.nextSpiderRoom = 0
 		syncInventory(player)
 	end
 	local previousSeed = state.seed
@@ -2922,14 +3030,14 @@ local function resetWorld()
 	end
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
-	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v8")
-	state.world:SetAttribute("GenerationBuild", "LootShopThreats-v8")
+	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v9")
+	state.world:SetAttribute("GenerationBuild", "SparseLootCompactHUD-v9")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v8] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v9] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -2971,6 +3079,7 @@ local function registerPlayer(player)
 		stamina = 100, sprinting = false, crouching = false, torchOn = false,
 		items = emptyItems(), coins = 0, notes = 0, gold = 0,
 		charge = 0, health = 100, selected = 1, pillUntil = 0, closetCooldown = 0,
+		nextSpiderRoom = 0,
 	}
 	player:SetAttribute("Stamina", 100)
 	syncInventory(player)
@@ -3044,7 +3153,8 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 	end
 	if action == "Select" then
 		if typeof(argument) == "number" and argument == math.floor(argument)
-			and argument >= 1 and argument <= #SLOTS then
+			and argument >= 1 and argument <= #SLOTS
+			and info.items[SLOTS[argument]] > 0 then
 			info.selected = argument
 			if argument ~= 1 then info.torchOn = false end
 			syncInventory(player)
@@ -3239,4 +3349,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v8] 100 enclosed doors, loot, apothecary, native hand and four physical threats.")
+print("[NOCTURNE v9] 100 enclosed doors, rare loot, compact HUD and four physical threats.")

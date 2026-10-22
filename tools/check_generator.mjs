@@ -415,6 +415,8 @@ end
 first.shape = originalShape
 observed.state = state
 observed.award = award
+observed.rollLoot = rollLoot
+observed.maybeSpider = maybeSpider
 observed.recordNoise = recordNoise
 observed.damagePlayer = damagePlayer
 observed.replayEcho = function(index) startEcho(state.rooms[index], session) end
@@ -461,12 +463,14 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v8"
-    and world:GetAttribute("GenerationBuild") == "LootShopThreats-v8", "old place was loaded")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v9"
+    and world:GetAttribute("GenerationBuild") == "SparseLootCompactHUD-v9", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
-assert(services.Lighting.Ambient.R > 0.11 and services.Lighting.Ambient.B > 0.15
-    and services.Lighting.ExposureCompensation >= 0,
-    "blackout shading crushes the image to zero visibility")
+assert(services.Lighting.Ambient.R > 0.13 and services.Lighting.Ambient.B > 0.17
+    and services.Lighting.ExposureCompensation > 0
+    and services.Lighting:FindFirstChild("CorridorHaze").Density < 0.25
+    and services.Lighting:FindFirstChild("ColdShadowsWarmLights").Contrast >= 0.16,
+    "v9 material contrast or legible blackout lighting was lost")
 local spawn = world:FindFirstChild("CheckpointSpawn")
 assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
     and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - NocturneLayout.EntranceY(0)) < 0.01
@@ -508,6 +512,55 @@ end
 local function walletValue(bag)
     return bag.coins + bag.notes * 10 + bag.gold * 60
 end
+-- Mock randomness exercises the server's sparse, seeded loot table across
+-- many rolls without relying on the particular starting room of this run.
+local empty, cash, equipmentDrops, torches, bars = 0, 0, 0, 0, 0
+local rng = Random.new(88219)
+for _ = 1, 10000 do
+    local kind = observed.rollLoot(rng)
+    if not kind then empty = empty + 1
+    elseif kind == "COIN" or kind == "NOTE" or kind == "GOLD" then
+        cash = cash + 1
+        if kind == "GOLD" then bars = bars + 1 end
+    else
+        equipmentDrops = equipmentDrops + 1
+        if kind == "FLASHLIGHT" then torches = torches + 1 end
+    end
+end
+assert(empty > 5000 and cash > 2900 and cash < 3850
+    and equipmentDrops > 950 and equipmentDrops < 1750
+    and torches > 40 and torches < 210 and bars < 180,
+    "drawer loot is no longer sparse or flashlight/gold are too common")
+-- One copy of each different type is allowed; repeat rewards are refused by
+-- the server, and consumption makes that type obtainable again.
+local collector = addPlayer("SingleCopyCollector")
+assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 1)
+assert(observed.award(collector, "PILL", 1) and inventoryOf(collector).selected == 2)
+assert(observed.award(collector, "MEDKIT", 1)
+    and not observed.award(collector, "PILL", 1)
+    and inventoryOf(collector).items.PILL == 1
+    and inventoryOf(collector).items.MEDKIT == 1,
+    "duplicate equipment stacked instead of allowing only different item types")
+remote.OnServerEvent:Fire(collector, "Select", 4)
+assert(inventoryOf(collector).selected == 2, "empty item slot can be selected")
+remote.OnServerEvent:Fire(collector, "Use", "PILL")
+assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 5,
+    "consuming the selected pill did not select the remaining owned item")
+assert(observed.award(collector, "PILL", 1)
+    and inventoryOf(collector).items.PILL == 1,
+    "consumed item type cannot be picked up again")
+removePlayer(collector)
+-- Even forced successful spider rolls must leave a 12-room gap per player.
+local startled = addPlayer("RareSpiderCooldown")
+local spiderPos = CFrame.new(0, 4, 20 * L + 14)
+local beforeSpider = countEvent("Spider")
+observed.maybeSpider(startled, 20, true, spiderPos)
+observed.maybeSpider(startled, 20, true, spiderPos)
+observed.maybeSpider(startled, 31, true, spiderPos)
+assert(countEvent("Spider") == beforeSpider + 1, "spiders repeated before the room cooldown")
+observed.maybeSpider(startled, 32, true, spiderPos)
+assert(countEvent("Spider") == beforeSpider + 2, "rare spider could never reappear later")
+removePlayer(startled)
 -- The crouch flag is server-owned and caps WalkSpeed even when Sprint is sent.
 remote.OnServerEvent:Fire(player, "Crouch", true)
 remote.OnServerEvent:Fire(player, "Sprint", true)
@@ -533,6 +586,7 @@ for index = 0, 99 do
     local wardrobes, treads, solidFlanks, partitions, arches, drawers, walls = 0, 0, 0, 0, 0, 0, 0
     local crossWalls, columns, vaults, lamps = 0, 0, 0, 0
     local aisleScreens, rotunda, nave, crypt, guides, mosaic = 0, 0, 0, 0, 0, 0
+    local inlays, rosettes, shades, dust, borders = 0, 0, 0, 0, 0
     -- Collision belongs to the real structural parts, not to the decorative
     -- non-colliding carpet. Test EACH streamed room so a missing floor in a
     -- later storey cannot pass a foyer-only check.
@@ -595,13 +649,41 @@ for index = 0, 99 do
             assert(child.Parent.Material == (dark and Enum.Material.Glass or Enum.Material.Neon),
                 "a Neon GUI-like bulb is shining in an unlit room")
         end
+        if child._class == "ParticleEmitter" and child.Name == "Dust in the lamplight" then
+            dust = dust + 1
+            assert(child.Parent.Name == "Warm filament" and child.Rate < 0.2
+                and child.Enabled == (not dark), "dust should follow physical lights, not obscure rooms")
+        end
+        if child.Name == "Smoked glass lamp shade" then
+            shades = shades + 1
+            assert(not child.CanCollide and child.CanQuery == false and not child.CastShadow,
+                "lamp detail steals light or blocks the native avatar")
+        end
+        if child.Name == "Inlaid floorboard joint" then
+            inlays = inlays + 1
+            assert(not child.CanCollide and child.CanQuery == false,
+                "decorative floor joint adds a new step or blocks interaction")
+        end
+        if child.Name == "Pressed metal ceiling rosette" then
+            rosettes = rosettes + 1
+            assert(not child.CanCollide and child.CanQuery == false)
+        end
+        if child.Name == "Engraved panel edge" then
+            borders = borders + 1
+            assert(not child.CanCollide and child.CanQuery == false)
+        end
         if child.Name == "OpenDrawer" then drawers = drawers + 1 end
         if loadBearing[child.Name] then
             assert(child.Anchored == true and child.CanCollide == true,
                 "non-colliding " .. child.Name .. " in room " .. index)
         end
     end
-    assert(wardrobes == 2 and lamps > 0, "room without two wardrobes or physical fixtures at " .. index)
+    assert(wardrobes == 2 and lamps > 0 and shades == lamps and dust == lamps,
+        "room is missing ornate, gently lit physical lamps at " .. index)
+    assert(inlays == (NocturneLayout.IsStair(index) and 0 or 6)
+        and rosettes == (NocturneLayout.IsStair(index) and 0 or 1)
+        and borders == (NocturneLayout.IsStair(index) and 0 or 16),
+        "non-colliding floor, ceiling or wall material details disappeared")
     assert(crossWalls == (shape == "VESTIBULE" and 4 or 0)
         and columns == (shape == "ARCADE" and 4 or 0)
         and vaults == (shape == "COFFERED" and 4 or 0)
@@ -851,6 +933,25 @@ for index = 0, 99 do
                         "shared drawer did not allow EACH teammate one pickup")
                     removePlayer(teammate)
                 end
+                if not observed.duplicateDrawerTested and id == "PILL" then
+                    observed.duplicateDrawerTested = true
+                    local teammate = addPlayer("RevisitDrawerAfterPill")
+                    rootOf(teammate).CFrame = CFrame.new(prize.Parent.Position)
+                    assert(observed.award(teammate, "PILL", 1))
+                    local held = inventoryOf(teammate)
+                    prize.Triggered:Fire(teammate)
+                    assert(inventoryOf(teammate) == held,
+                        "drawer consumed or stacked a duplicate held item")
+                    remote.OnServerEvent:Fire(teammate, "Use", "PILL")
+                    assert(inventoryOf(teammate).items.PILL == 0)
+                    prize.Triggered:Fire(teammate)
+                    assert(inventoryOf(teammate).items.PILL == 1,
+                        "revisiting the SAME drawer after consumption still refuses pickup")
+                    prize.Triggered:Fire(teammate)
+                    assert(inventoryOf(teammate).items.PILL == 1,
+                        "one teammate collected the same drawer twice")
+                    removePlayer(teammate)
+                end
             end
         end
     end
@@ -861,6 +962,9 @@ for index = 0, 99 do
         rootOf(player).CFrame = CFrame.new(11, NocturneLayout.EntranceY(index) + 3, index * L + 6)
         offer.Triggered:Fire(player)
         assert(inventoryOf(player) == previous, "bought from outside the shop")
+        -- Finance repeated-purchase assertions AFTER proving the natural run
+        -- can afford a visit; this does not alter the seeded loot distribution.
+        observed.award(player, "GOLD", 2)
         if previous.items.FLASHLIGHT > 0 then
             remote.OnServerEvent:Fire(player, "Select", 1)
             remote.OnServerEvent:Fire(player, "Torch", true)
@@ -875,13 +979,45 @@ for index = 0, 99 do
         assert(player:GetAttribute("HasFlashlight") and player:GetAttribute("TorchCharge") == 100
             and walletValue(inventoryOf(player)) == cash - 25,
             "late shop did not sell a fully charged flashlight for wallet currency")
+        local bought = inventoryOf(player)
+        offer.Triggered:Fire(player)
+        assert(inventoryOf(player) == bought,
+            "a second flashlight stacked in the bag or charged the wallet")
+        remote.OnServerEvent:Fire(player, "Select", 1)
+        remote.OnServerEvent:Fire(player, "Torch", true)
+        for _ = 1, 100 do services.RunService.Heartbeat:Fire(0.4) end
+        assert(not player:GetAttribute("HasFlashlight") and not player:GetAttribute("TorchOn")
+            and player:GetAttribute("TorchCharge") == 0)
+        rootOf(player).CFrame = CFrame.new(offer.Parent.Position)
+        local rechargeCash = walletValue(inventoryOf(player))
+        offer.Triggered:Fire(player)
+        assert(player:GetAttribute("HasFlashlight") and player:GetAttribute("TorchCharge") == 100
+            and walletValue(inventoryOf(player)) == rechargeCash - 25,
+            "spent flashlight cannot be purchased again")
         local medkit = room:FindFirstChild("Buy_MEDKIT", true)
         rootOf(player).CFrame = CFrame.new(medkit.Parent.Position)
         local medical = inventoryOf(player)
         medkit.Triggered:Fire(player)
-        assert(inventoryOf(player).items.MEDKIT == medical.items.MEDKIT + 1
-            and walletValue(inventoryOf(player)) == walletValue(medical) - 32,
-            "shop medical purchase failed or invented change")
+        if medical.items.MEDKIT == 1 then
+            assert(inventoryOf(player) == medical, "duplicate medkit was purchased despite a full slot")
+        else
+            assert(inventoryOf(player).items.MEDKIT == 1
+                and walletValue(inventoryOf(player)) == walletValue(medical) - 32,
+                "shop medical purchase failed or invented change")
+        end
+        local heldMedical = inventoryOf(player)
+        medkit.Triggered:Fire(player)
+        assert(inventoryOf(player) == heldMedical, "shop charged for a duplicate medkit")
+        observed.damagePlayer(player, 40)
+        remote.OnServerEvent:Fire(player, "Select", 5)
+        remote.OnServerEvent:Fire(player, "Use", "MEDKIT")
+        assert(healthOf(player) == 100 and inventoryOf(player).items.MEDKIT == 0,
+            "medkit did not disappear after use")
+        local replacementCash = walletValue(inventoryOf(player))
+        medkit.Triggered:Fire(player)
+        assert(inventoryOf(player).items.MEDKIT == 1
+            and walletValue(inventoryOf(player)) == replacementCash - 32,
+            "shop refused a medkit after the old one was used")
     end
     rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
     prompt.Triggered:Fire(player)
@@ -1119,9 +1255,11 @@ for index = 0, 99 do
     end
 
 end
-assert(lockCount >= 7 and turnCount == 10 and shopCount == 1 and lootCount > 100
-    and observed.lootTeamTested and keyRecoveryTested and countEvent("Spider") > 3,
-    "procedural locks/loot/shop/spiders or team key recovery were skipped")
+assert(lockCount >= 7 and turnCount == 10 and shopCount == 1
+    and lootCount > 65 and lootCount < 155
+    and observed.lootTeamTested and observed.duplicateDrawerTested and keyRecoveryTested
+    and countEvent("Spider") >= 2 and countEvent("Spider") < 12,
+    "sparse seeded loot, rare spiders, shop or key recovery did not survive")
 assert(darkCount >= 10 and physicalShapes.ARCADE and physicalShapes.COFFERED
     and physicalShapes.VESTIBULE and physicalShapes.OPEN and physicalShapes.AISLE
     and physicalShapes.ROTUNDA and physicalShapes.NAVE and physicalShapes.CRYPT,
@@ -1226,4 +1364,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Server generator smoke test failed: ${message}\n${nearby}`);
 }
-console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors, 17 stairs, 10 turns; per-player loot/shop/consumables/co-op, four physical threats and finite torch`);
+console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; rare loot/spiders, one of each item per player, art-deco lighting and four threats`);

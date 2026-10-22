@@ -9,8 +9,8 @@ local humanoid = character:WaitForChild("Humanoid")
 local head = character:WaitForChild("Head")
 task.wait(0.3)
 local world = workspace:FindFirstChild("NocturneWorld")
-assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v8",
-	"Open Nocturne-v8.rbxl in a NEW Studio tab")
+assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v9",
+	"Open Nocturne-v9.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
@@ -21,6 +21,17 @@ assert(not root.Anchored and humanoid.AutoRotate, "Character movement is locked"
 assert(humanoid.FloorMaterial ~= Enum.Material.Air, "Character is not standing on a floor")
 assert(not camera:FindFirstChild("AvatarArmsFirstPerson"),
 	"Old detached viewmodel still covers the natural Roblox arm")
+local hud = player:WaitForChild("PlayerGui"):WaitForChild("NocturneHUD", 10)
+local bar = hud and hud:FindFirstChild("Equipment bar")
+assert(bar and bar.AbsoluteSize.X <= 250 and bar.AbsoluteSize.Y <= 60,
+	"Inventory is still covering the bottom half of the screen")
+local visibleSlots = 0
+for _, id in ipairs({"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}) do
+	local tile = bar:FindFirstChild("Slot " .. id)
+	if tile and tile.Visible then visibleSlots = visibleSlots + 1 end
+end
+assert(bar.Visible == (visibleSlots > 0),
+	"Empty inventory appears on screen or held items have no hotbar")
 local right = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
 local shoulder = character:FindFirstChild("RightShoulder", true)
 	or character:FindFirstChild("Right Shoulder", true)
@@ -43,5 +54,5 @@ else
 	assert(right.LocalTransparencyModifier > 0.9,
 		"An arm hovers onscreen even when no key is held")
 end
-print("NOCTURNE v8: native first person, grounded humanoid, actual joined right arm",
+print("NOCTURNE v9: native first person, grounded humanoid, actual joined right arm",
 	held or "no key", right.LocalTransparencyModifier)

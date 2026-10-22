@@ -70,6 +70,216 @@
       </Item>
       <Item class="Part" referent="RBX5">
         <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.8</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX6">
+        <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-10.4</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX7">
+        <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-8</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX8">
+        <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>8</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX9">
+        <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.4</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX10">
+        <Properties>
+          <string name="Name">Inlaid floorboard joint</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.105882353</R>
+            <G>0.086274510</G>
+            <B>0.094117647</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.035</X>
+            <Y>0.012</Y>
+            <Z>42.4</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>12.8</X>
+            <Y>0.009</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX11">
+        <Properties>
           <string name="Name">Crimson runner</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">false</bool>
@@ -103,7 +313,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX6">
+      <Item class="Part" referent="RBX12">
         <Properties>
           <string name="Name">Runner edge</string>
           <bool name="Anchored">true</bool>
@@ -138,7 +348,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX7">
+      <Item class="Part" referent="RBX13">
         <Properties>
           <string name="Name">Runner edge</string>
           <bool name="Anchored">true</bool>
@@ -173,7 +383,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX8">
+      <Item class="Part" referent="RBX14">
         <Properties>
           <string name="Name">Heavy ceiling</string>
           <bool name="Anchored">true</bool>
@@ -208,7 +418,42 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX9">
+      <Item class="Part" referent="RBX15">
+        <Properties>
+          <string name="Name">Pressed metal ceiling rosette</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>2.7</X>
+            <Y>0.12</Y>
+            <Z>2.7</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>15.58</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX16">
         <Properties>
           <string name="Name">Entrance wall</string>
           <bool name="Anchored">true</bool>
@@ -243,7 +488,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX10">
+      <Item class="Part" referent="RBX17">
         <Properties>
           <string name="Name">Panelled side wall</string>
           <bool name="Anchored">true</bool>
@@ -278,7 +523,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX11">
+      <Item class="Part" referent="RBX18">
         <Properties>
           <string name="Name">Dark wainscot</string>
           <bool name="Anchored">true</bool>
@@ -313,7 +558,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX12">
+      <Item class="Part" referent="RBX19">
         <Properties>
           <string name="Name">Gilt picture rail</string>
           <bool name="Anchored">true</bool>
@@ -348,7 +593,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX13">
+      <Item class="Part" referent="RBX20">
         <Properties>
           <string name="Name">Oak skirting</string>
           <bool name="Anchored">true</bool>
@@ -383,7 +628,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX14">
+      <Item class="Part" referent="RBX21">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -418,7 +663,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX15">
+      <Item class="Part" referent="RBX22">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>2.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX23">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>8.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX24">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -453,7 +768,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX16">
+      <Item class="Part" referent="RBX25">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>11.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX26">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>18.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX27">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -488,7 +873,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX17">
+      <Item class="Part" referent="RBX28">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>25.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX29">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>32.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX30">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -523,7 +978,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX18">
+      <Item class="Part" referent="RBX31">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>35.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX32">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-14.0</X>
+            <Y>7.65</Y>
+            <Z>41.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX33">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -558,7 +1083,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX19">
+      <Item class="Part" referent="RBX34">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.5</X>
+            <Y>11.67</Y>
+            <Z>12</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX35">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.5</X>
+            <Y>11.14</Y>
+            <Z>12</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX36">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -592,7 +1187,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX20">
+        <Item class="PointLight" referent="RBX37">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.6</float>
@@ -606,7 +1201,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX21">
+      <Item class="Part" referent="RBX38">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -641,7 +1236,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX22">
+      <Item class="Part" referent="RBX39">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.5</X>
+            <Y>11.67</Y>
+            <Z>32</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX40">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.5</X>
+            <Y>11.14</Y>
+            <Z>32</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX41">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -675,7 +1340,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX23">
+        <Item class="PointLight" referent="RBX42">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.6</float>
@@ -689,7 +1354,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX24">
+      <Item class="Part" referent="RBX43">
         <Properties>
           <string name="Name">Doorway wall</string>
           <bool name="Anchored">true</bool>
@@ -724,7 +1389,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX25">
+      <Item class="Part" referent="RBX44">
         <Properties>
           <string name="Name">Brass jamb</string>
           <bool name="Anchored">true</bool>
@@ -759,7 +1424,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX26">
+      <Item class="Part" referent="RBX45">
         <Properties>
           <string name="Name">Panelled side wall</string>
           <bool name="Anchored">true</bool>
@@ -794,7 +1459,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX27">
+      <Item class="Part" referent="RBX46">
         <Properties>
           <string name="Name">Dark wainscot</string>
           <bool name="Anchored">true</bool>
@@ -829,7 +1494,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX28">
+      <Item class="Part" referent="RBX47">
         <Properties>
           <string name="Name">Gilt picture rail</string>
           <bool name="Anchored">true</bool>
@@ -864,7 +1529,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX29">
+      <Item class="Part" referent="RBX48">
         <Properties>
           <string name="Name">Oak skirting</string>
           <bool name="Anchored">true</bool>
@@ -899,7 +1564,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX30">
+      <Item class="Part" referent="RBX49">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -934,7 +1599,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX31">
+      <Item class="Part" referent="RBX50">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>2.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX51">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>8.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX52">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -969,7 +1704,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX32">
+      <Item class="Part" referent="RBX53">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>11.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX54">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>18.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX55">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -1004,7 +1809,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX33">
+      <Item class="Part" referent="RBX56">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>25.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX57">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>32.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX58">
         <Properties>
           <string name="Name">Recessed wall panel</string>
           <bool name="Anchored">true</bool>
@@ -1039,7 +1914,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX34">
+      <Item class="Part" referent="RBX59">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>35.25</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX60">
+        <Properties>
+          <string name="Name">Engraved panel edge</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.075</X>
+            <Y>5.7</Y>
+            <Z>0.065</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>14.0</X>
+            <Y>7.65</Y>
+            <Z>41.75</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX61">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -1074,7 +2019,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX35">
+      <Item class="Part" referent="RBX62">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>12.5</X>
+            <Y>11.67</Y>
+            <Z>12</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX63">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>12.5</X>
+            <Y>11.14</Y>
+            <Z>12</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX64">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -1108,7 +2123,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX36">
+        <Item class="PointLight" referent="RBX65">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.6</float>
@@ -1122,7 +2137,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX37">
+      <Item class="Part" referent="RBX66">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -1157,7 +2172,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX38">
+      <Item class="Part" referent="RBX67">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>12.5</X>
+            <Y>11.67</Y>
+            <Z>32</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX68">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>12.5</X>
+            <Y>11.14</Y>
+            <Z>32</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX69">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -1191,7 +2276,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX39">
+        <Item class="PointLight" referent="RBX70">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.6</float>
@@ -1205,7 +2290,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX40">
+      <Item class="Part" referent="RBX71">
         <Properties>
           <string name="Name">Doorway wall</string>
           <bool name="Anchored">true</bool>
@@ -1240,7 +2325,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX41">
+      <Item class="Part" referent="RBX72">
         <Properties>
           <string name="Name">Brass jamb</string>
           <bool name="Anchored">true</bool>
@@ -1275,7 +2360,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX42">
+      <Item class="Part" referent="RBX73">
         <Properties>
           <string name="Name">Doorway arch</string>
           <bool name="Anchored">true</bool>
@@ -1310,7 +2395,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX43">
+      <Item class="Part" referent="RBX74">
         <Properties>
           <string name="Name">Door 001</string>
           <bool name="Anchored">true</bool>
@@ -1345,7 +2430,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX44">
+      <Item class="Part" referent="RBX75">
         <Properties>
           <string name="Name">Door number plaque</string>
           <bool name="Anchored">true</bool>
@@ -1379,7 +2464,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="SurfaceGui" referent="RBX45">
+        <Item class="SurfaceGui" referent="RBX76">
           <Properties>
             <string name="Name">EngravedNumber</string>
             <token name="Face">5</token>
@@ -1388,7 +2473,7 @@
               <Y>512</Y>
             </Vector2>
           </Properties>
-          <Item class="TextLabel" referent="RBX46">
+          <Item class="TextLabel" referent="RBX77">
             <Properties>
               <string name="Name">001</string>
               <string name="Text">001</string>
@@ -1410,7 +2495,7 @@
           </Item>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX47">
+      <Item class="Part" referent="RBX78">
         <Properties>
           <string name="Name">Wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -1445,7 +2530,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX48">
+      <Item class="Part" referent="RBX79">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -1480,7 +2565,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX49">
+      <Item class="Part" referent="RBX80">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -1515,7 +2600,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX50">
+      <Item class="Part" referent="RBX81">
         <Properties>
           <string name="Name">Wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -1550,7 +2635,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX51">
+      <Item class="Part" referent="RBX82">
         <Properties>
           <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
@@ -1585,7 +2670,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX52">
+      <Item class="Part" referent="RBX83">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -1620,7 +2705,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX53">
+      <Item class="Part" referent="RBX84">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -1655,7 +2740,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX54">
+      <Item class="Part" referent="RBX85">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1690,7 +2775,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX55">
+      <Item class="Part" referent="RBX86">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1725,7 +2810,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX56">
+      <Item class="Part" referent="RBX87">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1760,7 +2845,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX57">
+      <Item class="Part" referent="RBX88">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1795,7 +2880,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX58">
+      <Item class="Part" referent="RBX89">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1830,7 +2915,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX59">
+      <Item class="Part" referent="RBX90">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1865,7 +2950,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX60">
+      <Item class="Part" referent="RBX91">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -1900,7 +2985,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX61">
+      <Item class="Part" referent="RBX92">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -1935,7 +3020,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX62">
+      <Item class="Part" referent="RBX93">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -1970,7 +3055,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX63">
+      <Item class="Part" referent="RBX94">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -2005,7 +3090,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX64">
+      <Item class="Part" referent="RBX95">
         <Properties>
           <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
@@ -2040,7 +3125,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX65">
+      <Item class="Part" referent="RBX96">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -2075,7 +3160,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX66">
+      <Item class="Part" referent="RBX97">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -2110,7 +3195,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX67">
+      <Item class="Part" referent="RBX98">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2145,7 +3230,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX68">
+      <Item class="Part" referent="RBX99">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2180,7 +3265,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX69">
+      <Item class="Part" referent="RBX100">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2215,7 +3300,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX70">
+      <Item class="Part" referent="RBX101">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2250,7 +3335,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX71">
+      <Item class="Part" referent="RBX102">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2285,7 +3370,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX72">
+      <Item class="Part" referent="RBX103">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2320,7 +3405,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX73">
+      <Item class="Part" referent="RBX104">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2355,7 +3440,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX74">
+      <Item class="Part" referent="RBX105">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -2390,7 +3475,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX75">
+      <Item class="Part" referent="RBX106">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -2425,7 +3510,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX76">
+      <Item class="Part" referent="RBX107">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -2460,7 +3545,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX77">
+      <Item class="Part" referent="RBX108">
         <Properties>
           <string name="Name">Wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -2495,7 +3580,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX78">
+      <Item class="Part" referent="RBX109">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -2530,7 +3615,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX79">
+      <Item class="Part" referent="RBX110">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -2565,7 +3650,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX80">
+      <Item class="Part" referent="RBX111">
         <Properties>
           <string name="Name">Wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -2600,7 +3685,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX81">
+      <Item class="Part" referent="RBX112">
         <Properties>
           <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
@@ -2635,7 +3720,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX82">
+      <Item class="Part" referent="RBX113">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -2670,7 +3755,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX83">
+      <Item class="Part" referent="RBX114">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -2705,7 +3790,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX84">
+      <Item class="Part" referent="RBX115">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2740,7 +3825,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX85">
+      <Item class="Part" referent="RBX116">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2775,7 +3860,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX86">
+      <Item class="Part" referent="RBX117">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2810,7 +3895,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX87">
+      <Item class="Part" referent="RBX118">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2845,7 +3930,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX88">
+      <Item class="Part" referent="RBX119">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2880,7 +3965,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX89">
+      <Item class="Part" referent="RBX120">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2915,7 +4000,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX90">
+      <Item class="Part" referent="RBX121">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -2950,7 +4035,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX91">
+      <Item class="Part" referent="RBX122">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -2985,7 +4070,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX92">
+      <Item class="Part" referent="RBX123">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -3020,7 +4105,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX93">
+      <Item class="Part" referent="RBX124">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -3055,7 +4140,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX94">
+      <Item class="Part" referent="RBX125">
         <Properties>
           <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
@@ -3090,7 +4175,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX95">
+      <Item class="Part" referent="RBX126">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -3125,7 +4210,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX96">
+      <Item class="Part" referent="RBX127">
         <Properties>
           <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
@@ -3160,7 +4245,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX97">
+      <Item class="Part" referent="RBX128">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3195,7 +4280,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX98">
+      <Item class="Part" referent="RBX129">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3230,7 +4315,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX99">
+      <Item class="Part" referent="RBX130">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3265,7 +4350,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX100">
+      <Item class="Part" referent="RBX131">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3300,7 +4385,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX101">
+      <Item class="Part" referent="RBX132">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3335,7 +4420,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX102">
+      <Item class="Part" referent="RBX133">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3370,7 +4455,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX103">
+      <Item class="Part" referent="RBX134">
         <Properties>
           <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
@@ -3405,7 +4490,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX104">
+      <Item class="Part" referent="RBX135">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -3440,7 +4525,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX105">
+      <Item class="Part" referent="RBX136">
         <Properties>
           <string name="Name">Carved leaf rail</string>
           <bool name="Anchored">true</bool>
@@ -3475,7 +4560,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX106">
+      <Item class="Part" referent="RBX137">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -3510,7 +4595,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX107">
+      <Item class="Part" referent="RBX138">
         <Properties>
           <string name="Name">Three-drawer dresser back</string>
           <bool name="Anchored">true</bool>
@@ -3545,7 +4630,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX108">
+      <Item class="Part" referent="RBX139">
         <Properties>
           <string name="Name">Dresser end panel</string>
           <bool name="Anchored">true</bool>
@@ -3580,7 +4665,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX109">
+      <Item class="Part" referent="RBX140">
         <Properties>
           <string name="Name">Dresser end panel</string>
           <bool name="Anchored">true</bool>
@@ -3615,7 +4700,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX110">
+      <Item class="Part" referent="RBX141">
         <Properties>
           <string name="Name">Marble dresser top</string>
           <bool name="Anchored">true</bool>
@@ -3650,7 +4735,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX111">
+      <Item class="Part" referent="RBX142">
         <Properties>
           <string name="Name">Sliding drawer front</string>
           <bool name="Anchored">true</bool>
@@ -3685,7 +4770,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX112">
+      <Item class="Part" referent="RBX143">
         <Properties>
           <string name="Name">Brass drawer pull</string>
           <bool name="Anchored">true</bool>
@@ -3720,7 +4805,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX113">
+      <Item class="Part" referent="RBX144">
         <Properties>
           <string name="Name">Sliding drawer front</string>
           <bool name="Anchored">true</bool>
@@ -3755,7 +4840,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX114">
+      <Item class="Part" referent="RBX145">
         <Properties>
           <string name="Name">Brass drawer pull</string>
           <bool name="Anchored">true</bool>
@@ -3790,7 +4875,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX115">
+      <Item class="Part" referent="RBX146">
         <Properties>
           <string name="Name">Sliding drawer front</string>
           <bool name="Anchored">true</bool>
@@ -3825,7 +4910,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX116">
+      <Item class="Part" referent="RBX147">
         <Properties>
           <string name="Name">Brass drawer pull</string>
           <bool name="Anchored">true</bool>
@@ -3860,7 +4945,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX117">
+      <Item class="Part" referent="RBX148">
         <Properties>
           <string name="Name">Fluted stone pillar</string>
           <bool name="Anchored">true</bool>
@@ -3895,7 +4980,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX118">
+      <Item class="Part" referent="RBX149">
         <Properties>
           <string name="Name">Pillar capital</string>
           <bool name="Anchored">true</bool>
@@ -3930,7 +5015,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX119">
+      <Item class="Part" referent="RBX150">
         <Properties>
           <string name="Name">Fluted stone pillar</string>
           <bool name="Anchored">true</bool>
@@ -3965,7 +5050,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX120">
+      <Item class="Part" referent="RBX151">
         <Properties>
           <string name="Name">Pillar capital</string>
           <bool name="Anchored">true</bool>
@@ -4000,7 +5085,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX121">
+      <Item class="Part" referent="RBX152">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4035,7 +5120,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX122">
+      <Item class="Part" referent="RBX153">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>14.47</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX154">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>13.940000000000001</Y>
+            <Z>22.0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX155">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4069,7 +5224,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX123">
+        <Item class="PointLight" referent="RBX156">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4084,11 +5239,11 @@
         </Item>
       </Item>
     </Item>
-    <Item class="Model" referent="RBX124">
+    <Item class="Model" referent="RBX157">
       <Properties>
         <string name="Name">PreviewEnclosedStair</string>
       </Properties>
-      <Item class="Part" referent="RBX125">
+      <Item class="Part" referent="RBX158">
         <Properties>
           <string name="Name">Stair foundation</string>
           <bool name="Anchored">true</bool>
@@ -4123,7 +5278,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX126">
+      <Item class="Part" referent="RBX159">
         <Properties>
           <string name="Name">Continuous wall handrail</string>
           <bool name="Anchored">true</bool>
@@ -4158,7 +5313,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX127">
+      <Item class="Part" referent="RBX160">
         <Properties>
           <string name="Name">Solid enclosed stair flank</string>
           <bool name="Anchored">true</bool>
@@ -4193,7 +5348,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX128">
+      <Item class="Part" referent="RBX161">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4228,7 +5383,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX129">
+      <Item class="Part" referent="RBX162">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4263,7 +5418,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX130">
+      <Item class="Part" referent="RBX163">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4298,7 +5453,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX131">
+      <Item class="Part" referent="RBX164">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4333,7 +5488,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX132">
+      <Item class="Part" referent="RBX165">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4368,7 +5523,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX133">
+      <Item class="Part" referent="RBX166">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4403,7 +5558,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX134">
+      <Item class="Part" referent="RBX167">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4438,7 +5593,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX135">
+      <Item class="Part" referent="RBX168">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4473,7 +5628,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX136">
+      <Item class="Part" referent="RBX169">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4508,7 +5663,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX137">
+      <Item class="Part" referent="RBX170">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4543,7 +5698,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX138">
+      <Item class="Part" referent="RBX171">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>10.77</Y>
+            <Z>49</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX172">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>10.24</Y>
+            <Z>49</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX173">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4577,7 +5802,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX139">
+        <Item class="PointLight" referent="RBX174">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4591,7 +5816,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX140">
+      <Item class="Part" referent="RBX175">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4626,7 +5851,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX141">
+      <Item class="Part" referent="RBX176">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>14.52</Y>
+            <Z>61</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX177">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>13.99</Y>
+            <Z>61</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX178">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4660,7 +5955,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX142">
+        <Item class="PointLight" referent="RBX179">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4674,7 +5969,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX143">
+      <Item class="Part" referent="RBX180">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4709,7 +6004,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX144">
+      <Item class="Part" referent="RBX181">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>19.770000000000003</Y>
+            <Z>73</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX182">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>19.240000000000002</Y>
+            <Z>73</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX183">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4743,7 +6108,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX145">
+        <Item class="PointLight" referent="RBX184">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4757,7 +6122,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX146">
+      <Item class="Part" referent="RBX185">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4792,7 +6157,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX147">
+      <Item class="Part" referent="RBX186">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>22.770000000000003</Y>
+            <Z>84</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX187">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-5.2</X>
+            <Y>22.240000000000002</Y>
+            <Z>84</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX188">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4826,7 +6261,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX148">
+        <Item class="PointLight" referent="RBX189">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4840,7 +6275,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX149">
+      <Item class="Part" referent="RBX190">
         <Properties>
           <string name="Name">Continuous wall handrail</string>
           <bool name="Anchored">true</bool>
@@ -4875,7 +6310,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX150">
+      <Item class="Part" referent="RBX191">
         <Properties>
           <string name="Name">Solid enclosed stair flank</string>
           <bool name="Anchored">true</bool>
@@ -4910,7 +6345,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX151">
+      <Item class="Part" referent="RBX192">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4945,7 +6380,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX152">
+      <Item class="Part" referent="RBX193">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4980,7 +6415,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX153">
+      <Item class="Part" referent="RBX194">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -5015,7 +6450,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX154">
+      <Item class="Part" referent="RBX195">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -5050,7 +6485,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX155">
+      <Item class="Part" referent="RBX196">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5085,7 +6520,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX156">
+      <Item class="Part" referent="RBX197">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5120,7 +6555,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX157">
+      <Item class="Part" referent="RBX198">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5155,7 +6590,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX158">
+      <Item class="Part" referent="RBX199">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5190,7 +6625,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX159">
+      <Item class="Part" referent="RBX200">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5225,7 +6660,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX160">
+      <Item class="Part" referent="RBX201">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5260,7 +6695,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX161">
+      <Item class="Part" referent="RBX202">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>10.77</Y>
+            <Z>49</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX203">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>10.24</Y>
+            <Z>49</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX204">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5294,7 +6799,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX162">
+        <Item class="PointLight" referent="RBX205">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5308,7 +6813,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX163">
+      <Item class="Part" referent="RBX206">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5343,7 +6848,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX164">
+      <Item class="Part" referent="RBX207">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>14.52</Y>
+            <Z>61</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX208">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>13.99</Y>
+            <Z>61</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX209">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5377,7 +6952,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX165">
+        <Item class="PointLight" referent="RBX210">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5391,7 +6966,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX166">
+      <Item class="Part" referent="RBX211">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5426,7 +7001,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX167">
+      <Item class="Part" referent="RBX212">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>19.770000000000003</Y>
+            <Z>73</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX213">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>19.240000000000002</Y>
+            <Z>73</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX214">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5460,7 +7105,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX168">
+        <Item class="PointLight" referent="RBX215">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5474,7 +7119,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX169">
+      <Item class="Part" referent="RBX216">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5509,7 +7154,77 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX170">
+      <Item class="Part" referent="RBX217">
+        <Properties>
+          <string name="Name">Hammered brass lamp crown</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.607843137</R>
+            <G>0.450980392</G>
+            <B>0.254901961</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.26</X>
+            <Y>0.11</Y>
+            <Z>1.26</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>22.770000000000003</Y>
+            <Z>84</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX218">
+        <Properties>
+          <string name="Name">Smoked glass lamp shade</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">false</bool>
+          <Color3 name="Color">
+            <R>0.721568627</R>
+            <G>0.545098039</G>
+            <B>0.364705882</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>0.82</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>5.2</X>
+            <Y>22.240000000000002</Y>
+            <Z>84</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">272</token>
+          <float name="Transparency">0.66</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX219">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5543,7 +7258,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX171">
+        <Item class="PointLight" referent="RBX220">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5557,7 +7272,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX172">
+      <Item class="Part" referent="RBX221">
         <Properties>
           <string name="Name">Lower arch lintel</string>
           <bool name="Anchored">true</bool>
@@ -5592,7 +7307,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX173">
+      <Item class="Part" referent="RBX222">
         <Properties>
           <string name="Name">Solid wall below upper exit</string>
           <bool name="Anchored">true</bool>
@@ -5627,7 +7342,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX174">
+      <Item class="Part" referent="RBX223">
         <Properties>
           <string name="Name">Upper arch lintel</string>
           <bool name="Anchored">true</bool>
@@ -5662,7 +7377,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX175">
+      <Item class="Part" referent="RBX224">
         <Properties>
           <string name="Name">Lower stair landing</string>
           <bool name="Anchored">true</bool>
@@ -5697,7 +7412,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX176">
+      <Item class="Part" referent="RBX225">
         <Properties>
           <string name="Name">Upper stair landing</string>
           <bool name="Anchored">true</bool>
@@ -5732,7 +7447,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX177">
+      <Item class="Part" referent="RBX226">
         <Properties>
           <string name="Name">Lower enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5767,7 +7482,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX178">
+      <Item class="Part" referent="RBX227">
         <Properties>
           <string name="Name">Upper enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5802,7 +7517,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX179">
+      <Item class="Part" referent="RBX228">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -5837,7 +7552,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX180">
+      <Item class="Part" referent="RBX229">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5872,7 +7587,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX181">
+      <Item class="Part" referent="RBX230">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -5907,7 +7622,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX182">
+      <Item class="Part" referent="RBX231">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -5942,7 +7657,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX183">
+      <Item class="Part" referent="RBX232">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -5977,7 +7692,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX184">
+      <Item class="Part" referent="RBX233">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6012,7 +7727,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX185">
+      <Item class="Part" referent="RBX234">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6047,7 +7762,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX186">
+      <Item class="Part" referent="RBX235">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6082,7 +7797,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX187">
+      <Item class="Part" referent="RBX236">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6117,7 +7832,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX188">
+      <Item class="Part" referent="RBX237">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6152,7 +7867,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX189">
+      <Item class="Part" referent="RBX238">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6187,7 +7902,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX190">
+      <Item class="Part" referent="RBX239">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6222,7 +7937,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX191">
+      <Item class="Part" referent="RBX240">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6257,7 +7972,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX192">
+      <Item class="Part" referent="RBX241">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6292,7 +8007,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX193">
+      <Item class="Part" referent="RBX242">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6327,7 +8042,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX194">
+      <Item class="Part" referent="RBX243">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6362,7 +8077,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX195">
+      <Item class="Part" referent="RBX244">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6397,7 +8112,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX196">
+      <Item class="Part" referent="RBX245">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6432,7 +8147,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX197">
+      <Item class="Part" referent="RBX246">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6467,7 +8182,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX198">
+      <Item class="Part" referent="RBX247">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6502,7 +8217,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX199">
+      <Item class="Part" referent="RBX248">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6537,7 +8252,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX200">
+      <Item class="Part" referent="RBX249">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6572,7 +8287,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX201">
+      <Item class="Part" referent="RBX250">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6607,7 +8322,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX202">
+      <Item class="Part" referent="RBX251">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6642,7 +8357,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX203">
+      <Item class="Part" referent="RBX252">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6677,7 +8392,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX204">
+      <Item class="Part" referent="RBX253">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6712,7 +8427,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX205">
+      <Item class="Part" referent="RBX254">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6747,7 +8462,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX206">
+      <Item class="Part" referent="RBX255">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6782,7 +8497,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX207">
+      <Item class="Part" referent="RBX256">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6817,7 +8532,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX208">
+      <Item class="Part" referent="RBX257">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6852,7 +8567,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX209">
+      <Item class="Part" referent="RBX258">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6887,7 +8602,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX210">
+      <Item class="Part" referent="RBX259">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6922,7 +8637,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX211">
+      <Item class="Part" referent="RBX260">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6957,7 +8672,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX212">
+      <Item class="Part" referent="RBX261">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6992,7 +8707,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX213">
+      <Item class="Part" referent="RBX262">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7027,7 +8742,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX214">
+      <Item class="Part" referent="RBX263">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7062,7 +8777,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX215">
+      <Item class="Part" referent="RBX264">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7097,7 +8812,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX216">
+      <Item class="Part" referent="RBX265">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7132,7 +8847,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX217">
+      <Item class="Part" referent="RBX266">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7167,7 +8882,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX218">
+      <Item class="Part" referent="RBX267">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7202,7 +8917,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX219">
+      <Item class="Part" referent="RBX268">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7237,7 +8952,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX220">
+      <Item class="Part" referent="RBX269">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7272,7 +8987,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX221">
+      <Item class="Part" referent="RBX270">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7307,7 +9022,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX222">
+      <Item class="Part" referent="RBX271">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7342,7 +9057,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX223">
+      <Item class="Part" referent="RBX272">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7377,7 +9092,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX224">
+      <Item class="Part" referent="RBX273">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7412,7 +9127,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX225">
+      <Item class="Part" referent="RBX274">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7447,7 +9162,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX226">
+      <Item class="Part" referent="RBX275">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7482,7 +9197,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX227">
+      <Item class="Part" referent="RBX276">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7517,7 +9232,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX228">
+      <Item class="Part" referent="RBX277">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7552,7 +9267,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX229">
+      <Item class="Part" referent="RBX278">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7587,7 +9302,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX230">
+      <Item class="Part" referent="RBX279">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7622,7 +9337,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX231">
+      <Item class="Part" referent="RBX280">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7657,7 +9372,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX232">
+      <Item class="Part" referent="RBX281">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7692,7 +9407,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX233">
+      <Item class="Part" referent="RBX282">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7727,7 +9442,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX234">
+      <Item class="Part" referent="RBX283">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7762,7 +9477,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX235">
+      <Item class="Part" referent="RBX284">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7797,7 +9512,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX236">
+      <Item class="Part" referent="RBX285">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7832,7 +9547,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX237">
+      <Item class="Part" referent="RBX286">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7867,7 +9582,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX238">
+      <Item class="Part" referent="RBX287">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7902,7 +9617,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX239">
+      <Item class="Part" referent="RBX288">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7937,7 +9652,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX240">
+      <Item class="Part" referent="RBX289">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7972,7 +9687,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX241">
+      <Item class="Part" referent="RBX290">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8007,7 +9722,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX242">
+      <Item class="Part" referent="RBX291">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8042,7 +9757,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX243">
+      <Item class="Part" referent="RBX292">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8077,7 +9792,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX244">
+      <Item class="Part" referent="RBX293">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -8112,7 +9827,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX245">
+      <Item class="Part" referent="RBX294">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8147,7 +9862,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX246">
+      <Item class="Part" referent="RBX295">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8182,7 +9897,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX247">
+      <Item class="Part" referent="RBX296">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8217,7 +9932,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX248">
+      <Item class="Part" referent="RBX297">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8252,7 +9967,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX249">
+      <Item class="Part" referent="RBX298">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -8287,7 +10002,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX250">
+      <Item class="Part" referent="RBX299">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8322,7 +10037,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX251">
+      <Item class="Part" referent="RBX300">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8357,7 +10072,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX252">
+      <Item class="Part" referent="RBX301">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8392,7 +10107,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX253">
+      <Item class="Part" referent="RBX302">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8427,7 +10142,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX254">
+      <Item class="Part" referent="RBX303">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -8462,7 +10177,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX255">
+      <Item class="Part" referent="RBX304">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8497,7 +10212,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX256">
+      <Item class="Part" referent="RBX305">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8532,7 +10247,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX257">
+      <Item class="Part" referent="RBX306">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8567,7 +10282,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX258">
+      <Item class="Part" referent="RBX307">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8602,7 +10317,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX259">
+      <Item class="Part" referent="RBX308">
         <Properties>
           <string name="Name">Door 002 / upper landing</string>
           <bool name="Anchored">true</bool>
@@ -8637,7 +10352,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX260">
+      <Item class="Part" referent="RBX309">
         <Properties>
           <string name="Name">Stair wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -8672,7 +10387,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX261">
+      <Item class="Part" referent="RBX310">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8707,7 +10422,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX262">
+      <Item class="Part" referent="RBX311">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8742,7 +10457,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX263">
+      <Item class="Part" referent="RBX312">
         <Properties>
           <string name="Name">Stair wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -8777,7 +10492,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX264">
+      <Item class="Part" referent="RBX313">
         <Properties>
           <string name="Name">Stair wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -8812,7 +10527,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX265">
+      <Item class="Part" referent="RBX314">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8847,7 +10562,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX266">
+      <Item class="Part" referent="RBX315">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8882,7 +10597,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX267">
+      <Item class="Part" referent="RBX316">
         <Properties>
           <string name="Name">Stair wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -8918,7 +10633,7 @@
         </Properties>
       </Item>
     </Item>
-    <Item class="SpawnLocation" referent="RBX268">
+    <Item class="SpawnLocation" referent="RBX317">
       <Properties>
         <string name="Name">PreviewSpawn</string>
         <bool name="Anchored">true</bool>
@@ -8956,74 +10671,83 @@
       </Properties>
     </Item>
   </Item>
-  <Item class="Lighting" referent="RBX269">
+  <Item class="Lighting" referent="RBX318">
     <Properties>
       <string name="Name">Lighting</string>
       <float name="ClockTime">0</float>
-      <float name="Brightness">0.9</float>
+      <float name="Brightness">1.12</float>
       <Color3 name="Ambient">
-        <R>0.121568627</R>
-        <G>0.145098039</G>
-        <B>0.168627451</B>
+        <R>0.149019608</R>
+        <G>0.164705882</G>
+        <B>0.176470588</B>
       </Color3>
       <Color3 name="OutdoorAmbient">
-        <R>0.058823529</R>
-        <G>0.082352941</G>
-        <B>0.105882353</B>
+        <R>0.074509804</R>
+        <G>0.098039216</G>
+        <B>0.117647059</B>
       </Color3>
       <Color3 name="FogColor">
-        <R>0.074509804</R>
-        <G>0.105882353</G>
-        <B>0.129411765</B>
+        <R>0.078431373</R>
+        <G>0.101960784</G>
+        <B>0.125490196</B>
       </Color3>
       <float name="FogStart">19</float>
-      <float name="FogEnd">112</float>
+      <float name="FogEnd">120</float>
       <bool name="GlobalShadows">true</bool>
-      <float name="ExposureCompensation">0</float>
+      <float name="ExposureCompensation">0.06</float>
     </Properties>
-    <Item class="Atmosphere" referent="RBX270">
+    <Item class="Atmosphere" referent="RBX319">
       <Properties>
         <string name="Name">CorridorHaze</string>
-        <float name="Density">0.28</float>
-        <float name="Haze">1.8</float>
+        <float name="Density">0.22</float>
+        <float name="Haze">1.3</float>
         <Color3 name="Color">
-          <R>0.423529412</R>
-          <G>0.501960784</G>
+          <R>0.454901961</R>
+          <G>0.513725490</G>
           <B>0.537254902</B>
         </Color3>
         <Color3 name="Decay">
-          <R>0.133333333</R>
-          <G>0.094117647</G>
-          <B>0.105882353</B>
+          <R>0.168627451</R>
+          <G>0.129411765</G>
+          <B>0.121568627</B>
         </Color3>
       </Properties>
     </Item>
-    <Item class="ColorCorrectionEffect" referent="RBX271">
+    <Item class="ColorCorrectionEffect" referent="RBX320">
       <Properties>
         <string name="Name">ColdShadowsWarmLights</string>
         <Color3 name="TintColor">
-          <R>0.882352941</R>
-          <G>0.913725490</G>
-          <B>0.929411765</B>
+          <R>0.913725490</R>
+          <G>0.921568627</G>
+          <B>0.905882353</B>
         </Color3>
-        <float name="Contrast">0.12</float>
-        <float name="Saturation">-0.24</float>
+        <float name="Contrast">0.17</float>
+        <float name="Saturation">-0.13</float>
       </Properties>
     </Item>
-    <Item class="BloomEffect" referent="RBX272">
+    <Item class="BloomEffect" referent="RBX321">
       <Properties>
         <string name="Name">WarmBloom</string>
-        <float name="Intensity">0.37</float>
-        <float name="Size">26</float>
-        <float name="Threshold">1.6</float>
+        <float name="Intensity">0.23</float>
+        <float name="Size">19</float>
+        <float name="Threshold">1.8</float>
+      </Properties>
+    </Item>
+    <Item class="DepthOfFieldEffect" referent="RBX322">
+      <Properties>
+        <string name="Name">HotelDepth</string>
+        <float name="FarIntensity">0.16</float>
+        <float name="NearIntensity">0.03</float>
+        <float name="FocusDistance">24</float>
+        <float name="InFocusRadius">17</float>
       </Properties>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="RBX273">
+  <Item class="ServerScriptService" referent="RBX323">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="RBX274">
+    <Item class="Script" referent="RBX324">
       <Properties>
         <string name="Name">NocturneServer</string>
         <ProtectedString name="Source">-- NOCTURNE / a self-contained, original, 100-door horror game.
@@ -9083,6 +10807,12 @@ local SLOTS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}
 local PRICES = {FLASHLIGHT = 25, PILL = 12, CRUCIFIX = 60, BANDAGE = 10, MEDKIT = 32}
 local VALUE = {COIN = 1, NOTE = 10, GOLD = 60}
 local HEAL = {BANDAGE = 25, MEDKIT = 65}
+-- Interactions stay reproducible for a seed, but a spider should be a surprise,
+-- not something that happens in every few rooms. A hit also has a per-player
+-- room cooldown so two nearby cabinets cannot chain-jumpscare the same person.
+local DRAWER_SPIDER_CHANCE = 0.01
+local WARDROBE_SPIDER_CHANCE = 0.006
+local SPIDER_ROOM_COOLDOWN = 12
 
 local function emptyItems()
 	return {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
@@ -9158,6 +10888,14 @@ local function roomBlock(room, name, sx, sy, sz, x, relativeY, z, color, materia
 	return block(room.model, name, sx, sy, sz, x, room.entryY + relativeY, z, color, material)
 end
 
+local function roomDetail(room, name, sx, sy, sz, x, relativeY, z, color, material)
+	local detail = roomBlock(room, name, sx, sy, sz, x, relativeY, z, color, material)
+	detail.CanCollide = false
+	detail.CanQuery = false
+	detail.CastShadow = false
+	return detail
+end
+
 local function railBetween(parent, name, a, b, radius, color)
 	local midpoint = (a + b) / 2
 	local direction = b - a
@@ -9170,9 +10908,34 @@ end
 local function addLight(parent, position, room, brightness, color)
 	local fixture = newPart(parent, "Oxidised brass sconce", Vector3.new(1.2, 0.32, 1.2),
 		CFrame.new(position), C.brassDark, Enum.Material.Metal)
+	-- Glass, a narrow metal crown and a wall mount catch the warm pool of light.
+	-- These are non-colliding details; the fixture still uses ONE PointLight.
+	local crown = newPart(parent, "Hammered brass lamp crown", Vector3.new(0.12, 1.27, 1.27),
+		CFrame.new(position + Vector3.new(0, 0.18, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		C.brass, Enum.Material.Metal, 0, false)
+	crown.Shape = Enum.PartType.Cylinder
+	crown.CanQuery = false
+	local shade = newPart(parent, "Smoked glass lamp shade", Vector3.new(1.1, 0.82, 1.1),
+		CFrame.new(position + Vector3.new(0, -0.36, 0)), Color3.fromRGB(184, 139, 93),
+		Enum.Material.Glass, 0.66, false)
+	shade.Shape = Enum.PartType.Ball
+	shade.CastShadow = false
+	shade.CanQuery = false
+	if math.abs(position.X) &gt; W / 2 - 3 then
+		local side = position.X &lt; 0 and -1 or 1
+		local plate = newPart(parent, "Sconce wall escutcheon", Vector3.new(0.14, 1.92, 0.94),
+			CFrame.new(side * (W / 2 - 0.91), position.Y + 0.2, position.Z),
+			C.brassDark, Enum.Material.Metal, 0, false)
+		plate.CanQuery = false
+		local arm = newPart(parent, "Sconce forged arm", Vector3.new(1.6, 0.11, 0.12),
+			CFrame.new(side * (W / 2 - 1.7), position.Y + 0.12, position.Z),
+			C.brass, Enum.Material.Metal, 0, false)
+		arm.CanQuery = false
+	end
 	local bulb = newPart(parent, "Warm filament", Vector3.new(0.48, 0.42, 0.48),
 		CFrame.new(position + Vector3.new(0, -0.3, 0)), color or C.lamp, Enum.Material.Neon, 0, false)
 	bulb.Shape = Enum.PartType.Ball
+	bulb.CanQuery = false
 	local light = Instance.new("PointLight")
 	light.Color = color or C.lamp
 	light.Brightness = (brightness or 1.6) * (room.lightPower or 1)
@@ -9180,7 +10943,20 @@ local function addLight(parent, position, room, brightness, color)
 	-- One shadow-casting sconce per room keeps mobile lighting affordable.
 	light.Shadows = #room.lamps == 0
 	light.Parent = bulb
-	local lamp = {light = light, bulb = bulb, brightness = light.Brightness,
+	local dust = Instance.new("ParticleEmitter")
+	dust.Name = "Dust in the lamplight"
+	dust.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	dust.Color = ColorSequence.new(Color3.fromRGB(237, 205, 166))
+	dust.Transparency = NumberSequence.new(0.89, 1)
+	dust.Size = NumberSequence.new(0.11, 0.24)
+	dust.Rate = 0.17
+	dust.Lifetime = NumberRange.new(3.5, 5.2)
+	dust.Speed = NumberRange.new(0.08, 0.21)
+	dust.SpreadAngle = Vector2.new(85, 85)
+	dust.LightEmission = 0.1
+	dust.Enabled = not room.dark
+	dust.Parent = bulb
+	local lamp = {light = light, bulb = bulb, dust = dust, brightness = light.Brightness,
 		color = light.Color, normallyOn = not room.dark}
 	table.insert(room.lamps, lamp)
 	if room.dark then
@@ -9197,6 +10973,7 @@ local function setLamp(lamp, on, tint, intensity)
 	lamp.light.Enabled = on
 	lamp.light.Color = tint or lamp.color
 	lamp.light.Brightness = lamp.brightness * (intensity or 1)
+	lamp.dust.Enabled = on
 	lamp.bulb.Material = on and Enum.Material.Neon or Enum.Material.Glass
 	lamp.bulb.Color = on and (tint or lamp.color) or Color3.fromRGB(37, 42, 44)
 	lamp.bulb.Transparency = on and 0 or 0.32
@@ -9344,8 +11121,16 @@ end
 local function syncInventory(player)
 	local info = state.players[player]
 	if not info then return end
+	-- Keep selection on an actually owned item. When the last item is used up,
+	-- the hotbar disappears; obtaining a new one selects it automatically.
+	if info.items[SLOTS[info.selected]] == 0 then
+		for index, id in ipairs(SLOTS) do
+			if info.items[id] &gt; 0 then info.selected = index; break end
+		end
+	end
+	if info.selected ~= 1 or info.items.FLASHLIGHT == 0 then info.torchOn = false end
 	player:SetAttribute("HasFlashlight", info.items.FLASHLIGHT &gt; 0)
-	player:SetAttribute("TorchOn", info.torchOn and info.items.FLASHLIGHT &gt; 0)
+	player:SetAttribute("TorchOn", info.torchOn)
 	player:SetAttribute("TorchCharge", math.ceil(info.charge))
 	player:SetAttribute("Health", math.ceil(info.health))
 	player:SetAttribute("SelectedItem", SLOTS[info.selected])
@@ -9364,9 +11149,18 @@ local function award(player, kind, amount)
 		local field = ({COIN = "coins", NOTE = "notes", GOLD = "gold"})[kind]
 		info[field] = info[field] + amount
 	elseif info.items[kind] ~= nil then
-		if kind == "FLASHLIGHT" and info.items.FLASHLIGHT &gt; 0 then return false end
-		info.items[kind] = info.items[kind] + amount
+		-- One per TYPE, not one item in total. A refused drawer stays available
+		-- to this player after the held copy is consumed, lost or discharged.
+		if amount ~= 1 or info.items[kind] &gt; 0 then return false end
+		local selectedID = SLOTS[info.selected]
+		local selectedWasEmpty = info.items[selectedID] == 0
+		info.items[kind] = 1
 		if kind == "FLASHLIGHT" then info.charge = 100 end
+		if selectedWasEmpty then
+			for index, id in ipairs(SLOTS) do
+				if id == kind then info.selected = index; break end
+			end
+		end
 	else
 		return false
 	end
@@ -9427,6 +11221,13 @@ local function spiderJump(player, cf)
 	tweenPivot(spider, cf, cf * CFrame.new(0, 2.1, -2.5), 0.37, function()
 		task.delay(1.3, function() if spider.Parent then spider:Destroy() end end)
 	end)
+end
+
+local function maybeSpider(player, roomIndex, rolled, cf)
+	local info = state.players[player]
+	if not rolled or not info or roomIndex &lt; (info.nextSpiderRoom or 0) then return end
+	info.nextSpiderRoom = roomIndex + SPIDER_ROOM_COOLDOWN
+	spiderJump(player, cf)
 end
 
 -- The two leaves are real hinged models. An open wardrobe is only a usable
@@ -9508,7 +11309,8 @@ local function enterCloset(player, closet)
 		recordNoise(closet.front, 58)
 		if not closet.spiderChecked then
 			closet.spiderChecked = true
-			if closet.spiderRoll then spiderJump(player, closet.rootCF * CFrame.new(0, 1, -1.8)) end
+			maybeSpider(player, closet.roomIndex, closet.spiderRoll,
+				closet.rootCF * CFrame.new(0, 1, -1.8))
 		end
 		return
 	end
@@ -9606,12 +11408,13 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	closePrompt.Parent = handles[1]
 	local closet = {
 		model = model, barrier = barrier, leaves = leaves, prompt = prompt, closePrompt = closePrompt,
-		front = (cf * CFrame.new(0, 4, -1.6)).Position,
+		roomIndex = room.index, front = (cf * CFrame.new(0, 4, -1.6)).Position,
 		rootCF = cf * CFrame.new(0, 3, 0.1),
 		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
 		exitCF = cf * CFrame.new(0, 3, -3.45),
 		epoch = session,
-		spiderRoll = Random.new(state.seed + room.index * 197 + (serial == "A" and 13 or 71)):NextNumber() &lt; 0.08,
+		spiderRoll = Random.new(state.seed + room.index * 197
+			+ (serial == "A" and 13 or 71)):NextNumber() &lt; WARDROBE_SPIDER_CHANCE,
 		occupant = nil, open = false,
 	}
 	prompt.Triggered:Connect(function(player) enterCloset(player, closet) end)
@@ -9693,15 +11496,17 @@ end
 -- Drawer contents are seeded once on the server, but each teammate can take a
 -- given cache once. The props move WITH the real drawer and are never client gifts.
 local function rollLoot(rng)
+	-- Over half the drawers are empty. Cash is more common than equipment;
+	-- the latter drops in only 13.5% of unlocked, non-key drawers.
 	local roll = rng:NextNumber()
-	if roll &lt; 0.24 then return "COIN", rng:NextInteger(2, 6) end
-	if roll &lt; 0.42 then return "NOTE", rng:NextInteger(1, 2) end
-	if roll &lt; 0.45 then return "GOLD", 1 end
-	if roll &lt; 0.48 then return "FLASHLIGHT", 1 end -- genuinely rare
-	if roll &lt; 0.59 then return "PILL", 1 end
-	if roll &lt; 0.64 then return "CRUCIFIX", 1 end
-	if roll &lt; 0.76 then return "BANDAGE", 1 end
-	if roll &lt; 0.80 then return "MEDKIT", 1 end
+	if roll &lt; 0.19 then return "COIN", rng:NextInteger(2, 6) end
+	if roll &lt; 0.33 then return "NOTE", rng:NextInteger(1, 2) end
+	if roll &lt; 0.34 then return "GOLD", 1 end
+	if roll &lt; 0.352 then return "FLASHLIGHT", 1 end
+	if roll &lt; 0.397 then return "PILL", 1 end
+	if roll &lt; 0.415 then return "CRUCIFIX", 1 end
+	if roll &lt; 0.46 then return "BANDAGE", 1 end
+	if roll &lt; 0.475 then return "MEDKIT", 1 end
 	return nil, 0
 end
 
@@ -9890,7 +11695,7 @@ local function makeDresser(room, rng)
 				recordNoise(root.Position, 29)
 			end)
 		end
-		local spiderRoll = rng:NextNumber() &lt; 0.075
+		local spiderRoll = rng:NextNumber() &lt; DRAWER_SPIDER_CHANCE
 		local opened = false
 		openPrompt.Triggered:Connect(function(player)
 			if opened or room.epoch ~= session or not openPrompt.Enabled then return end
@@ -9900,7 +11705,7 @@ local function makeDresser(room, rng)
 			opened = true
 			openPrompt.Enabled = false
 			recordNoise(handle.Position, 65)
-			if spiderRoll then spiderJump(player, pivot * CFrame.new(0, 0.5, -1.4)) end
+			maybeSpider(player, room.index, spiderRoll, pivot * CFrame.new(0, 0.5, -1.4))
 			tweenPivot(drawer, pivot, pivot * CFrame.new(0, 0, -1.25), 0.5, function()
 				if room.epoch ~= session then return end
 				if lootPrompt and loot and loot.Parent then lootPrompt.Enabled = true end
@@ -9977,8 +11782,7 @@ local function makeShop(room)
 			local info = state.players[player]
 			if room.epoch ~= session or not root or not info or state.hidden[player]
 				or state.opened &lt; 51 or (root.Position - plaque.Position).Magnitude &gt; 10
-				or (id == "FLASHLIGHT" and info.items.FLASHLIGHT &gt; 0)
-				or info.items[id] &gt;= 9 then return end
+				or info.items[id] &gt; 0 then return end -- no charge for a duplicate
 			if not pay(info, PRICES[id]) then return end
 			award(player, id, 1)
 		end)
@@ -9992,8 +11796,14 @@ local function makePainting(room, side, z, accent)
 		C.brassDark, Enum.Material.Metal)
 	roomBlock(room, "Oil painting", 0.28, 4.45, 4.65, x - side * 0.15, 8.4, z,
 		accent, Enum.Material.SmoothPlastic)
-	roomBlock(room, "Painting horizon", 0.29, 0.18, 3.6, x - side * 0.3, 7.3, z,
+	roomDetail(room, "Painted distant ridge", 0.08, 0.62, 3.9,
+		x - side * 0.32, 7.65, z - 0.05, Color3.fromRGB(33, 44, 50), Enum.Material.SmoothPlastic)
+	roomDetail(room, "Painting horizon", 0.08, 0.18, 3.6, x - side * 0.36, 7.3, z,
 		C.woodDark, Enum.Material.SmoothPlastic)
+	local moon = roomDetail(room, "Distant moon in oil", 0.14, 0.72, 0.72,
+		x - side * 0.35, 9.27, z + 1.05, Color3.fromRGB(171, 168, 146),
+		Enum.Material.SmoothPlastic)
+	moon.Shape = Enum.PartType.Ball
 end
 
 local function furnish(room, rng)
@@ -10213,41 +12023,41 @@ end
 
 local function configureLighting()
 	Lighting.ClockTime = 0
-	Lighting.Brightness = 0.9
-	-- A blacked-out room is gloomy, not unrenderable. Physical low-level guide
-	-- lamps below illuminate the floor even with the hand torch switched off.
-	Lighting.Ambient = Color3.fromRGB(31, 37, 43)
-	Lighting.OutdoorAmbient = Color3.fromRGB(15, 21, 27)
-	Lighting.FogColor = Color3.fromRGB(19, 27, 33)
+	Lighting.Brightness = 1.12
+	-- Preserve the readable blackout floor; increase material contrast instead
+	-- of making the whole corridor darker or obscuring it with grey fog.
+	Lighting.Ambient = Color3.fromRGB(38, 42, 45)
+	Lighting.OutdoorAmbient = Color3.fromRGB(19, 25, 30)
+	Lighting.FogColor = Color3.fromRGB(20, 26, 32)
 	Lighting.FogStart = 19
-	Lighting.FogEnd = 112
+	Lighting.FogEnd = 120
 	Lighting.GlobalShadows = true
-	Lighting.EnvironmentDiffuseScale = 0.4
-	Lighting.EnvironmentSpecularScale = 0.25
-	Lighting.ExposureCompensation = 0
+	Lighting.EnvironmentDiffuseScale = 0.48
+	Lighting.EnvironmentSpecularScale = 0.29
+	Lighting.ExposureCompensation = 0.06
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Name = "CorridorHaze"
-	atmosphere.Density = 0.28
-	atmosphere.Haze = 1.8
-	atmosphere.Color = Color3.fromRGB(108, 128, 137)
-	atmosphere.Decay = Color3.fromRGB(34, 24, 27)
+	atmosphere.Density = 0.22
+	atmosphere.Haze = 1.3
+	atmosphere.Color = Color3.fromRGB(116, 131, 137)
+	atmosphere.Decay = Color3.fromRGB(43, 33, 31)
 	atmosphere.Parent = Lighting
 	local grading = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
 	grading.Name = "ColdShadowsWarmLights"
-	grading.TintColor = Color3.fromRGB(225, 233, 237)
-	grading.Contrast = 0.12
-	grading.Saturation = -0.24
+	grading.TintColor = Color3.fromRGB(233, 235, 231)
+	grading.Contrast = 0.17
+	grading.Saturation = -0.13
 	grading.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.37
-	bloom.Size = 26
-	bloom.Threshold = 1.6
+	bloom.Intensity = 0.23
+	bloom.Size = 19
+	bloom.Threshold = 1.8
 	bloom.Parent = Lighting
 	local dof = Lighting:FindFirstChildOfClass("DepthOfFieldEffect") or Instance.new("DepthOfFieldEffect")
-	dof.FarIntensity = 0.2
-	dof.NearIntensity = 0.04
-	dof.FocusDistance = 22
-	dof.InFocusRadius = 18
+	dof.FarIntensity = 0.16
+	dof.NearIntensity = 0.03
+	dof.FocusDistance = 24
+	dof.InFocusRadius = 17
 	dof.Parent = Lighting
 	SoundService.AmbientReverb = Enum.ReverbType.Hallway
 end
@@ -10420,6 +12230,18 @@ local function flatRoom(room, rng)
 		C.wood, Enum.Material.WoodPlanks)
 	roomBlock(room, "Continuous interior ceiling", W, 0.9, L, 0, H + 0.45, z + L / 2,
 		C.woodDark, Enum.Material.Wood)
+	-- Fine inlaid planks read under the sconces, without raised edges that
+	-- could change the height of the real walkable floor or block a raycast.
+	for _, x in ipairs({-12.8, -10.4, -8.0, 8.0, 10.4, 12.8}) do
+		roomDetail(room, "Inlaid floorboard joint", 0.035, 0.012, L - 1.6,
+			x, 0.009, z + L / 2, C.woodDark, Enum.Material.Wood)
+	end
+	for _, dz in ipairs({6, 14, 30, 38}) do
+		for _, side in ipairs({-1, 1}) do
+			roomDetail(room, "Transverse parquet joint", 5.6, 0.012, 0.035,
+				side * 10.4, 0.009, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+	end
 	for _, side in ipairs({-1, 1}) do
 		roomBlock(room, "Load-bearing corridor wall", 0.8, H, L, side * (W / 2 - 0.4),
 			H / 2, z + L / 2, wallColor, Enum.Material.Concrete)
@@ -10438,6 +12260,11 @@ local function flatRoom(room, rng)
 				side * (W / 2 - 0.84), 7.65, z + dz, color, Enum.Material.Concrete)
 			roomBlock(room, "Gilt wall moulding", 0.17, 0.13, 7.2,
 				side * (W / 2 - 0.89), 10.75, z + dz, style.trim, Enum.Material.Metal)
+			for _, endZ in ipairs({-3.25, 3.25}) do
+				roomDetail(room, "Engraved panel edge", 0.075, 5.7, 0.065,
+					side * (W / 2 - 1), 7.65, z + dz + endZ,
+					style.trim, Enum.Material.Metal)
+			end
 		end
 		for _, dz in ipairs({12, 32}) do
 			addLight(model, Vector3.new(side * (W / 2 - 2.5), y + 11.5,
@@ -10449,6 +12276,10 @@ local function flatRoom(room, rng)
 		roomBlock(room, "Joined ceiling joist", W - 1.2, 0.36, 0.4,
 			0, H - 0.12, z + dz, C.brassDark, Enum.Material.Metal)
 	end
+	local rosette = roomDetail(room, "Pressed metal ceiling rosette", 0.12, 2.7, 2.7,
+		0, H - 0.42, z + L / 2, style.trim, Enum.Material.Metal)
+	rosette.Shape = Enum.PartType.Cylinder
+	rosette.CFrame = rosette.CFrame * CFrame.Angles(0, 0, math.pi / 2)
 	if room.kind == "TURN" then
 		local side = Layout.TurnSide(room.index, state.seed)
 		local stops = {{0, 3}, {side * 8, 17}, {-side * 8, 28}, {0, 41}}
@@ -11941,6 +13772,7 @@ local function resetWorld()
 		info.coins, info.notes, info.gold = 0, 0, 0
 		info.charge, info.health, info.selected = 0, 100, 1
 		info.torchOn, info.pillUntil, info.closetCooldown = false, 0, 0
+		info.nextSpiderRoom = 0
 		syncInventory(player)
 	end
 	local previousSeed = state.seed
@@ -11950,14 +13782,14 @@ local function resetWorld()
 	end
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
-	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v8")
-	state.world:SetAttribute("GenerationBuild", "LootShopThreats-v8")
+	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v9")
+	state.world:SetAttribute("GenerationBuild", "SparseLootCompactHUD-v9")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v8] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v9] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -11999,6 +13831,7 @@ local function registerPlayer(player)
 		stamina = 100, sprinting = false, crouching = false, torchOn = false,
 		items = emptyItems(), coins = 0, notes = 0, gold = 0,
 		charge = 0, health = 100, selected = 1, pillUntil = 0, closetCooldown = 0,
+		nextSpiderRoom = 0,
 	}
 	player:SetAttribute("Stamina", 100)
 	syncInventory(player)
@@ -12072,7 +13905,8 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 	end
 	if action == "Select" then
 		if typeof(argument) == "number" and argument == math.floor(argument)
-			and argument &gt;= 1 and argument &lt;= #SLOTS then
+			and argument &gt;= 1 and argument &lt;= #SLOTS
+			and info.items[SLOTS[argument]] &gt; 0 then
 			info.selected = argument
 			if argument ~= 1 then info.torchOn = false end
 			syncInventory(player)
@@ -12267,13 +14101,13 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v8] 100 enclosed doors, loot, apothecary, native hand and four physical threats.")
+print("[NOCTURNE v9] 100 enclosed doors, rare loot, compact HUD and four physical threats.")
 </ProtectedString>
         <bool name="Disabled">false</bool>
       </Properties>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="RBX275">
+  <Item class="StarterPlayer" referent="RBX325">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <token name="CameraMode">1</token>
@@ -12281,11 +14115,11 @@ print("[NOCTURNE v8] 100 enclosed doors, loot, apothecary, native hand and four 
       <float name="CameraMaxZoomDistance">0.5</float>
       <bool name="EnableMouseLockOption">false</bool>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="RBX276">
+    <Item class="StarterPlayerScripts" referent="RBX326">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="RBX277">
+      <Item class="LocalScript" referent="RBX327">
         <Properties>
           <string name="Name">NocturneClient</string>
           <ProtectedString name="Source">-- NOCTURNE / HUD, hiding treatment, light and close-up scares.
@@ -12317,6 +14151,7 @@ local SLOT_COLORS = {GOLD, Color3.fromRGB(151, 191, 165), PALE,
 	Color3.fromRGB(221, 179, 154), Color3.fromRGB(184, 203, 213)}
 local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
 local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
+local hidden, dead, finished = false, false, false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 local function hideRobloxBackpack()
 	pcall(function()
@@ -12400,77 +14235,99 @@ local function edge(name, size, pos, rotation)
 	gradient.Parent = f
 end
 edge("Top vignette", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0), 90)
-edge("Bottom vignette", UDim2.fromScale(1, 0.18), UDim2.fromScale(0, 0.82), 270)
+edge("Bottom vignette", UDim2.fromScale(1, 0.09), UDim2.fromScale(0, 0.91), 270)
 edge("Left vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0, 0), 0)
 edge("Right vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0.91, 0), 180)
 local staminaTrack = frame(ui, "Stamina track", UDim2.fromOffset(108, 2),
-	UDim2.new(0, 18, 1, -27), PALE, 0.79)
+	isTouch and UDim2.fromOffset(16, 99) or UDim2.new(0, 18, 1, -27), PALE, 0.79)
 staminaTrack.ZIndex = 4
 local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1),
 	UDim2.fromScale(0, 0), PALE, 0)
 staminaFill.ZIndex = 5
 local healthTrack = frame(ui, "Health track", UDim2.fromOffset(108, 4),
-	UDim2.new(0, 18, 1, -43), RED, 0.76)
+	isTouch and UDim2.fromOffset(16, 84) or UDim2.new(0, 18, 1, -43), RED, 0.76)
 healthTrack.ZIndex = 4
 local healthFill = frame(healthTrack, "Health", UDim2.fromScale(1, 1),
 	UDim2.fromScale(0, 0), RED, 0)
 healthFill.ZIndex = 5
 
--- Five handmade slots sit where Roblox's default Backpack would be. This is
--- not the built-in inventory in disguise: server snapshots own every count.
-local equipment = frame(ui, "Equipment bar", UDim2.new(0.92, 0, 0, 90),
-	UDim2.new(0.5, 0, 1, -9), Color3.fromRGB(17, 20, 23), 0.16)
+-- A tiny contextual hotbar replaces the full-width Roblox Backpack. Empty
+-- slots are not drawn: it first appears after taking an ACTUAL usable item.
+local SLOT_SIZE = isTouch and 44 or 42 -- keep mobile hit targets finger-sized
+local SLOT_HEIGHT = isTouch and 49 or 47
+local SLOT_GAP = 4
+local BAR_PADDING = 5
+local equipment = frame(ui, "Equipment bar", UDim2.fromOffset(0, SLOT_HEIGHT + BAR_PADDING * 2),
+	UDim2.new(0.5, 0, 1, -10), Color3.fromRGB(17, 20, 23), 0.24)
 equipment.AnchorPoint = Vector2.new(0.5, 1)
 equipment.ZIndex = 6
+equipment.Visible = false
 local barCorner = Instance.new("UICorner")
-barCorner.CornerRadius = UDim.new(0, 10)
+barCorner.CornerRadius = UDim.new(0, 7)
 barCorner.Parent = equipment
 local barEdge = Instance.new("UIStroke")
 barEdge.Color = GOLD
-barEdge.Transparency = 0.48
+barEdge.Transparency = 0.58
 barEdge.Thickness = 1
 barEdge.Parent = equipment
 local inventorySlots = {}
 local selectSlot -- bound below, after the server-owned torch control
+local useButton -- created after the other mobile controls
 for index, id in ipairs(SLOT_IDS) do
-	local tile = button(equipment, "Slot " .. id, "", UDim2.new(0.177, 0, 0, 74),
-		UDim2.new(0.013 + (index - 1) * 0.201, 0, 0, 8))
+	local tile = button(equipment, "Slot " .. id, "", UDim2.fromOffset(SLOT_SIZE, SLOT_HEIGHT),
+		UDim2.fromOffset(BAR_PADDING, BAR_PADDING))
 	tile.ZIndex = 7
+	tile.Visible = false
 	tile.BackgroundColor3 = Color3.fromRGB(28, 32, 35)
-	local numeral = label(tile, "Number", tostring(index), UDim2.new(0, 18, 0, 16),
-		UDim2.fromOffset(5, 2), Enum.Font.GothamMedium, 11, GOLD)
-	numeral.ZIndex = 8
-	local glyph = label(tile, "Item symbol", SLOT_GLYPHS[index], UDim2.new(1, 0, 0, 39),
-		UDim2.fromOffset(0, 7), Enum.Font.Garamond, 34, SLOT_COLORS[index], Enum.TextXAlignment.Center)
+	local numeral = label(tile, "Number", tostring(index), UDim2.fromOffset(13, 12),
+		UDim2.fromOffset(3, 1), Enum.Font.GothamMedium, 9, GOLD)
+	numeral.ZIndex = 9
+	local glyph = label(tile, "Item symbol", SLOT_GLYPHS[index], UDim2.new(1, 0, 0, 29),
+		UDim2.fromOffset(0, 3), Enum.Font.Garamond, 26, SLOT_COLORS[index], Enum.TextXAlignment.Center)
 	glyph.ZIndex = 8
-	local title = label(tile, "Item name", SLOT_NAMES[index], UDim2.new(1, -4, 0, 15),
-		UDim2.new(0, 2, 1, -18), Enum.Font.GothamMedium, 10, PALE, Enum.TextXAlignment.Center)
+	local title = label(tile, "Item name", SLOT_NAMES[index], UDim2.new(1, -4, 0, 12),
+		UDim2.new(0, 2, 1, -15), Enum.Font.GothamMedium, 9, PALE, Enum.TextXAlignment.Center)
+	title.TextScaled = true
 	title.ZIndex = 8
-	local count = label(tile, "Count", "", UDim2.fromOffset(28, 16),
-		UDim2.new(1, -31, 0, 2), Enum.Font.GothamBold, 12, PALE, Enum.TextXAlignment.Right)
-	count.ZIndex = 8
-	local battery = frame(tile, "Charge", UDim2.new(1, -8, 0, 2),
+	local battery = frame(tile, "Charge", UDim2.fromOffset(SLOT_SIZE - 8, 2),
 		UDim2.new(0, 4, 1, -2), GOLD, 0.1)
 	battery.ZIndex = 9
 	battery.Visible = false
-	inventorySlots[index] = {tile = tile, count = count, glyph = glyph, charge = battery}
+	inventorySlots[index] = {tile = tile, charge = battery,
+		stroke = tile:FindFirstChildOfClass("UIStroke")}
 	tile.MouseButton1Click:Connect(function() if selectSlot then selectSlot(index, true) end end)
 end
-local wallet = label(ui, "Wallet", "◉ 0   ▤ 0   ▰ 0", UDim2.fromOffset(260, 23),
-	UDim2.new(0.5, 0, 1, -105), Enum.Font.GothamMedium, 15, GOLD, Enum.TextXAlignment.Center)
-wallet.AnchorPoint = Vector2.new(0.5, 1)
+local wallet = label(ui, "Wallet", "◉ 0  ▤ 0  ▰ 0", UDim2.fromOffset(174, 17),
+	isTouch and UDim2.fromOffset(16, 55) or UDim2.new(0, 18, 1, -53),
+	Enum.Font.GothamMedium, 11, GOLD)
+-- On phones, keep the wallet away from the centred hotbar and thumbstick.
+wallet.AnchorPoint = isTouch and Vector2.new(0, 0) or Vector2.new(0, 1)
 wallet.ZIndex = 7
+wallet.Visible = false
 local function redrawEquipment()
+	local owned = 0
 	for index, id in ipairs(SLOT_IDS) do
 		local slot = inventorySlots[index]
-		local amount = counts[id] or 0
-		slot.count.Text = amount &gt; 0 and ("×" .. amount) or ""
-		slot.glyph.TextTransparency = amount &gt; 0 and 0 or 0.73
+		local hasItem = (counts[id] or 0) &gt; 0
+		slot.tile.Visible = hasItem
+		if hasItem then
+			slot.tile.Position = UDim2.fromOffset(BAR_PADDING + owned * (SLOT_SIZE + SLOT_GAP), BAR_PADDING)
+			owned = owned + 1
+		end
 		slot.tile.BackgroundColor3 = selected == index and Color3.fromRGB(64, 52, 43)
 			or Color3.fromRGB(28, 32, 35)
-		slot.charge.Visible = id == "FLASHLIGHT" and amount &gt; 0
-		slot.charge.Size = UDim2.new(math.max(0, charge) / 100, -8, 0, 2)
+		slot.stroke.Transparency = selected == index and 0.05 or 0.7
+		slot.charge.Visible = id == "FLASHLIGHT" and hasItem
+		slot.charge.Size = UDim2.fromOffset(math.floor((SLOT_SIZE - 8) * math.clamp(charge, 0, 100) / 100), 2)
 		slot.charge.BackgroundColor3 = charge &lt; 20 and RED or GOLD
+	end
+	local width = owned * SLOT_SIZE + math.max(0, owned - 1) * SLOT_GAP + BAR_PADDING * 2
+	equipment.Size = UDim2.fromOffset(width, SLOT_HEIGHT + BAR_PADDING * 2)
+	equipment.Visible = owned &gt; 0
+	if useButton then
+		local id = SLOT_IDS[selected]
+		useButton.Visible = isTouch and not hidden and not dead and not finished
+			and (counts[id] or 0) &gt; 0 and id ~= "FLASHLIGHT" and id ~= "CRUCIFIX"
 	end
 end
 redrawEquipment()
@@ -12629,10 +14486,10 @@ local lightButton = button(ui, "Mobile torch", "☼", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -153))
 lightButton.ZIndex = 18
 lightButton.Visible = false -- there is no starting flashlight
-local useButton = button(ui, "Use selected item", "◆", UDim2.fromOffset(77, 53),
-	UDim2.new(1, -99, 1, -339))
+useButton = button(ui, "Use selected item", "◆", UDim2.fromOffset(65, 47),
+	UDim2.new(1, -93, 1, -339))
 useButton.ZIndex = 18
-useButton.Visible = isTouch
+redrawEquipment() -- starts hidden, including the touch-only item action
 local exitButton = button(ui, "Leave wardrobe", "↩", UDim2.fromOffset(105, 52),
 	UDim2.new(1, -124, 1, -222))
 exitButton.ZIndex = 18
@@ -12650,9 +14507,6 @@ local peekCF = nil
 local root = nil
 local humanoid = nil
 local head = nil
-local hidden = false
-local dead = false
-local finished = false
 local elapsed = 0
 local sprinting = false
 local crouching = false
@@ -12704,8 +14558,9 @@ local function toggleTorch()
 	remote:FireServer("Torch", not flashlightOn) -- server confirms via TorchOn attribute
 end
 selectSlot = function(index, tapped)
-	if hidden or dead or finished or not SLOT_IDS[index] then return end
-	if tapped and selected == index and (counts[SLOT_IDS[index]] or 0) &gt; 0 then
+	if hidden or dead or finished or not SLOT_IDS[index]
+		or (counts[SLOT_IDS[index]] or 0) == 0 then return end
+	if tapped and selected == index then
 		if index == 1 then toggleTorch()
 		elseif index ~= 3 then remote:FireServer("Use", SLOT_IDS[index]) end
 		return
@@ -12713,6 +14568,15 @@ selectSlot = function(index, tapped)
 	selected = index
 	remote:FireServer("Select", index)
 	redrawEquipment()
+end
+local function cycleOwnedSlot(direction)
+	for offset = 1, #SLOT_IDS do
+		local index = (selected - 1 + direction * offset) % #SLOT_IDS + 1
+		if (counts[SLOT_IDS[index]] or 0) &gt; 0 then
+			selectSlot(index)
+			return
+		end
+	end
 end
 local function useSelected()
 	if hidden or dead or finished then return end
@@ -12908,9 +14772,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonR1 then
 		useSelected()
 	elseif input.KeyCode == Enum.KeyCode.DPadLeft then
-		selectSlot((selected - 2) % #SLOT_IDS + 1)
+		cycleOwnedSlot(-1)
 	elseif input.KeyCode == Enum.KeyCode.DPadRight then
-		selectSlot(selected % #SLOT_IDS + 1)
+		cycleOwnedSlot(1)
 	else
 		for index, code in ipairs({Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three,
 			Enum.KeyCode.Four, Enum.KeyCode.Five}) do
@@ -12966,8 +14830,9 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		selected = a.selected or selected
 		charge = a.charge or 0
 		hasFlashlight = (counts.FLASHLIGHT or 0) &gt; 0
-		wallet.Text = string.format("◉ %d    ▤ %d    ▰ %d",
+		wallet.Text = string.format("◉ %d  ▤ %d  ▰ %d",
 			a.coins or 0, a.notes or 0, a.gold or 0)
+		wallet.Visible = (a.coins or 0) + (a.notes or 0) + (a.gold or 0) &gt; 0
 		healthFill.Size = UDim2.fromScale(math.clamp(a.health or 100, 0, 100) / 100, 1)
 		lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
 		redrawEquipment()
@@ -13002,7 +14867,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
-		useButton.Visible = not hidden and isTouch
+		redrawEquipment()
 		lightButton.Visible = not hidden and isTouch and hasFlashlight
 	elseif event == "Jumpscare" then
 		showScare(a, b)
@@ -13062,7 +14927,7 @@ local function onCharacter(character)
 	shelterColor.Saturation = 0
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
-	useButton.Visible = isTouch
+	redrawEquipment()
 	lightButton.Visible = isTouch and hasFlashlight
 	reticle.Visible = true
 	player:SetAttribute("NocturnePeek", false)
@@ -13159,7 +15024,7 @@ end)
           <bool name="Disabled">false</bool>
         </Properties>
       </Item>
-      <Item class="LocalScript" referent="RBX278">
+      <Item class="LocalScript" referent="RBX328">
         <Properties>
           <string name="Name">NocturnePerspective</string>
           <ProtectedString name="Source">-- Native Roblox first person, with the ACTUAL right arm and welded drawer key.
@@ -13287,18 +15152,18 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v8 / native first person] actual R6/R15 arm and welded key; no viewmodel clones")
+print("[NOCTURNE v9 / native first person] actual R6/R15 arm and welded key; no viewmodel clones")
 </ProtectedString>
           <bool name="Disabled">false</bool>
         </Properties>
       </Item>
     </Item>
   </Item>
-  <Item class="ReplicatedStorage" referent="RBX279">
+  <Item class="ReplicatedStorage" referent="RBX329">
     <Properties>
       <string name="Name">ReplicatedStorage</string>
     </Properties>
-    <Item class="ModuleScript" referent="RBX280">
+    <Item class="ModuleScript" referent="RBX330">
       <Properties>
         <string name="Name">NocturneLayout</string>
         <ProtectedString name="Source">-- Single source of truth for the hotel's physical route. The same module is
@@ -13393,7 +15258,7 @@ return Layout
       </Properties>
     </Item>
   </Item>
-  <Item class="SoundService" referent="RBX281">
+  <Item class="SoundService" referent="RBX331">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

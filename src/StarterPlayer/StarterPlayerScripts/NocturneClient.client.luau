@@ -27,6 +27,7 @@ local SLOT_COLORS = {GOLD, Color3.fromRGB(151, 191, 165), PALE,
 	Color3.fromRGB(221, 179, 154), Color3.fromRGB(184, 203, 213)}
 local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
 local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
+local hidden, dead, finished = false, false, false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 local function hideRobloxBackpack()
 	pcall(function()
@@ -110,77 +111,99 @@ local function edge(name, size, pos, rotation)
 	gradient.Parent = f
 end
 edge("Top vignette", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0), 90)
-edge("Bottom vignette", UDim2.fromScale(1, 0.18), UDim2.fromScale(0, 0.82), 270)
+edge("Bottom vignette", UDim2.fromScale(1, 0.09), UDim2.fromScale(0, 0.91), 270)
 edge("Left vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0, 0), 0)
 edge("Right vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0.91, 0), 180)
 local staminaTrack = frame(ui, "Stamina track", UDim2.fromOffset(108, 2),
-	UDim2.new(0, 18, 1, -27), PALE, 0.79)
+	isTouch and UDim2.fromOffset(16, 99) or UDim2.new(0, 18, 1, -27), PALE, 0.79)
 staminaTrack.ZIndex = 4
 local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1),
 	UDim2.fromScale(0, 0), PALE, 0)
 staminaFill.ZIndex = 5
 local healthTrack = frame(ui, "Health track", UDim2.fromOffset(108, 4),
-	UDim2.new(0, 18, 1, -43), RED, 0.76)
+	isTouch and UDim2.fromOffset(16, 84) or UDim2.new(0, 18, 1, -43), RED, 0.76)
 healthTrack.ZIndex = 4
 local healthFill = frame(healthTrack, "Health", UDim2.fromScale(1, 1),
 	UDim2.fromScale(0, 0), RED, 0)
 healthFill.ZIndex = 5
 
--- Five handmade slots sit where Roblox's default Backpack would be. This is
--- not the built-in inventory in disguise: server snapshots own every count.
-local equipment = frame(ui, "Equipment bar", UDim2.new(0.92, 0, 0, 90),
-	UDim2.new(0.5, 0, 1, -9), Color3.fromRGB(17, 20, 23), 0.16)
+-- A tiny contextual hotbar replaces the full-width Roblox Backpack. Empty
+-- slots are not drawn: it first appears after taking an ACTUAL usable item.
+local SLOT_SIZE = isTouch and 44 or 42 -- keep mobile hit targets finger-sized
+local SLOT_HEIGHT = isTouch and 49 or 47
+local SLOT_GAP = 4
+local BAR_PADDING = 5
+local equipment = frame(ui, "Equipment bar", UDim2.fromOffset(0, SLOT_HEIGHT + BAR_PADDING * 2),
+	UDim2.new(0.5, 0, 1, -10), Color3.fromRGB(17, 20, 23), 0.24)
 equipment.AnchorPoint = Vector2.new(0.5, 1)
 equipment.ZIndex = 6
+equipment.Visible = false
 local barCorner = Instance.new("UICorner")
-barCorner.CornerRadius = UDim.new(0, 10)
+barCorner.CornerRadius = UDim.new(0, 7)
 barCorner.Parent = equipment
 local barEdge = Instance.new("UIStroke")
 barEdge.Color = GOLD
-barEdge.Transparency = 0.48
+barEdge.Transparency = 0.58
 barEdge.Thickness = 1
 barEdge.Parent = equipment
 local inventorySlots = {}
 local selectSlot -- bound below, after the server-owned torch control
+local useButton -- created after the other mobile controls
 for index, id in ipairs(SLOT_IDS) do
-	local tile = button(equipment, "Slot " .. id, "", UDim2.new(0.177, 0, 0, 74),
-		UDim2.new(0.013 + (index - 1) * 0.201, 0, 0, 8))
+	local tile = button(equipment, "Slot " .. id, "", UDim2.fromOffset(SLOT_SIZE, SLOT_HEIGHT),
+		UDim2.fromOffset(BAR_PADDING, BAR_PADDING))
 	tile.ZIndex = 7
+	tile.Visible = false
 	tile.BackgroundColor3 = Color3.fromRGB(28, 32, 35)
-	local numeral = label(tile, "Number", tostring(index), UDim2.new(0, 18, 0, 16),
-		UDim2.fromOffset(5, 2), Enum.Font.GothamMedium, 11, GOLD)
-	numeral.ZIndex = 8
-	local glyph = label(tile, "Item symbol", SLOT_GLYPHS[index], UDim2.new(1, 0, 0, 39),
-		UDim2.fromOffset(0, 7), Enum.Font.Garamond, 34, SLOT_COLORS[index], Enum.TextXAlignment.Center)
+	local numeral = label(tile, "Number", tostring(index), UDim2.fromOffset(13, 12),
+		UDim2.fromOffset(3, 1), Enum.Font.GothamMedium, 9, GOLD)
+	numeral.ZIndex = 9
+	local glyph = label(tile, "Item symbol", SLOT_GLYPHS[index], UDim2.new(1, 0, 0, 29),
+		UDim2.fromOffset(0, 3), Enum.Font.Garamond, 26, SLOT_COLORS[index], Enum.TextXAlignment.Center)
 	glyph.ZIndex = 8
-	local title = label(tile, "Item name", SLOT_NAMES[index], UDim2.new(1, -4, 0, 15),
-		UDim2.new(0, 2, 1, -18), Enum.Font.GothamMedium, 10, PALE, Enum.TextXAlignment.Center)
+	local title = label(tile, "Item name", SLOT_NAMES[index], UDim2.new(1, -4, 0, 12),
+		UDim2.new(0, 2, 1, -15), Enum.Font.GothamMedium, 9, PALE, Enum.TextXAlignment.Center)
+	title.TextScaled = true
 	title.ZIndex = 8
-	local count = label(tile, "Count", "", UDim2.fromOffset(28, 16),
-		UDim2.new(1, -31, 0, 2), Enum.Font.GothamBold, 12, PALE, Enum.TextXAlignment.Right)
-	count.ZIndex = 8
-	local battery = frame(tile, "Charge", UDim2.new(1, -8, 0, 2),
+	local battery = frame(tile, "Charge", UDim2.fromOffset(SLOT_SIZE - 8, 2),
 		UDim2.new(0, 4, 1, -2), GOLD, 0.1)
 	battery.ZIndex = 9
 	battery.Visible = false
-	inventorySlots[index] = {tile = tile, count = count, glyph = glyph, charge = battery}
+	inventorySlots[index] = {tile = tile, charge = battery,
+		stroke = tile:FindFirstChildOfClass("UIStroke")}
 	tile.MouseButton1Click:Connect(function() if selectSlot then selectSlot(index, true) end end)
 end
-local wallet = label(ui, "Wallet", "◉ 0   ▤ 0   ▰ 0", UDim2.fromOffset(260, 23),
-	UDim2.new(0.5, 0, 1, -105), Enum.Font.GothamMedium, 15, GOLD, Enum.TextXAlignment.Center)
-wallet.AnchorPoint = Vector2.new(0.5, 1)
+local wallet = label(ui, "Wallet", "◉ 0  ▤ 0  ▰ 0", UDim2.fromOffset(174, 17),
+	isTouch and UDim2.fromOffset(16, 55) or UDim2.new(0, 18, 1, -53),
+	Enum.Font.GothamMedium, 11, GOLD)
+-- On phones, keep the wallet away from the centred hotbar and thumbstick.
+wallet.AnchorPoint = isTouch and Vector2.new(0, 0) or Vector2.new(0, 1)
 wallet.ZIndex = 7
+wallet.Visible = false
 local function redrawEquipment()
+	local owned = 0
 	for index, id in ipairs(SLOT_IDS) do
 		local slot = inventorySlots[index]
-		local amount = counts[id] or 0
-		slot.count.Text = amount > 0 and ("×" .. amount) or ""
-		slot.glyph.TextTransparency = amount > 0 and 0 or 0.73
+		local hasItem = (counts[id] or 0) > 0
+		slot.tile.Visible = hasItem
+		if hasItem then
+			slot.tile.Position = UDim2.fromOffset(BAR_PADDING + owned * (SLOT_SIZE + SLOT_GAP), BAR_PADDING)
+			owned = owned + 1
+		end
 		slot.tile.BackgroundColor3 = selected == index and Color3.fromRGB(64, 52, 43)
 			or Color3.fromRGB(28, 32, 35)
-		slot.charge.Visible = id == "FLASHLIGHT" and amount > 0
-		slot.charge.Size = UDim2.new(math.max(0, charge) / 100, -8, 0, 2)
+		slot.stroke.Transparency = selected == index and 0.05 or 0.7
+		slot.charge.Visible = id == "FLASHLIGHT" and hasItem
+		slot.charge.Size = UDim2.fromOffset(math.floor((SLOT_SIZE - 8) * math.clamp(charge, 0, 100) / 100), 2)
 		slot.charge.BackgroundColor3 = charge < 20 and RED or GOLD
+	end
+	local width = owned * SLOT_SIZE + math.max(0, owned - 1) * SLOT_GAP + BAR_PADDING * 2
+	equipment.Size = UDim2.fromOffset(width, SLOT_HEIGHT + BAR_PADDING * 2)
+	equipment.Visible = owned > 0
+	if useButton then
+		local id = SLOT_IDS[selected]
+		useButton.Visible = isTouch and not hidden and not dead and not finished
+			and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT" and id ~= "CRUCIFIX"
 	end
 end
 redrawEquipment()
@@ -339,10 +362,10 @@ local lightButton = button(ui, "Mobile torch", "☼", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -153))
 lightButton.ZIndex = 18
 lightButton.Visible = false -- there is no starting flashlight
-local useButton = button(ui, "Use selected item", "◆", UDim2.fromOffset(77, 53),
-	UDim2.new(1, -99, 1, -339))
+useButton = button(ui, "Use selected item", "◆", UDim2.fromOffset(65, 47),
+	UDim2.new(1, -93, 1, -339))
 useButton.ZIndex = 18
-useButton.Visible = isTouch
+redrawEquipment() -- starts hidden, including the touch-only item action
 local exitButton = button(ui, "Leave wardrobe", "↩", UDim2.fromOffset(105, 52),
 	UDim2.new(1, -124, 1, -222))
 exitButton.ZIndex = 18
@@ -360,9 +383,6 @@ local peekCF = nil
 local root = nil
 local humanoid = nil
 local head = nil
-local hidden = false
-local dead = false
-local finished = false
 local elapsed = 0
 local sprinting = false
 local crouching = false
@@ -414,8 +434,9 @@ local function toggleTorch()
 	remote:FireServer("Torch", not flashlightOn) -- server confirms via TorchOn attribute
 end
 selectSlot = function(index, tapped)
-	if hidden or dead or finished or not SLOT_IDS[index] then return end
-	if tapped and selected == index and (counts[SLOT_IDS[index]] or 0) > 0 then
+	if hidden or dead or finished or not SLOT_IDS[index]
+		or (counts[SLOT_IDS[index]] or 0) == 0 then return end
+	if tapped and selected == index then
 		if index == 1 then toggleTorch()
 		elseif index ~= 3 then remote:FireServer("Use", SLOT_IDS[index]) end
 		return
@@ -423,6 +444,15 @@ selectSlot = function(index, tapped)
 	selected = index
 	remote:FireServer("Select", index)
 	redrawEquipment()
+end
+local function cycleOwnedSlot(direction)
+	for offset = 1, #SLOT_IDS do
+		local index = (selected - 1 + direction * offset) % #SLOT_IDS + 1
+		if (counts[SLOT_IDS[index]] or 0) > 0 then
+			selectSlot(index)
+			return
+		end
+	end
 end
 local function useSelected()
 	if hidden or dead or finished then return end
@@ -618,9 +648,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonR1 then
 		useSelected()
 	elseif input.KeyCode == Enum.KeyCode.DPadLeft then
-		selectSlot((selected - 2) % #SLOT_IDS + 1)
+		cycleOwnedSlot(-1)
 	elseif input.KeyCode == Enum.KeyCode.DPadRight then
-		selectSlot(selected % #SLOT_IDS + 1)
+		cycleOwnedSlot(1)
 	else
 		for index, code in ipairs({Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three,
 			Enum.KeyCode.Four, Enum.KeyCode.Five}) do
@@ -676,8 +706,9 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		selected = a.selected or selected
 		charge = a.charge or 0
 		hasFlashlight = (counts.FLASHLIGHT or 0) > 0
-		wallet.Text = string.format("◉ %d    ▤ %d    ▰ %d",
+		wallet.Text = string.format("◉ %d  ▤ %d  ▰ %d",
 			a.coins or 0, a.notes or 0, a.gold or 0)
+		wallet.Visible = (a.coins or 0) + (a.notes or 0) + (a.gold or 0) > 0
 		healthFill.Size = UDim2.fromScale(math.clamp(a.health or 100, 0, 100) / 100, 1)
 		lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
 		redrawEquipment()
@@ -712,7 +743,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
-		useButton.Visible = not hidden and isTouch
+		redrawEquipment()
 		lightButton.Visible = not hidden and isTouch and hasFlashlight
 	elseif event == "Jumpscare" then
 		showScare(a, b)
@@ -772,7 +803,7 @@ local function onCharacter(character)
 	shelterColor.Saturation = 0
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
-	useButton.Visible = isTouch
+	redrawEquipment()
 	lightButton.Visible = isTouch and hasFlashlight
 	reticle.Visible = true
 	player:SetAttribute("NocturnePeek", false)

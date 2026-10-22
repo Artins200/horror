@@ -123,4 +123,4 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v8 / native first person] actual R6/R15 arm and welded key; no viewmodel clones")
+print("[NOCTURNE v9 / native first person] actual R6/R15 arm and welded key; no viewmodel clones")

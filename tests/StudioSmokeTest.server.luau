@@ -4,9 +4,9 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v8"
-	and world:GetAttribute("GenerationBuild") == "LootShopThreats-v8",
-	"Old place loaded: open Nocturne-v8.rbxl in a NEW Studio tab")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v9"
+	and world:GetAttribute("GenerationBuild") == "SparseLootCompactHUD-v9",
+	"Old place loaded: open Nocturne-v9.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -35,7 +35,7 @@ for index = 0, 1 do
 			COFFERED = "Deep coffered cross-vault"}
 		assert(not required[shape] or room:FindFirstChild(required[shape]),
 			"A random architecture label did not build a visible structure")
-		print("NOCTURNE v8 seed", world:GetAttribute("Seed"), "first room",
+		print("NOCTURNE v9 seed", world:GetAttribute("Seed"), "first room",
 			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
 	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
@@ -48,6 +48,12 @@ for index = 0, 1 do
 	end
 	if not Layout.IsStair(index) then
 		local floor = room:FindFirstChild("Continuous wooden subfloor")
+		local inlay = room:FindFirstChild("Inlaid floorboard joint")
+		local rosette = room:FindFirstChild("Pressed metal ceiling rosette")
+		local shade = room:FindFirstChild("Smoked glass lamp shade")
+		assert(inlay and rosette and shade and not inlay.CanCollide
+			and not rosette.CanCollide and not shade.CanCollide,
+			"v9 material detail is missing or blocks the player")
 		assert(floor and floor.Anchored and floor.CanCollide
 			and math.abs(floor.Position.Y + floor.Size.Y / 2 - Layout.EntranceY(index)) < 0.01,
 			"The playable room has no solid floor")
