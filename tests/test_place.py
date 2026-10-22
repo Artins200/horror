@@ -174,7 +174,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
         self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "SharedLootHeldItemsAudio-v10")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "InteractiveItems-v11")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -206,8 +206,8 @@ class PlaceTests(unittest.TestCase):
                          'local path = {farZ, nearZ, farZ, nearZ, farZ}',
                          'local function spiderJump(', 'ClosetLimit = 14',
                          'tryCrucifix = function(player, entity)',
-                         'damagePlayer(player, 36)', 'info.health < 100',
-                         'CONFIG.TorchDrain * step'):
+                         'damagePlayer(player, 36)', 'local health = math.min(info.health, humanoid.Health)',
+                         'if health >= 100 then', 'CONFIG.TorchDrain * step'):
             self.assertIn(fragment, self.server)
         self.assertIn('local SLOTS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}',
                       self.server)
@@ -233,11 +233,15 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('if event == "Inventory" then', self.client)
         self.assertIn('elseif event == "Spider"', self.client)
         self.assertIn('shelterBlur.Size = visualPressure * 13', self.client)
-        self.assertIn('remote:FireServer("Use", SLOT_IDS[selected])', self.client)
+        self.assertIn('remote:FireServer("Use", id)', self.client)
+        self.assertIn('remote:FireServer("Use", SLOT_IDS[index])', self.client)
+        self.assertIn('GetGuiObjectsAtPosition(point.X, point.Y)', self.client)
+        self.assertIn('local function raiseCrucifix(player, root)', self.server)
+        self.assertIn('remote:FireClient(player, "ItemDenied", id)', self.server)
         self.assertIn('humanoid.CameraOffset = Vector3.new', self.client)
         self.assertIn('remote:FireServer("Crouch", on)', self.client)
         self.assertNotIn('remote:FireServer("Torch", flashlightOn)', self.client)
-        self.assertIn('remote:FireServer("Torch", not flashlightOn)', self.client)
+        self.assertIn('remote:FireServer("Use", "FLASHLIGHT")', self.client)
         self.assertNotIn('"Whisper"', self.server + self.client)
         self.assertNotIn('elseif event == "Warning"', self.client)
         self.assertNotIn('remote:FireAllClients("Warning"', self.server)
@@ -323,7 +327,7 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v10.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v11.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
 
 

@@ -2544,11 +2544,40 @@ tryCrucifix = function(player, entity)
 		if state[key] and state[key].entity == entity then state[key].banished = true end
 	end
 	syncInventory(player)
+	remote:FireClient(player, "ItemUsed", "CRUCIFIX")
 	local pivot = entity:GetPivot()
 	tweenPivot(entity, pivot, pivot * CFrame.new(0, -11, 0), 0.75, function()
 		if entity.Parent then entity:Destroy() end
 	end)
 	return true
+end
+
+-- The equipped cross still saves its wearer on contact, but it can also be
+-- deliberately raised against a nearby creature. Solid hotel walls/closed
+-- doors block this short-range action; an empty corridor does not spend it.
+local function raiseCrucifix(player, root)
+	local origin = root.Position + Vector3.new(0, 1.5, 0)
+	local nearest, distance = nil, 20
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.RespectCanCollide = true
+	rayParams.FilterDescendantsInstances = {player.Character}
+	for _, key in ipairs({"rush", "blind", "moth", "echo"}) do
+		local threat = state[key]
+		local entity = threat and threat.entity
+		if entity and entity.Parent and entity.PrimaryPart and not threat.banished
+			and not entity:GetAttribute("Banished") then
+			local point = entity:GetPivot().Position
+			local range = (point - origin).Magnitude
+			if range <= distance then
+				rayParams.FilterDescendantsInstances = {player.Character, entity}
+				if not Workspace:Raycast(origin, point - origin, rayParams) then
+					nearest, distance = entity, range
+				end
+			end
+		end
+	end
+	return nearest ~= nil and tryCrucifix(player, nearest)
 end
 
 local function killPlayer(player, humanoid, kind, entity)
@@ -3292,13 +3321,13 @@ local function resetWorld()
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
 	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
-	state.world:SetAttribute("GenerationBuild", "SharedLootHeldItemsAudio-v10")
+	state.world:SetAttribute("GenerationBuild", "InteractiveItems-v11")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v10] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v11] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -3427,17 +3456,52 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 		end
 		return
 	elseif action == "Use" then
-		local id = SLOTS[info.selected]
-		local _, humanoid = playerRoot(player)
-		if typeof(argument) ~= "string" or argument ~= id or not humanoid
-			or state.hidden[player] or info.items[id] < 1 or player:GetAttribute("Finished") then return end
-		if id == "PILL" then
+		-- The item ID travels with the activation. Equipping and activating are
+		-- one server action: a freshly clicked slot works even if the preceding
+		-- Select/Inventory round trip has not arrived yet.
+		if typeof(argument) ~= "string" then return end
+		local slot
+		for index, id in ipairs(SLOTS) do
+			if argument == id then slot = index; break end
+		end
+		if not slot then return end
+		local root, humanoid = playerRoot(player)
+		if not humanoid or state.hidden[player] or player:GetAttribute("Finished") then return end
+		local id = SLOTS[slot]
+		if info.items[id] < 1 then
+			syncInventory(player) -- repair a stale client hotbar without creating an item
+			remote:FireClient(player, "ItemDenied", id)
+			return
+		end
+		local selectionChanged = info.selected ~= slot
+		info.selected = slot
+		if slot ~= 1 then info.torchOn = false end
+		if id == "FLASHLIGHT" then
+			if info.charge <= 0 then
+				if selectionChanged then syncInventory(player) end
+				remote:FireClient(player, "ItemDenied", id)
+				return
+			end
+			info.torchOn = not info.torchOn
+			syncInventory(player)
+			remote:FireClient(player, "ItemUsed", id)
+			return
+		elseif id == "CRUCIFIX" then
+			if raiseCrucifix(player, root) then return end
+			if selectionChanged then syncInventory(player) end
+			remote:FireClient(player, "ItemDenied", id)
+			return
+		elseif id == "PILL" then
 			info.pillUntil = state.clock + 8
-		elseif HEAL[id] and info.health < 100 then
-			info.health = math.min(100, math.min(info.health, humanoid.Health) + HEAL[id])
+		elseif HEAL[id] then
+			local health = math.min(info.health, humanoid.Health)
+			if health >= 100 then
+				if selectionChanged then syncInventory(player) end
+				remote:FireClient(player, "ItemDenied", id)
+				return -- healthy players keep the bandage/kit for a later injury
+			end
+			info.health = math.min(100, health + HEAL[id])
 			humanoid.Health = info.health
-		else
-			return -- cross is spent only on contact; torch has its own toggle
 		end
 		info.items[id] = info.items[id] - 1
 		syncInventory(player)
@@ -3616,4 +3680,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v10] shared prizes, real held items and echoed threats in 100 enclosed rooms.")
+print("[NOCTURNE v11] item activation, shared prizes and real hands in 100 enclosed rooms.")

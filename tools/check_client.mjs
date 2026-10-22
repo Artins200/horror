@@ -91,6 +91,7 @@ function methods:Clone()
 end
 function methods:PivotTo(cf) self.WorldPivot = cf end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
+function methods:GetGuiObjectsAtPosition() return self.guiAtMouse or {} end
 function methods:SetAttribute(name, value)
     self._attributes[name] = value
     if self._attributeSignals[name] then self._attributeSignals[name]:Fire() end
@@ -100,7 +101,9 @@ function methods:GetAttributeChangedSignal(name)
     self._attributeSignals[name] = self._attributeSignals[name] or signal()
     return self._attributeSignals[name]
 end
-function methods:IsA(class) return self._class == class or (class == "BasePart" and self._class == "Part") end
+function methods:IsA(class) return self._class == class
+    or (class == "BasePart" and self._class == "Part")
+    or (class == "GuiButton" and (self._class == "TextButton" or self._class == "ImageButton")) end
 function methods:Play()
     assert(self._class == "Sound" and self.SoundId:match("^rbxasset://sounds/"))
     self.IsPlaying = true
@@ -155,7 +158,10 @@ local uiService = Instance.new("UserInputService")
 uiService.TouchEnabled = false
 uiService.MouseEnabled = true
 if uiService.TouchEnabled then camera.ViewportSize = {X=380,Y=780} end
-function uiService:GetFocusedTextBox() return nil end
+function uiService:GetFocusedTextBox() return self.focusedTextBox end
+function uiService:GetMouseLocation() return Vector2.new(960, 540) end
+local guiService = Instance.new("GuiService")
+guiService.MenuIsOpen = false
 local tweenService = Instance.new("TweenService")
 function tweenService:Create(target, _, props)
     return {Play=function()
@@ -168,8 +174,9 @@ local starterGui = Instance.new("StarterGui")
 starterGui.disabled = {}
 function starterGui:SetCoreGuiEnabled(which, enabled) self.disabled[which] = not enabled end
 local services = {Players=Instance.new("Players"), ReplicatedStorage=replicated, Workspace=workspace,
-    RunService=runService, UserInputService=uiService, TweenService=tweenService,
-    Lighting=lighting, SoundService=soundService, StarterGui=starterGui}
+    RunService=runService, UserInputService=uiService, GuiService=guiService,
+    TweenService=tweenService, Lighting=lighting, SoundService=soundService,
+    StarterGui=starterGui}
 services.Players.LocalPlayer = player
 game = {GetService=function(_, name) return services[name] end}
 local timers = {}
@@ -330,8 +337,14 @@ teammateBeam.Name = "Selected torch beam"
 teammateBeam.Enabled = true
 teammateBeam.Parent = lens
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
-assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == true,
-    "found torch did not request server-owned light")
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+    "found torch did not request an atomic server-owned light toggle")
+if uiService.TouchEnabled then
+    gui:FindFirstChild("Mobile torch").MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][1] == "Use"
+        and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+        "the phone torch button did not activate the actual selected light")
+end
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
 local light = camera:FindFirstChild("Invisible torch light source"):FindFirstChild("Weak hand torch")
@@ -349,6 +362,84 @@ uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.One}, false)
 player:SetAttribute("TorchCharge", 18)
 assert(bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").BackgroundColor3[1] == 196,
     "low charge did not turn the battery indicator red")
+-- Real controls: a world click activates the currently held item, not a GUI
+-- click; processed number/Q keys still work when Roblox Backpack consumes them.
+local mouse = {UserInputType=Enum.UserInputType.MouseButton1}
+local beforeMouse = #remote.actions
+uiService.InputBegan:Fire(mouse, false)
+assert(#remote.actions == beforeMouse + 1
+    and remote.actions[#remote.actions][1] == "Use"
+    and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+    "clicking the 3-D scene did not activate the selected torch")
+playerGui.guiAtMouse = {bar:FindFirstChild("Slot PILL")}
+local beforeUI = #remote.actions
+uiService.InputBegan:Fire(mouse, false)
+uiService.InputBegan:Fire(mouse, true)
+assert(#remote.actions == beforeUI, "a click on the HUD also consumed a different item")
+playerGui.guiAtMouse = {}
+guiService.MenuIsOpen = true
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(#remote.actions == beforeUI, "pause menu triggered a hidden item")
+guiService.MenuIsOpen = false
+uiService.focusedTextBox = Instance.new("TextBox")
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(#remote.actions == beforeUI, "typing in chat used the held item")
+uiService.focusedTextBox = nil
+local keyboard = Enum.UserInputType.Keyboard
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Two}, true)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
+    "Roblox-processed number key did not select medicine")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
+    selected=1,charge=18,health=72,coins=12,notes=2,gold=1})
+assert(bar:FindFirstChild("Slot PILL").BackgroundColor3[1] == 64,
+    "an old inventory snapshot undid the clicked slot before its server ACK")
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "PILL",
+    "Roblox-processed Q did not activate the newly selected item")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
+    selected=2,charge=18,health=72,coins=12,notes=2,gold=1})
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Three}, true)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 3)
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "raising the cross still does nothing")
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Gamepad1,
+    KeyCode=Enum.KeyCode.ButtonR2}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "gamepad trigger could not raise the cross")
+local use = gui:FindFirstChild("Use selected item")
+assert(use.Visible == uiService.TouchEnabled and use.Text == "✝",
+    "phone lost its active cross button")
+if uiService.TouchEnabled then
+    use.MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][2] == "CRUCIFIX",
+        "phone cross button did not send its activation")
+end
+bar:FindFirstChild("Slot CRUCIFIX").MouseButton1Click:Fire()
+assert(remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "second tap/click of the selected cross slot did nothing")
+remote.OnClientEvent:Fire("ItemDenied", "CRUCIFIX")
+assert(bar:FindFirstChild("Slot CRUCIFIX"):FindFirstChildOfClass("UIStroke").Color[1] == 196
+    and soundService:FindFirstChild("Item cannot be used yet").Plays == 1,
+    "failed activation still gives no visible/audible acknowledgement")
+drainTimers()
+for _, pair in ipairs({{4, "BANDAGE", "▣"}, {5, "MEDKIT", "✚"}}) do
+    local index, kind, symbol = pair[1], pair[2], pair[3]
+    bar:FindFirstChild("Slot " .. kind).MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][1] == "Select"
+        and remote.actions[#remote.actions][2] == index,
+        "tapping a medical slot did not equip that item")
+    if uiService.TouchEnabled then
+        assert(use.Visible and use.Text == symbol,
+            "phone's action button does not match the selected medical item")
+        use.MouseButton1Click:Fire()
+    else
+        uiService.InputBegan:Fire(mouse, false)
+    end
+    assert(remote.actions[#remote.actions][1] == "Use"
+        and remote.actions[#remote.actions][2] == kind,
+        "medical item click/touch was not sent to the server")
+end
 local peek = CFrame.new(1, 5, 21)
 local hotel = Instance.new("Folder")
 hotel.Name = "NocturneWorld"
@@ -449,6 +540,10 @@ runService.render(0.016)
 assert(replacement.CameraType == Enum.CameraType.Custom
     and replacement.CameraSubject == nextHumanoid,
     "HUD camera replacement stopped following the living avatar")
+remote.OnClientEvent:Fire("ItemUsed", "PILL")
+for _ = 1, 12 do runService.render(0.07) end
+assert(replacement.FieldOfView > 76,
+    "using speed medicine gave no visible short-lived first-person response")
 local torch=replacement:FindFirstChild("Invisible torch light source")
     :FindFirstChild("Weak hand torch")
 local carried = Instance.new("Model")

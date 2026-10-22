@@ -75,6 +75,7 @@ Color3 = {new = function(r, g, b) return {R=r, G=g, B=b} end,
 UDim = {new = function() return {} end}
 UDim2 = {fromScale = function() return {} end}
 TweenInfo = {new = function() return {} end}
+RaycastParams = {new = function() return {} end}
 Enum = setmetatable({}, {__index = function(t, k)
     local values = setmetatable({}, {__index = function(_, v) return v end})
     rawset(t, k, values)
@@ -259,6 +260,13 @@ function services.Players:GetPlayerFromCharacter(character)
     for _, player in ipairs(self:GetPlayers()) do if player.Character == character then return player end end
 end
 services.ReplicatedStorage.Name = "ReplicatedStorage"
+function services.Workspace:Raycast(_, _, params)
+    observed.raycasts = (observed.raycasts or 0) + 1
+    assert(params.RespectCanCollide and params.FilterType == Enum.RaycastFilterType.Exclude
+        and #params.FilterDescendantsInstances == 2,
+        "cross raycast should ignore the player/monster but respect solid hotel walls")
+    return observed.raycastHit
+end
 function services.ReplicatedStorage:WaitForChild(name)
     if name == "NocturneLayout" then return NocturneLayout end
     return self:FindFirstChild(name)
@@ -481,7 +489,7 @@ local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-    and world:GetAttribute("GenerationBuild") == "SharedLootHeldItemsAudio-v10", "old place was loaded")
+    and world:GetAttribute("GenerationBuild") == "InteractiveItems-v11", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
     "hotel walls no longer have physical audio reverb")
@@ -522,6 +530,13 @@ local function countEvent(name, kind)
     end
     return count
 end
+local noPill = countEvent("ItemDenied", "PILL")
+remote.OnServerEvent:Fire(player, "Use", "PILL")
+assert(countEvent("ItemDenied", "PILL") == noPill + 1
+    and player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 12,
+    "the server activated a pill the player never found")
+remote.OnServerEvent:Fire(player, "Use", "NOT_AN_ITEM")
+assert(countEvent("ItemUsed") == 0, "unknown remote item ID created an effect")
 local function inventoryOf(p)
     for i = #observed.events, 1, -1 do
         local ev = observed.events[i]
@@ -575,7 +590,10 @@ assert(observed.award(collector, "MEDKIT", 1)
     "duplicate equipment stacked instead of allowing only different item types")
 remote.OnServerEvent:Fire(collector, "Select", 4)
 assert(inventoryOf(collector).selected == 2, "empty item slot can be selected")
-remote.OnServerEvent:Fire(collector, "Use", "PILL")
+remote.OnServerEvent:Fire(collector, "Select", 5)
+assert(inventoryOf(collector).selected == 5)
+remote.OnServerEvent:Fire(collector, "Use", "PILL") -- selection and use in one message
+
 assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 5
     and not pill.Parent and collector.Character:FindFirstChild("HeldItem")
         :FindFirstChild("Ivory enamel cross", true)
@@ -584,6 +602,63 @@ assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selecte
 assert(observed.award(collector, "PILL", 1)
     and inventoryOf(collector).items.PILL == 1,
     "consumed item type cannot be picked up again")
+-- A full-health medical item reports why it did nothing WITHOUT wasting the
+-- only copy. Both kinds then heal after real server-side damage, even without
+-- a preceding Select message from the player's hotbar.
+assert(observed.award(collector, "BANDAGE", 1))
+local firstDenial = countEvent("ItemDenied", "BANDAGE")
+remote.OnServerEvent:Fire(collector, "Use", "BANDAGE")
+assert(countEvent("ItemDenied", "BANDAGE") == firstDenial + 1
+    and inventoryOf(collector).items.BANDAGE == 1
+    and inventoryOf(collector).selected == 4 and healthOf(collector) == 100,
+    "bandage at full health vanished or silently ignored the use button")
+observed.damagePlayer(collector, 20)
+remote.OnServerEvent:Fire(collector, "Use", "BANDAGE")
+assert(healthOf(collector) == 100 and inventoryOf(collector).items.BANDAGE == 0
+    and countEvent("ItemUsed", "BANDAGE") >= 1,
+    "an injured player's bandage did not heal and disappear")
+local kitDenials = countEvent("ItemDenied", "MEDKIT")
+remote.OnServerEvent:Fire(collector, "Use", "MEDKIT")
+assert(countEvent("ItemDenied", "MEDKIT") == kitDenials + 1
+    and inventoryOf(collector).items.MEDKIT == 1,
+    "full-health kit was spent or gave no acknowledgement")
+observed.damagePlayer(collector, 50)
+remote.OnServerEvent:Fire(collector, "Use", "MEDKIT")
+assert(healthOf(collector) == 100 and inventoryOf(collector).items.MEDKIT == 0
+    and countEvent("ItemUsed", "MEDKIT") >= 1,
+    "medical kit did not heal when selected and activated atomically")
+-- The cross can be RAISED in range, but never burns on a wall or in an empty
+-- hallway. The old passive on-contact defence is tested separately below.
+assert(observed.award(collector, "CRUCIFIX", 1))
+local noThreat = countEvent("ItemDenied", "CRUCIFIX")
+remote.OnServerEvent:Fire(collector, "Use", "CRUCIFIX")
+assert(countEvent("ItemDenied", "CRUCIFIX") == noThreat + 1
+    and inventoryOf(collector).items.CRUCIFIX == 1
+    and inventoryOf(collector).selected == 3,
+    "cross is still a no-op in a quiet room instead of acknowledging the attempt")
+local ghost = Instance.new("Model")
+ghost.Name = "NearTestMonster"
+local ghostBody = Instance.new("Part")
+ghostBody.CFrame = CFrame.new(rootOf(collector).Position + Vector3.new(0, 1, 10))
+ghostBody.Parent = ghost
+ghost.PrimaryPart = ghostBody
+ghost.Parent = world
+ghost:PivotTo(ghostBody.CFrame)
+observed.state.echo = {entity=ghost}
+observed.raycastHit = {Instance=Instance.new("Part")}
+remote.OnServerEvent:Fire(collector, "Use", "CRUCIFIX")
+assert(inventoryOf(collector).items.CRUCIFIX == 1 and not ghost:GetAttribute("Banished"),
+    "cross passed through a solid closed hotel wall")
+observed.raycastHit = nil
+local beforeRaycasts = observed.raycasts
+remote.OnServerEvent:Fire(collector, "Use", "CRUCIFIX")
+assert(observed.raycasts == beforeRaycasts + 1 and ghost:GetAttribute("Banished")
+    and inventoryOf(collector).items.CRUCIFIX == 0
+    and countEvent("ItemUsed", "CRUCIFIX") >= 1,
+    "raising a cross near a visible monster did not repel it")
+assert(observed.award(collector, "CRUCIFIX", 1),
+    "spent cross cannot be picked up again from another drawer")
+observed.state.echo = nil
 removePlayer(collector)
 local torchOwner = addPlayer("HandTorchActuallyWorks")
 assert(observed.award(torchOwner, "FLASHLIGHT", 1))
@@ -605,6 +680,15 @@ remote.OnServerEvent:Fire(torchOwner, "Select", 2)
 assert(not handheld.Parent and not torchOwner:GetAttribute("TorchOn")
     and torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "PILL",
     "switching items left the flashlight visibly lit in the wrong hand")
+remote.OnServerEvent:Fire(torchOwner, "Use", "FLASHLIGHT") -- F while another item is selected
+assert(inventoryOf(torchOwner).selected == 1 and torchOwner:GetAttribute("TorchOn")
+    and torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "FLASHLIGHT"
+    and countEvent("ItemUsed", "FLASHLIGHT") >= 1,
+    "atomic use failed to equip and switch on a found torch")
+remote.OnServerEvent:Fire(torchOwner, "Use", "FLASHLIGHT")
+assert(not torchOwner:GetAttribute("TorchOn") and inventoryOf(torchOwner).items.FLASHLIGHT == 1,
+    "a second click could not switch the torch off without consuming it")
+remote.OnServerEvent:Fire(torchOwner, "Select", 2)
 remote.OnServerEvent:Fire(torchOwner, "Use", "PILL")
 assert(torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "FLASHLIGHT"
     and not torchOwner:GetAttribute("TorchOn"), "consumed item did not re-equip the torch")
@@ -1389,9 +1473,11 @@ for index = 0, 99 do
         remote.OnServerEvent:Fire(defender, "Select", 3)
         rootOf(defender).CFrame = CFrame.new(0, NocturneLayout.WalkwayY(index - 1, 20) + 3,
             (index - 1) * L + 20)
+        local beforePassive = countEvent("ItemUsed", "CRUCIFIX")
         observed.replayEcho(index)
-        assert(healthOf(defender) == 100 and inventoryOf(defender).items.CRUCIFIX == 0,
-            "equipped cross did not consume and sink the touching monster")
+        assert(healthOf(defender) == 100 and inventoryOf(defender).items.CRUCIFIX == 0
+            and countEvent("ItemUsed", "CRUCIFIX") == beforePassive + 1,
+            "equipped cross did not consume, play feedback and sink the touching monster")
         removePlayer(defender)
     end
 

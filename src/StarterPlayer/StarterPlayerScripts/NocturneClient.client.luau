@@ -10,6 +10,7 @@ local SoundService = game:GetService("SoundService")
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
@@ -28,6 +29,8 @@ local SLOT_COLORS = {GOLD, Color3.fromRGB(151, 191, 165), PALE,
 	Color3.fromRGB(221, 179, 154), Color3.fromRGB(184, 203, 213)}
 local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
 local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
+local pendingSelection = nil -- do not undo a click with a late inventory snapshot
+local pillEffectUntil = 0
 local hidden, dead, finished = false, false, false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 local function hideRobloxBackpack()
@@ -46,7 +49,8 @@ ui.Name = "NocturneHUD"
 ui.IgnoreGuiInset = true
 ui.ResetOnSpawn = false
 ui.DisplayOrder = 50
-ui.Parent = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
+ui.Parent = playerGui
 
 local function frame(parent, name, size, position, color, transparency)
 	local f = Instance.new("Frame")
@@ -194,6 +198,8 @@ local function redrawEquipment()
 		slot.tile.BackgroundColor3 = selected == index and Color3.fromRGB(64, 52, 43)
 			or Color3.fromRGB(28, 32, 35)
 		slot.stroke.Transparency = selected == index and 0.05 or 0.7
+		slot.stroke.Color = GOLD
+		slot.stroke.Thickness = 1
 		slot.charge.Visible = id == "FLASHLIGHT" and hasItem
 		slot.charge.Size = UDim2.fromOffset(math.floor((SLOT_SIZE - 8) * math.clamp(charge, 0, 100) / 100), 2)
 		slot.charge.BackgroundColor3 = charge < 20 and RED or GOLD
@@ -204,7 +210,8 @@ local function redrawEquipment()
 	if useButton then
 		local id = SLOT_IDS[selected]
 		useButton.Visible = isTouch and not hidden and not dead and not finished
-			and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT" and id ~= "CRUCIFIX"
+			and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT"
+		useButton.Text = SLOT_GLYPHS[selected] or "◆"
 	end
 end
 redrawEquipment()
@@ -404,6 +411,7 @@ end
 local arrivalVoice = localCue("Creature at the threshold", "uuhhh.mp3", 1.65, 0.62)
 local arrivalImpact = localCue("Corridor arrival impact", "action_jump_land.mp3", 1.12, 0.64)
 local itemClick = localCue("Physical item used", "action_get_up.mp3", 0.31, 1.18)
+local itemDenied = localCue("Item cannot be used yet", "action_get_up.mp3", 0.16, 0.67)
 local spiderImpact = localCue("Drawer spider strike", "action_jump_land.mp3", 0.88, 1.35)
 local roomLength = 44
 
@@ -458,20 +466,22 @@ local function toggleTorch()
 	if hidden or dead or finished or not hasFlashlight or charge <= 0 then return end
 	if selected ~= 1 then
 		selected = 1
-		remote:FireServer("Select", 1)
+		pendingSelection = 1
 		redrawEquipment()
 	end
-	remote:FireServer("Torch", not flashlightOn) -- server confirms via TorchOn attribute
+	-- One authoritative action equips AND toggles. Sending Select then Torch
+	-- separately lost presses during a round trip; the server owns the state.
+	remote:FireServer("Use", "FLASHLIGHT")
 end
 selectSlot = function(index, tapped)
 	if hidden or dead or finished or not SLOT_IDS[index]
 		or (counts[SLOT_IDS[index]] or 0) == 0 then return end
 	if tapped and selected == index then
-		if index == 1 then toggleTorch()
-		elseif index ~= 3 then remote:FireServer("Use", SLOT_IDS[index]) end
+		remote:FireServer("Use", SLOT_IDS[index])
 		return
 	end
 	selected = index
+	pendingSelection = index
 	remote:FireServer("Select", index)
 	redrawEquipment()
 end
@@ -486,9 +496,9 @@ local function cycleOwnedSlot(direction)
 end
 local function useSelected()
 	if hidden or dead or finished then return end
-	if selected == 1 then toggleTorch()
-	elseif selected ~= 3 and (counts[SLOT_IDS[selected]] or 0) > 0 then
-		remote:FireServer("Use", SLOT_IDS[selected])
+	local id = SLOT_IDS[selected]
+	if id and (counts[id] or 0) > 0 then
+		remote:FireServer("Use", id) -- torch, cross and medicines share the same action
 	end
 end
 local function fallbackScareFace(kind)
@@ -660,22 +670,37 @@ useButton.MouseButton1Click:Connect(useSelected)
 exitButton.MouseButton1Click:Connect(function() remote:FireServer("Exit") end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
-	if input.KeyCode == Enum.KeyCode.ButtonB and not UserInputService:GetFocusedTextBox() then
+	-- Roblox's default Backpack/PlayerModule may mark number keys or gamepad
+	-- actions as processed even after the stock Backpack is hidden. Do not
+	-- discard our shortcuts; still respect text fields and the pause menu.
+	if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen then return end
+	if input.KeyCode == Enum.KeyCode.ButtonB then
 		if hidden then remote:FireServer("Exit") else setCrouch(not crouching) end
-		return -- Roblox's default jump binding may consume this gamepad button.
+		return
 	end
 	if hidden and input.KeyCode == Enum.KeyCode.E then
 		remote:FireServer("Exit")
 		return
 	end
-	if processed or UserInputService:GetFocusedTextBox() then return end
-	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.ButtonL3 then
+	local keyboardOrPad = input.UserInputType == Enum.UserInputType.Keyboard
+		or input.UserInputType == Enum.UserInputType.Gamepad1
+	if processed and not keyboardOrPad then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		-- A click in the 3-D scene uses the item in the real hand. Never let
+		-- clicking a hotbar/touch GUI button also consume the PREVIOUS slot.
+		local point = UserInputService:GetMouseLocation()
+		for _, object in ipairs(playerGui:GetGuiObjectsAtPosition(point.X, point.Y)) do
+			if object:IsA("GuiButton") then return end
+		end
+		useSelected()
+	elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.ButtonL3 then
 		setSprint(true)
 	elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl then
 		setCrouch(not crouching)
 	elseif input.KeyCode == Enum.KeyCode.F or input.KeyCode == Enum.KeyCode.ButtonY then
 		toggleTorch()
-	elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonR1 then
+	elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonR1
+		or input.KeyCode == Enum.KeyCode.ButtonR2 then
 		useSelected()
 	elseif input.KeyCode == Enum.KeyCode.DPadLeft then
 		cycleOwnedSlot(-1)
@@ -733,7 +758,13 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	if event == "Inventory" then
 		if type(a) ~= "table" then return end
 		counts = a.items or counts
-		selected = a.selected or selected
+		if pendingSelection and a.selected ~= pendingSelection
+			and (counts[SLOT_IDS[pendingSelection]] or 0) > 0 then
+			selected = pendingSelection -- older server snapshot; keep the clicked slot
+		else
+			selected = a.selected or selected
+			pendingSelection = nil
+		end
 		charge = a.charge or 0
 		hasFlashlight = (counts.FLASHLIGHT or 0) > 0
 		wallet.Text = string.format("◉ %d  ▤ %d  ▰ %d",
@@ -758,6 +789,25 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 	elseif event == "ItemUsed" then
 		if not dead then itemClick:Play() end
+		if a == "PILL" then pillEffectUntil = os.clock() + 8 end
+	elseif event == "ItemDenied" then
+		-- Red border and a quiet dry click acknowledge an attempted action,
+		-- without adding any on-screen explanation or wasting the consumable.
+		if not dead and not finished then
+			itemDenied:Play()
+			for index, id in ipairs(SLOT_IDS) do
+				if id == a and inventorySlots[index].tile.Visible then
+					local stroke = inventorySlots[index].stroke
+					stroke.Color = RED
+					stroke.Thickness = 2
+					task.delay(0.45, function()
+						stroke.Color = GOLD
+						stroke.Thickness = 1
+					end)
+					break
+				end
+			end
+		end
 	elseif event == "Spider" then
 		if not dead and not finished then spiderImpact:Play(); showSpider(a) end
 	elseif event == "Hide" then
@@ -832,6 +882,8 @@ local function onCharacter(character)
 	peekCF = nil
 	dead = false
 	finished = false
+	pendingSelection = nil
+	pillEffectUntil = 0
 	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
 	scare.Visible = false
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
@@ -932,8 +984,9 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local moving = not hidden and not dead and horizontalSpeed > 1.5
 		and humanoid.MoveDirection.Magnitude > 0.05
 	local running = moving and not crouching and horizontalSpeed > 15
-	camera.FieldOfView = camera.FieldOfView + ((hidden and (70 - pressure * 9) or (running and 79 or 73))
-		- camera.FieldOfView) * damp(4, dt)
+	local targetFOV = hidden and (70 - pressure * 9) or (running and 79 or 73)
+	if not hidden and os.clock() < pillEffectUntil then targetFOV = targetFOV + 5 end
+	camera.FieldOfView = camera.FieldOfView + (targetFOV - camera.FieldOfView) * damp(4, dt)
 	local held = player.Character and player.Character:FindFirstChild("HeldItem")
 	local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"
 		and held:FindFirstChild("Torch lens", true)
