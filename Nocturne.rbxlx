@@ -11612,16 +11612,29 @@ local function makeLoot(drawer, cf, y, kind, amount)
 			Enum.Material.Neon, Enum.PartType.Cylinder, 0.18)
 		piece("Raised power switch", Vector3.new(0.21, 0.09, 0.16),
 			CFrame.new(0.28, 0.23, 0), steel, Enum.Material.Metal)
+		-- Two physical cones make the held torch useful in blackout rooms:
+		-- soft coverage up close and a focussed beam down the corridor. Both
+		-- live in the REAL model so other players see the light, not a UI flash.
 		local beam = Instance.new("SpotLight")
 		beam.Name = "Selected torch beam"
 		beam.Enabled = false
 		beam.Face = Enum.NormalId.Left
-		beam.Angle = 67
-		beam.Range = 28
-		beam.Brightness = 1.3
-		beam.Color = Color3.fromRGB(255, 221, 179)
+		beam.Angle = 92
+		beam.Range = 32
+		beam.Brightness = 3.4
+		beam.Color = Color3.fromRGB(255, 238, 208)
 		beam.Shadows = false
 		beam.Parent = lens
+		local core = Instance.new("SpotLight")
+		core.Name = "Selected torch core"
+		core.Enabled = false
+		core.Face = Enum.NormalId.Left
+		core.Angle = 42
+		core.Range = 56
+		core.Brightness = 4.6
+		core.Color = Color3.fromRGB(255, 250, 232)
+		core.Shadows = false
+		core.Parent = lens
 	elseif kind == "PILL" then
 		local amber = Color3.fromRGB(186, 146, 92)
 		local vertical = CFrame.Angles(0, 0, math.pi / 2)
@@ -11766,8 +11779,10 @@ updateHeldItem = function(player)
 			if part:IsA("BasePart") then part.Anchored = false end
 		end
 	end
-	local beam = held:FindFirstChild("Selected torch beam", true)
-	if beam then beam.Enabled = info.torchOn end
+	for _, name in ipairs({"Selected torch beam", "Selected torch core"}) do
+		local beam = held:FindFirstChild(name, true)
+		if beam then beam.Enabled = info.torchOn end
+	end
 end
 
 -- The key is in exactly one of three physical drawers in the SAME room as its
@@ -13102,6 +13117,7 @@ local function creatureMist(part, name, offset, tint, rate, scale)
 	mist.SpreadAngle = Vector2.new(95, 95)
 	mist.LightEmission = 0.08
 	mist.Parent = attachment
+	return mist
 end
 
 -- Rush: foretold only by LIGHT, never by a warning sound. It starts three
@@ -13210,6 +13226,140 @@ local function makeRush()
 			Color3.fromRGB(33, 30, 36), x == 0 and 28 or 13, x == 0 and 3.0 or 2.1)
 	end
 	return entity, claws, glow, jaw, jawHinge, legs
+end
+
+-- Echo is NOT a recoloured Rush. It has a narrow hanging body, porcelain
+-- mask, connected pendulum arms and trailing veils hinged at the shoulders.
+-- Returning passes physically open the veils and expose cracks in the mask.
+local function makeEcho()
+	local entity = Instance.new("Model")
+	entity.Name = "TheEcho"
+	entity.Parent = state.world
+	local void = Color3.fromRGB(9, 12, 20)
+	local charcoal = Color3.fromRGB(34, 37, 50)
+	local bone = Color3.fromRGB(204, 216, 218)
+	local chalk = Color3.fromRGB(234, 240, 235)
+	local frost = Color3.fromRGB(135, 171, 188)
+	local torso = creaturePart(entity, "Sunken echo thorax", Vector3.new(1.86, 4.88, 1.15),
+		CFrame.new(0, 0.16, 0.31) * CFrame.Angles(math.rad(-17), 0, 0),
+		void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	entity.PrimaryPart = torso
+	creaturePart(entity, "Hollow waist", Vector3.new(1.15, 1.26, 1.02),
+		CFrame.new(0, -1.49, 0.38), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	creatureLimb(entity, "Continuous narrow neck", Vector3.new(0, 1.72, -0.18),
+		Vector3.new(0, 2.81, -0.53), 0.43, void, Enum.Material.Slate)
+	local arms, legs, veils, shrouds = {}, {}, {}, {}
+	for _, side in ipairs({-1, 1}) do
+		local shoulder = Vector3.new(side * 1.34, 1.53, 0.09)
+		creatureLimb(entity, "Spindly joined collar", Vector3.new(side * 0.28, 1.65, 0.02),
+			shoulder, 0.31, charcoal, Enum.Material.Slate)
+		creaturePart(entity, "Echo shoulder socket", Vector3.new(0.63, 0.76, 0.64),
+			CFrame.new(shoulder), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local arm = Instance.new("Model")
+		arm.Name = side == -1 and "Left pendulum arm" or "Right pendulum arm"
+		arm.Parent = entity
+		local hinge = CFrame.new(shoulder)
+		arm.WorldPivot = hinge
+		table.insert(arms, {model = arm, hinge = hinge, side = side})
+		local elbow = Vector3.new(side * 2.10, -0.52, -0.46)
+		local wrist = Vector3.new(side * 2.52, -2.64, -1.09)
+		creatureLimb(arm, "Echo upper arm", shoulder, elbow, 0.29, void, Enum.Material.Slate)
+		creaturePart(arm, "Echo elbow joint", Vector3.new(0.38, 0.46, 0.37),
+			CFrame.new(elbow), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(arm, "Suspended long forearm", elbow, wrist, 0.20, void, Enum.Material.Slate)
+		creaturePart(arm, "Narrow connected palm", Vector3.new(0.37, 0.43, 0.40),
+			CFrame.new(wrist), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		for finger = 1, 4 do
+			local spread = (finger - 2.5) * 0.16
+			creatureLimb(arm, "Thin listening fingers", wrist + Vector3.new(spread, -0.13, 0),
+				wrist + Vector3.new(spread * 1.3, -0.91 - finger * 0.07, -0.46),
+				0.085, frost, Enum.Material.Slate)
+		end
+		local hip = CFrame.new(side * 0.59, -1.80, 0.33)
+		local knee = Vector3.new(side * 0.90, -3.28, 0.41)
+		creaturePart(entity, "Echo joined hip", Vector3.new(0.68, 0.77, 0.68),
+			hip, charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local leg = Instance.new("Model")
+		leg.Name = side == -1 and "Left echo leg" or "Right echo leg"
+		leg.Parent = entity
+		leg.WorldPivot = hip
+		creatureLimb(leg, "Hanging thigh", hip.Position, knee, 0.46, void, Enum.Material.Slate)
+		creaturePart(leg, "Echo knee joint", Vector3.new(0.44, 0.49, 0.44),
+			CFrame.new(knee), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local shin = Instance.new("Model")
+		shin.Name = "Trailing echo shin"
+		shin.Parent = leg
+		shin.WorldPivot = CFrame.new(knee)
+		creatureLimb(shin, "Attached narrow shin", knee,
+			Vector3.new(side * 0.85, -4.48, 0.31), 0.27, void, Enum.Material.Slate)
+		creaturePart(shin, "Quiet dragging foot", Vector3.new(0.59, 0.34, 1.01),
+			CFrame.new(side * 0.86, -4.70, -0.19), charcoal,
+			Enum.Material.Slate, 0, Enum.PartType.Ball)
+		table.insert(legs, {model = leg, hinge = hip, shin = shin,
+			kneeOffset = knee - hip.Position, side = side})
+		local veil = Instance.new("Model")
+		veil.Name = side == -1 and "Left trailing veil" or "Right trailing veil"
+		veil.Parent = entity
+		local veilHinge = CFrame.new(side * 0.86, 1.43, 0.51)
+		veil.WorldPivot = veilHinge
+		table.insert(veils, {model = veil, hinge = veilHinge, side = side})
+		creatureLimb(veil, "Veil rooted in shoulder", veilHinge.Position,
+			Vector3.new(side * 1.70, 0.73, 1.14), 0.39, charcoal, Enum.Material.Slate, 0.12)
+		creatureLimb(veil, "Long receding veil", Vector3.new(side * 1.70, 0.73, 1.14),
+			Vector3.new(side * 2.78, -1.46, 2.30), 0.26, charcoal, Enum.Material.Slate, 0.09)
+		local shroud = creaturePart(veil, "Torn echo shroud", Vector3.new(1.03, 3.23, 0.34),
+			CFrame.new(side * 2.40, -0.65, 1.72)
+				* CFrame.Angles(math.rad(-19), 0, side * math.rad(14)),
+			Color3.fromRGB(75, 83, 99), Enum.Material.Fabric, 0.57, Enum.PartType.Ball)
+		table.insert(shrouds, shroud)
+		creatureLimb(veil, "Frayed veil end", Vector3.new(side * 2.78, -1.46, 2.30),
+			Vector3.new(side * 3.18, -2.87, 2.61), 0.12, frost, Enum.Material.Slate, 0.23)
+		for rib = 1, 3 do
+			creatureLimb(entity, "Fine bridged echo rib",
+				Vector3.new(side * 0.22, 1.05 - rib * 0.66, -0.52),
+				Vector3.new(side * 0.87, 1.13 - rib * 0.63, -0.27),
+				0.11, charcoal, Enum.Material.Slate)
+		end
+	end
+	creaturePart(entity, "Long hollow porcelain face", Vector3.new(1.92, 3.17, 1.13),
+		CFrame.new(0, 3.42, -0.58) * CFrame.Angles(math.rad(-9), 0, 0),
+		bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	hollowEyes(entity, 0.46, 3.77, -1.18, 0.36, 0.49, chalk, void)
+	local marks = {}
+	for _, side in ipairs({-1, 1}) do
+		table.insert(marks, creatureLimb(entity, "Return face fracture",
+			Vector3.new(side * 0.91, 4.22, -0.94),
+			Vector3.new(side * 0.77, 3.30, -1.11), 0.09, void, Enum.Material.Slate, 0.94))
+		table.insert(marks, creatureLimb(entity, "Return jaw fracture",
+			Vector3.new(side * 0.77, 3.30, -1.11),
+			Vector3.new(side * 0.36, 2.58, -1.05), 0.08, void, Enum.Material.Slate, 0.94))
+	end
+	local jaw = Instance.new("Model")
+	jaw.Name = "Echo shutter jaw"
+	jaw.Parent = entity
+	local jawHinge = CFrame.new(0, 2.72, -1.02)
+	jaw.WorldPivot = jawHinge
+	creaturePart(jaw, "Lower porcelain shutter", Vector3.new(1.08, 0.72, 0.40),
+		CFrame.new(0, 2.41, -1.16), bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	creaturePart(jaw, "Sealed black throat", Vector3.new(0.64, 0.23, 0.14),
+		CFrame.new(0, 2.55, -1.39), void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	for _, side in ipairs({-1, 1}) do
+		creatureLimb(jaw, "Hinged echo tendon", Vector3.new(side * 0.45, 2.45, -1.06),
+			Vector3.new(side * 0.63, 2.90, -0.78), 0.11, charcoal, Enum.Material.Slate)
+	end
+	local glow = Instance.new("PointLight")
+	glow.Name = "Cold return-mask light"
+	glow.Color = frost
+	glow.Brightness = 0.70
+	glow.Range = 11
+	glow.Parent = entity:FindFirstChild("Long hollow porcelain face")
+	creatureHalo(entity, Color3.fromRGB(25, 31, 39), Color3.fromRGB(119, 153, 173))
+	local mist = {}
+	for _, x in ipairs({-1.0, 0, 1.0}) do
+		table.insert(mist, creatureMist(torso, "Receding echo dust",
+			Vector3.new(x, -1.43, 1.00), frost, 5, 0.98))
+	end
+	return entity, arms, glow, jaw, jawHinge, legs, veils, marks, mist, shrouds
 end
 
 makeFinalWitness = function(parent)
@@ -13959,18 +14109,22 @@ startEcho = function(room, epoch)
 		task.wait(0.18)
 	end
 	if epoch ~= session then return end
-	local entity, claws, glow, jaw, jawHinge, legs = makeRush()
-	entity.Name = "TheEcho"
+	local entity, arms, glow, jaw, jawHinge, legs, veils, marks, mist, shrouds = makeEcho()
 	echo.entity = entity
-	local face = entity:FindFirstChild("Cracked funeral mask")
-	if face then face.Color = Color3.fromRGB(183, 183, 205) end
-	glow.Color = Color3.fromRGB(167, 157, 211)
 	local z, elapsed = nearZ, 0
 	entity:PivotTo(CFrame.lookAt(pathPoint(z), pathPoint(z) + Vector3.new(0, 0, 1)))
 	announceMonster(room, "ECHO", entity) -- not during the light warning
 	local path = {farZ, nearZ, farZ, nearZ, farZ}
 	for pass, target in ipairs(path) do
 		if echo.banished or epoch ~= session then break end
+		local returning = pass % 2 == 0
+		for _, mark in ipairs(marks) do mark.Transparency = returning and 0.07 or 0.94 end
+		for _, shroud in ipairs(shrouds) do shroud.Transparency = returning and 0.22 or 0.57 end
+		for _, emitter in ipairs(mist) do emitter.Rate = returning and 14 or 5 end
+		glow.Color = returning and Color3.fromRGB(207, 229, 235)
+			or Color3.fromRGB(135, 171, 188)
+		entity:SetAttribute("Returning", returning)
+		entity:SetAttribute("EchoPass", pass)
 		local direction = target &gt; z and 1 or -1
 		local frames = 0
 		while not echo.banished and epoch == session and math.abs(target - z) &gt; 0.1 and frames &lt; 85 do
@@ -13983,19 +14137,26 @@ startEcho = function(room, epoch)
 			local point = pathPoint(z)
 			local facing = CFrame.lookAt(point, point + Vector3.new(0, 0, direction))
 			entity:PivotTo(facing)
-			for _, claw in ipairs(claws) do
-				claw.model:PivotTo(facing * claw.hinge
-					* CFrame.Angles(math.sin(elapsed * 9 + claw.side) * 0.31, 0, 0))
+			for _, arm in ipairs(arms) do
+				arm.model:PivotTo(facing * arm.hinge
+					* CFrame.Angles(math.sin(elapsed * 7 + arm.side) * 0.28, 0, 0))
+			end
+			for _, veil in ipairs(veils) do
+				veil.model:PivotTo(facing * veil.hinge * CFrame.Angles(
+					math.sin(elapsed * 4.7 + veil.side) * 0.16,
+					veil.side * (returning and 0.48 or 0.10),
+					math.sin(elapsed * 5.4 + veil.side) * 0.08))
 			end
 			for _, leg in ipairs(legs) do
-				local stride = math.sin(elapsed * 9 + (leg.side == -1 and 0 or math.pi))
-				local hip = facing * leg.hinge * CFrame.Angles(stride * 0.34, 0, 0)
+				local stride = math.sin(elapsed * 8 + (leg.side == -1 and 0 or math.pi))
+				local hip = facing * leg.hinge * CFrame.Angles(stride * 0.33, 0, 0)
 				leg.model:PivotTo(hip)
 				leg.shin:PivotTo(hip * CFrame.new(leg.kneeOffset)
-					* CFrame.Angles(math.max(0, stride) * 0.42, 0, 0))
+					* CFrame.Angles(math.max(0, stride) * 0.38, 0, 0))
 			end
-			jaw:PivotTo(facing * jawHinge * CFrame.Angles(-0.25 + math.sin(elapsed * 12) * 0.15, 0, 0))
-			glow.Brightness = 0.7 + math.sin(elapsed * 14) * 0.17
+			jaw:PivotTo(facing * jawHinge * CFrame.Angles(
+					(returning and -0.51 or -0.13) + math.sin(elapsed * 11) * 0.10, 0, 0))
+			glow.Brightness = (returning and 1.16 or 0.70) + math.sin(elapsed * 12) * 0.16
 			for _, player in ipairs(Players:GetPlayers()) do
 				local root, humanoid = playerRoot(player)
 				if root and not state.hidden[player]
@@ -14073,13 +14234,13 @@ local function resetWorld()
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
 	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
-	state.world:SetAttribute("GenerationBuild", "InteractiveItems-v11")
+	state.world:SetAttribute("GenerationBuild", "ReturnEchoBrightTorch-v12")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v11] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v12] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -14432,7 +14593,7 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v11] item activation, shared prizes and real hands in 100 enclosed rooms.")
+print("[NOCTURNE v12] distinct returning Echo and a brighter real hand torch in 100 enclosed rooms.")
 </ProtectedString>
         <bool name="Disabled">false</bool>
       </Properties>
@@ -14890,16 +15051,42 @@ torchMount.CanQuery = false
 torchMount.CastShadow = false
 torchMount.Transparency = 1
 torchMount.Parent = camera
+-- A warm near-field pool and a clear, pale hotspot are emitted from the
+-- selected REAL lens. Only their lighting changes; darkness away from the
+-- beam and the flashlight's original battery drain stay intact.
 local torch = Instance.new("SpotLight")
-torch.Name = "Weak hand torch"
-torch.Angle = 69
-torch.Range = 29
-torch.Brightness = 1.35
-torch.Color = Color3.fromRGB(255, 221, 179)
+torch.Name = "Hand torch flood"
+torch.Angle = 92
+torch.Range = 32
+torch.Brightness = 3.4
+torch.Color = Color3.fromRGB(255, 238, 208)
 torch.Face = Enum.NormalId.Front
-torch.Shadows = true
+torch.Shadows = false
 torch.Enabled = false
 torch.Parent = torchMount
+local torchCore = Instance.new("SpotLight")
+torchCore.Name = "Hand torch reach"
+torchCore.Angle = 42
+torchCore.Range = 56
+torchCore.Brightness = 4.6
+torchCore.Color = Color3.fromRGB(255, 250, 232)
+torchCore.Face = Enum.NormalId.Front
+torchCore.Shadows = false
+torchCore.Enabled = false
+torchCore.Parent = torchMount
+local torchBounce = Instance.new("PointLight")
+torchBounce.Name = "Hand torch nearby light"
+torchBounce.Range = 12
+torchBounce.Brightness = 0.85
+torchBounce.Color = Color3.fromRGB(255, 232, 198)
+torchBounce.Shadows = false
+torchBounce.Enabled = false
+torchBounce.Parent = torchMount
+local function setTorchLights(on)
+	torch.Enabled = on
+	torchCore.Enabled = on
+	torchBounce.Enabled = on
+end
 
 local function setSprint(on)
 	if on and (crouching or hidden or dead or finished) then return end
@@ -14963,6 +15150,7 @@ local function fallbackScareFace(kind)
 	model.Name = "Last glimpse of " .. tostring(kind)
 	local color = kind == "MOTH" and Color3.fromRGB(177, 187, 175)
 		or kind == "BLIND" and Color3.fromRGB(196, 199, 182)
+		or kind == "ECHO" and Color3.fromRGB(204, 216, 218)
 		or Color3.fromRGB(207, 207, 189)
 	local function oval(name, size, cf, tint)
 		local part = Instance.new("Part")
@@ -14996,6 +15184,15 @@ local function fallbackScareFace(kind)
 			CFrame.new(side * 0.63, 3.57, -1.31), DARK)
 	end
 	oval("Still mouth", Vector3.new(0.83, 0.18, 0.13), CFrame.new(0, 2.53, -1.14), DARK)
+	if kind == "ECHO" then
+		-- Even if the fast returning model replicates too late for the scare,
+		-- its thin shrouded silhouette must not fall back to the Rush's body.
+		body.Size = Vector3.new(1.28, 4.90, 0.80)
+		for _, side in ipairs({-1, 1}) do
+			oval("Last trailing echo veil", Vector3.new(0.72, 3.27, 0.32),
+				CFrame.new(side * 2.12, -0.47, 1.16), Color3.fromRGB(82, 94, 109))
+		end
+	end
 	return model
 end
 local function fallbackMothSwarm()
@@ -15033,6 +15230,7 @@ local function showScare(kind, source)
 	local token = scareToken
 	reticle.Visible = false
 	scare.Visible = true
+	setTorchLights(false)
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
 	local monster = source
 	if not monster or not monster:IsA("Model") then
@@ -15106,6 +15304,7 @@ local function showEnd(win)
 	end
 	modal.Visible = true
 	reticle.Visible = false
+	setTorchLights(false)
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	UserInputService.MouseIconEnabled = true
 end
@@ -15186,7 +15385,7 @@ player:GetAttributeChangedSignal("Health"):Connect(function()
 end)
 player:GetAttributeChangedSignal("TorchOn"):Connect(function()
 	flashlightOn = player:GetAttribute("TorchOn") == true
-	torch.Enabled = flashlightOn and not hidden and not dead and not finished
+	if not flashlightOn then setTorchLights(false) end
 end)
 player:GetAttributeChangedSignal("HasFlashlight"):Connect(function()
 	hasFlashlight = player:GetAttribute("HasFlashlight") == true
@@ -15267,6 +15466,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		if not dead and not finished then spiderImpact:Play(); showSpider(a) end
 	elseif event == "Hide" then
 		hidden = a
+		if hidden then setTorchLights(false) end
 		player:SetAttribute("NocturnePeek", hidden)
 		setSprint(false)
 		crouching = false
@@ -15312,7 +15512,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Finale" then
 		finished = true
 		setSprint(false)
-		torch.Enabled = false
+		setTorchLights(false)
 		showScare("FINAL", a)
 		local token = scareToken
 		task.delay(2.4, function()
@@ -15332,6 +15532,7 @@ local function onCharacter(character)
 	local newHead = character:WaitForChild("Head", 8)
 	if player.Character ~= character then return end -- late appearance from a previous life
 	root, humanoid, head = newRoot, newHumanoid, newHead
+	setTorchLights(false)
 	hideRobloxBackpack()
 	hidden = false
 	peekCF = nil
@@ -15448,14 +15649,18 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
 	if lens and lens:IsA("BasePart") then
 		origin = lens.Position -- the beam begins in the REAL hand, not the head
-		local otherPlayersBeam = lens:FindFirstChild("Selected torch beam")
-		if otherPlayersBeam then otherPlayersBeam.Enabled = false end -- one local beam, aimed by native camera
+		-- Peers see the model's two server lights; the owner gets camera-aimed
+		-- cones from the same lens without stacking either source twice.
+		for _, name in ipairs({"Selected torch beam", "Selected torch core"}) do
+			local peerBeam = lens:FindFirstChild(name)
+			if peerBeam then peerBeam.Enabled = false end
+		end
 	else
 		origin = origin + camera.CFrame.RightVector * 0.45
 	end
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
-	torch.Enabled = lens ~= nil and flashlightOn and hasFlashlight and charge &gt; 0
-		and not hidden and not dead and not finished
+	setTorchLights(lens ~= nil and flashlightOn and hasFlashlight and charge &gt; 0
+		and not hidden and not dead and not finished)
 end)
 </ProtectedString>
           <bool name="Disabled">false</bool>
@@ -15634,7 +15839,7 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v11 / native first person] actual R6/R15 hands, key and selected item")
+print("[NOCTURNE v12 / native first person] actual R6/R15 hands, key and selected item")
 </ProtectedString>
           <bool name="Disabled">false</bool>
         </Properties>

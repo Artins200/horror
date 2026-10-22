@@ -336,6 +336,10 @@ local teammateBeam = Instance.new("SpotLight")
 teammateBeam.Name = "Selected torch beam"
 teammateBeam.Enabled = true
 teammateBeam.Parent = lens
+local teammateCore = Instance.new("SpotLight")
+teammateCore.Name = "Selected torch core"
+teammateCore.Enabled = true
+teammateCore.Parent = lens
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "FLASHLIGHT",
     "found torch did not request an atomic server-owned light toggle")
@@ -347,14 +351,31 @@ if uiService.TouchEnabled then
 end
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
-local light = camera:FindFirstChild("Invisible torch light source"):FindFirstChild("Weak hand torch")
-assert(light.Enabled and not teammateBeam.Enabled
-    and (camera:FindFirstChild("Invisible torch light source").CFrame.Position - lens.Position).Magnitude < 0.1,
-    "torch beam did not emerge from the actual selected hand-held lens")
+local mount = camera:FindFirstChild("Invisible torch light source")
+local light = mount:FindFirstChild("Hand torch flood")
+local reach = mount:FindFirstChild("Hand torch reach")
+local bounce = mount:FindFirstChild("Hand torch nearby light")
+assert(light and reach and bounce and light.Enabled and reach.Enabled and bounce.Enabled
+    and light.Brightness >= 3.2 and light.Angle >= 90 and light.Range >= 30
+    and reach.Brightness >= 4.4 and reach.Range >= 52
+    and reach.Angle < light.Angle / 2 and bounce.Brightness >= 0.8
+    and bounce.Range >= 12 and not teammateBeam.Enabled and not teammateCore.Enabled
+    and (mount.CFrame.Position - lens.Position).Magnitude < 0.1,
+    "torch lacks its brighter near/wide/far light from the actual held lens")
+player:SetAttribute("TorchCharge", 0)
+runService.render(0)
+assert(not light.Enabled and not reach.Enabled and not bounce.Enabled,
+    "the strong local beam stayed on after battery depletion")
+player:SetAttribute("TorchCharge", 100)
+runService.render(0)
+assert(light.Enabled and reach.Enabled and bounce.Enabled,
+    "a charged selected flashlight failed to light the corridor again")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Two}, false)
 assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
     "number keys did not select the custom pill slot")
 player:SetAttribute("TorchOn", false)
+assert(not light.Enabled and not reach.Enabled and not bounce.Enabled,
+    "the bright beam remained on after a light-off acknowledgement")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Q}, false)
 assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "PILL",
     "selected consumable was not sent for server-authoritative use")
@@ -487,6 +508,14 @@ assert(spiderView.Visible and spiderView.CurrentCamera
     "drawer spider did not jump toward the actual screen")
 drainTimers()
 assert(not spiderView.Visible, "jumping spider remained stuck over the scene")
+remote.OnClientEvent:Fire("Jumpscare", "ECHO", nil)
+local fallback = stage:FindFirstChild("Last glimpse of ECHO")
+local echoVeils = 0
+for _, piece in ipairs(fallback and fallback:GetChildren() or {}) do
+    if piece.Name == "Last trailing echo veil" then echoVeils = echoVeils + 1 end
+end
+assert(fallback and echoVeils == 2 and fallback.PrimaryPart.Size.X < 1.5,
+    "late Echo replication turned its scare back into the ordinary Rush")
 local monster = Instance.new("Model")
 monster.Name = "TheBlindGuest"
 local face = Instance.new("Part")
@@ -544,8 +573,10 @@ remote.OnClientEvent:Fire("ItemUsed", "PILL")
 for _ = 1, 12 do runService.render(0.07) end
 assert(replacement.FieldOfView > 76,
     "using speed medicine gave no visible short-lived first-person response")
-local torch=replacement:FindFirstChild("Invisible torch light source")
-    :FindFirstChild("Weak hand torch")
+local replacementMount = replacement:FindFirstChild("Invisible torch light source")
+local torch = replacementMount:FindFirstChild("Hand torch flood")
+local replacementReach = replacementMount:FindFirstChild("Hand torch reach")
+local replacementBounce = replacementMount:FindFirstChild("Hand torch nearby light")
 local carried = Instance.new("Model")
 carried.Name = "HeldItem"
 carried:SetAttribute("ItemKind", "FLASHLIGHT")
@@ -557,7 +588,8 @@ newLens.Parent = carried
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
-assert(torch.Enabled, "pre-finale found/bought torch did not work")
+assert(torch.Enabled and replacementReach.Enabled and replacementBounce.Enabled,
+    "pre-finale found/bought torch lost its extra near and far light")
 local witness=Instance.new("Model")
 witness.Name="TheLastWitness"
 local finalFace=Instance.new("Part")
@@ -571,7 +603,8 @@ assert(scare.Visible and not modal.Visible and not reticle.Visible
     "door 100 did not show its REAL final creature BEFORE the victory screen")
 local finaleHold=false
 for _,timer in ipairs(timers) do if timer.at>=2.4 then finaleHold=true end end
-assert(finaleHold and not torch.Enabled, "finale has no held beat or leaves the torch on")
+assert(finaleHold and not torch.Enabled and not replacementReach.Enabled
+    and not replacementBounce.Enabled, "finale left a bright beam on the death screen")
 drainTimers()
 assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
     and not scare.Visible and replacement.CameraSubject==nextHumanoid,

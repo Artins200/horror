@@ -23,6 +23,7 @@ local function drainTasks()
     end
 end
 local observed = {events = {}, monsterPositions = {}, monsterLooks = {}, sounds = {},
+    echoPhases = {}, echoArmFrames = 0, echoVeilFrames = 0, echoJawFrames = 0,
     wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0,
     jawFrames = 0, graceElapsed = 0, sconceChanges = 0}
 local function signal()
@@ -141,7 +142,21 @@ function methods:Play()
         id = self.SoundId, source = self})
 end
 function methods:Stop() if self._class == "Sound" then self.IsPlaying = false end end
-function methods:SetAttribute(name, value) self._attributes[name] = value end
+function methods:SetAttribute(name, value)
+    self._attributes[name] = value
+    if self.Name == "TheEcho" and name == "EchoPass" then
+        local veil = self:FindFirstChild("Left trailing veil")
+        if not veil then return end -- a jumpscare clone copies attributes before children
+        local shroud = veil:FindFirstChild("Torn echo shroud")
+        local mark = self:FindFirstChild("Return face fracture")
+        local light = self:FindFirstChild("Cold return-mask light", true)
+        local dust = self:FindFirstChild("Receding echo dust", true)
+        assert(shroud and mark and light and dust, "returning model lost its physical markers")
+        table.insert(observed.echoPhases, {pass=value, returning=self:GetAttribute("Returning"),
+            veilAlpha=shroud.Transparency, markAlpha=mark.Transparency,
+            glow=light.Color, dustRate=dust.Rate})
+    end
+end
 function methods:GetAttribute(name) return self._attributes[name] end
 function methods:IsA(class) return self._class == class or (class == "BasePart" and
     (self._class == "Part" or self._class == "SpawnLocation")) end
@@ -216,6 +231,12 @@ function methods:PivotTo(cf)
         observed.clawFrames = observed.clawFrames + 1
     elseif self.Name == "Hinged split mandible" then
         observed.jawFrames = observed.jawFrames + 1
+    elseif self.Name == "Left pendulum arm" or self.Name == "Right pendulum arm" then
+        observed.echoArmFrames = observed.echoArmFrames + 1
+    elseif self.Name == "Left trailing veil" or self.Name == "Right trailing veil" then
+        observed.echoVeilFrames = observed.echoVeilFrames + 1
+    elseif self.Name == "Echo shutter jaw" then
+        observed.echoJawFrames = observed.echoJawFrames + 1
     elseif self.Name == "Left walking leg" or self.Name == "Right walking leg"
         or self.Name == "Left searching arm" or self.Name == "Right searching arm" then
         observed.limbFrames = observed.limbFrames + 1
@@ -489,7 +510,7 @@ local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-    and world:GetAttribute("GenerationBuild") == "InteractiveItems-v11", "old place was loaded")
+    and world:GetAttribute("GenerationBuild") == "ReturnEchoBrightTorch-v12", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
     "hotel walls no longer have physical audio reverb")
@@ -665,16 +686,21 @@ assert(observed.award(torchOwner, "FLASHLIGHT", 1))
 local handheld = torchOwner.Character:FindFirstChild("HeldItem")
 local lens = handheld and handheld:FindFirstChild("Torch lens", true)
 local light = lens and lens:FindFirstChild("Selected torch beam")
+local reach = lens and lens:FindFirstChild("Selected torch core")
 assert(handheld and handheld:GetAttribute("ItemKind") == "FLASHLIGHT"
     and handheld:FindFirstChild("Machined torch barrel", true)
     and handheld:FindFirstChild("Crosshatched grip ring", true)
     and handheld:FindFirstChild("Item grip in Roblox hand", true).Part0
         == torchOwner.Character:FindFirstChild("RightHand")
-    and light and not light.Enabled and torchOwner:GetAttribute("EquippedItem") == "FLASHLIGHT",
-    "the physical, detailed flashlight is not in the player's real hand")
+    and light and not light.Enabled and light.Brightness >= 3.2
+    and light.Angle >= 90 and light.Range >= 30
+    and reach and not reach.Enabled and reach.Brightness >= 4.4
+    and reach.Angle < light.Angle / 2 and reach.Range >= 52
+    and torchOwner:GetAttribute("EquippedItem") == "FLASHLIGHT",
+    "the real hand torch lacks its distinct wide and far-reaching bright cones")
 remote.OnServerEvent:Fire(torchOwner, "Torch", true)
-assert(torchOwner:GetAttribute("TorchOn") and light.Enabled,
-    "switching the actual selected hand torch on did not create a visible beam")
+assert(torchOwner:GetAttribute("TorchOn") and light.Enabled and reach.Enabled,
+    "turning on the actual selected torch did not enable both physical beams")
 assert(observed.award(torchOwner, "PILL", 1))
 remote.OnServerEvent:Fire(torchOwner, "Select", 2)
 assert(not handheld.Parent and not torchOwner:GetAttribute("TorchOn")
@@ -686,8 +712,11 @@ assert(inventoryOf(torchOwner).selected == 1 and torchOwner:GetAttribute("TorchO
     and countEvent("ItemUsed", "FLASHLIGHT") >= 1,
     "atomic use failed to equip and switch on a found torch")
 remote.OnServerEvent:Fire(torchOwner, "Use", "FLASHLIGHT")
-assert(not torchOwner:GetAttribute("TorchOn") and inventoryOf(torchOwner).items.FLASHLIGHT == 1,
-    "a second click could not switch the torch off without consuming it")
+local heldOff = torchOwner.Character:FindFirstChild("HeldItem")
+assert(not torchOwner:GetAttribute("TorchOn") and inventoryOf(torchOwner).items.FLASHLIGHT == 1
+    and not heldOff:FindFirstChild("Selected torch beam", true).Enabled
+    and not heldOff:FindFirstChild("Selected torch core", true).Enabled,
+    "a second click left the bright cones on or consumed the torch")
 remote.OnServerEvent:Fire(torchOwner, "Select", 2)
 remote.OnServerEvent:Fire(torchOwner, "Use", "PILL")
 assert(torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "FLASHLIGHT"
@@ -1468,6 +1497,24 @@ for index = 0, 99 do
         end
         assert(reversals >= 4 and healthOf(player) == 100,
             "Echo did not make FIVE alternating physical passes")
+        assert(#observed.echoPhases >= 5 and observed.echoArmFrames > 10
+            and observed.echoVeilFrames > 10 and observed.echoJawFrames > 10,
+            "the returning monster has no connected, animated arms/veils/face")
+        local phases = observed.echoPhases
+        for pass = 1, 5 do
+            local phase = phases[#phases - 5 + pass]
+            assert(phase.pass == pass and phase.returning == (pass % 2 == 0),
+                "Echo did not transform on each of its two backward passes")
+            if pass % 2 == 0 then
+                assert(phase.markAlpha < 0.15 and phase.veilAlpha < 0.3
+                    and phase.dustRate >= 14 and phase.glow.R > phases[1].glow.R,
+                    "returning silhouette/mask did not physically open and brighten")
+            else
+                assert(phase.markAlpha > 0.9 and phase.veilAlpha > 0.5
+                    and phase.dustRate == 5,
+                    "forward pass inherited the returning face and cloak")
+            end
+        end
         local defender = addPlayer("CrucifixStopsContact")
         observed.award(defender, "CRUCIFIX", 1)
         remote.OnServerEvent:Fire(defender, "Select", 3)
@@ -1534,13 +1581,23 @@ assert(mothLook and mothLook.parts >= 100 and mothLook.halos == 1
     and not mothLook.names["Chalk orbital ring"],
     "Moth was not replaced by a swarm of very small individual insects")
 local echoLook = observed.monsterLooks.TheEcho
-assert(echoLook and echoLook.names["Cracked funeral mask"] == 1
-    and echoLook.names["Joined hip socket"] == 2
+assert(echoLook and echoLook.parts >= 82 and echoLook.blocks == 0 and echoLook.halos == 1
+    and echoLook.names["Sunken echo thorax"] == 1
+    and echoLook.names["Long hollow porcelain face"] == 1
+    and echoLook.names["Torn echo shroud"] == 2
+    and echoLook.names["Return face fracture"] == 2
+    and echoLook.names["Echo shoulder socket"] == 2
+    and echoLook.names["Echo joined hip"] == 2
+    and echoLook.names["Attached narrow shin"] == 2
+    and echoLook.names["Chalk orbital ring"] == 28
+    and echoLook.mist == 3 and not echoLook.names["Cracked funeral mask"]
+    and not rushLook.names["Long hollow porcelain face"]
+    and not rushLook.names["Torn echo shroud"]
     and rushLook.names["Joined hip socket"] == 2
     and rushLook.names["Long shin fixed to knee"] == 2
     and blindLook.names["Knifelike shin"] == 2
     and blindLook.names["Connected hip joint"] == 2,
-    "humanoid legs/torso no longer meet at visible walking joints")
+    "returning Echo is still the Rush recoloured, or limbs are disconnected")
 local first = 100 - 8
 assert(not roomAt(first - 1), "old rooms were never culled")
 local backSeal = roomAt(first):FindFirstChild("The corridor closes behind you")

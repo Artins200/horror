@@ -10,7 +10,7 @@ local head = character:WaitForChild("Head")
 task.wait(0.3)
 local world = workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10",
-	"Open Nocturne-v11.rbxl in a NEW Studio tab")
+	"Open Nocturne-v12.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
@@ -62,8 +62,19 @@ if selected then
 	if selected == "FLASHLIGHT" then
 		local lens = item:FindFirstChild("Torch lens", true)
 		local beam = lens and lens:FindFirstChild("Selected torch beam")
-		assert(lens and beam and player:GetAttribute("HasFlashlight"),
-			"Selected hand torch has no lens/beam")
+		local reach = lens and lens:FindFirstChild("Selected torch core")
+		assert(lens and beam and reach and player:GetAttribute("HasFlashlight")
+			and beam.Brightness >= 3.2 and beam.Range >= 30
+			and reach.Brightness >= 4.4 and reach.Range >= 52,
+			"Selected hand torch has no bright wide/far physical beams")
+		local mount = camera:FindFirstChild("Invisible torch light source")
+		local flood = mount and mount:FindFirstChild("Hand torch flood")
+		local core = mount and mount:FindFirstChild("Hand torch reach")
+		local nearby = mount and mount:FindFirstChild("Hand torch nearby light")
+		local on = player:GetAttribute("TorchOn") == true
+		assert(flood and core and nearby and flood.Enabled == on
+			and core.Enabled == on and nearby.Enabled == on,
+			"Found torch has no visible light in Play, or stayed on when switched off")
 	end
 else
 	assert(not item, "Item model remained in the hand after use or discharge")
@@ -90,5 +101,5 @@ else
 			"Equipped item in right hand was hidden by first-person fading")
 	end
 end
-print("NOCTURNE v11: first-person grounded real Roblox hands",
+print("NOCTURNE v12: first-person grounded real Roblox hands",
 	held or "no key", selected or "no selected item", right.LocalTransparencyModifier)

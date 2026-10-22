@@ -435,16 +435,42 @@ torchMount.CanQuery = false
 torchMount.CastShadow = false
 torchMount.Transparency = 1
 torchMount.Parent = camera
+-- A warm near-field pool and a clear, pale hotspot are emitted from the
+-- selected REAL lens. Only their lighting changes; darkness away from the
+-- beam and the flashlight's original battery drain stay intact.
 local torch = Instance.new("SpotLight")
-torch.Name = "Weak hand torch"
-torch.Angle = 69
-torch.Range = 29
-torch.Brightness = 1.35
-torch.Color = Color3.fromRGB(255, 221, 179)
+torch.Name = "Hand torch flood"
+torch.Angle = 92
+torch.Range = 32
+torch.Brightness = 3.4
+torch.Color = Color3.fromRGB(255, 238, 208)
 torch.Face = Enum.NormalId.Front
-torch.Shadows = true
+torch.Shadows = false
 torch.Enabled = false
 torch.Parent = torchMount
+local torchCore = Instance.new("SpotLight")
+torchCore.Name = "Hand torch reach"
+torchCore.Angle = 42
+torchCore.Range = 56
+torchCore.Brightness = 4.6
+torchCore.Color = Color3.fromRGB(255, 250, 232)
+torchCore.Face = Enum.NormalId.Front
+torchCore.Shadows = false
+torchCore.Enabled = false
+torchCore.Parent = torchMount
+local torchBounce = Instance.new("PointLight")
+torchBounce.Name = "Hand torch nearby light"
+torchBounce.Range = 12
+torchBounce.Brightness = 0.85
+torchBounce.Color = Color3.fromRGB(255, 232, 198)
+torchBounce.Shadows = false
+torchBounce.Enabled = false
+torchBounce.Parent = torchMount
+local function setTorchLights(on)
+	torch.Enabled = on
+	torchCore.Enabled = on
+	torchBounce.Enabled = on
+end
 
 local function setSprint(on)
 	if on and (crouching or hidden or dead or finished) then return end
@@ -508,6 +534,7 @@ local function fallbackScareFace(kind)
 	model.Name = "Last glimpse of " .. tostring(kind)
 	local color = kind == "MOTH" and Color3.fromRGB(177, 187, 175)
 		or kind == "BLIND" and Color3.fromRGB(196, 199, 182)
+		or kind == "ECHO" and Color3.fromRGB(204, 216, 218)
 		or Color3.fromRGB(207, 207, 189)
 	local function oval(name, size, cf, tint)
 		local part = Instance.new("Part")
@@ -541,6 +568,15 @@ local function fallbackScareFace(kind)
 			CFrame.new(side * 0.63, 3.57, -1.31), DARK)
 	end
 	oval("Still mouth", Vector3.new(0.83, 0.18, 0.13), CFrame.new(0, 2.53, -1.14), DARK)
+	if kind == "ECHO" then
+		-- Even if the fast returning model replicates too late for the scare,
+		-- its thin shrouded silhouette must not fall back to the Rush's body.
+		body.Size = Vector3.new(1.28, 4.90, 0.80)
+		for _, side in ipairs({-1, 1}) do
+			oval("Last trailing echo veil", Vector3.new(0.72, 3.27, 0.32),
+				CFrame.new(side * 2.12, -0.47, 1.16), Color3.fromRGB(82, 94, 109))
+		end
+	end
 	return model
 end
 local function fallbackMothSwarm()
@@ -578,6 +614,7 @@ local function showScare(kind, source)
 	local token = scareToken
 	reticle.Visible = false
 	scare.Visible = true
+	setTorchLights(false)
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
 	local monster = source
 	if not monster or not monster:IsA("Model") then
@@ -651,6 +688,7 @@ local function showEnd(win)
 	end
 	modal.Visible = true
 	reticle.Visible = false
+	setTorchLights(false)
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	UserInputService.MouseIconEnabled = true
 end
@@ -731,7 +769,7 @@ player:GetAttributeChangedSignal("Health"):Connect(function()
 end)
 player:GetAttributeChangedSignal("TorchOn"):Connect(function()
 	flashlightOn = player:GetAttribute("TorchOn") == true
-	torch.Enabled = flashlightOn and not hidden and not dead and not finished
+	if not flashlightOn then setTorchLights(false) end
 end)
 player:GetAttributeChangedSignal("HasFlashlight"):Connect(function()
 	hasFlashlight = player:GetAttribute("HasFlashlight") == true
@@ -812,6 +850,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		if not dead and not finished then spiderImpact:Play(); showSpider(a) end
 	elseif event == "Hide" then
 		hidden = a
+		if hidden then setTorchLights(false) end
 		player:SetAttribute("NocturnePeek", hidden)
 		setSprint(false)
 		crouching = false
@@ -857,7 +896,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Finale" then
 		finished = true
 		setSprint(false)
-		torch.Enabled = false
+		setTorchLights(false)
 		showScare("FINAL", a)
 		local token = scareToken
 		task.delay(2.4, function()
@@ -877,6 +916,7 @@ local function onCharacter(character)
 	local newHead = character:WaitForChild("Head", 8)
 	if player.Character ~= character then return end -- late appearance from a previous life
 	root, humanoid, head = newRoot, newHumanoid, newHead
+	setTorchLights(false)
 	hideRobloxBackpack()
 	hidden = false
 	peekCF = nil
@@ -993,12 +1033,16 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
 	if lens and lens:IsA("BasePart") then
 		origin = lens.Position -- the beam begins in the REAL hand, not the head
-		local otherPlayersBeam = lens:FindFirstChild("Selected torch beam")
-		if otherPlayersBeam then otherPlayersBeam.Enabled = false end -- one local beam, aimed by native camera
+		-- Peers see the model's two server lights; the owner gets camera-aimed
+		-- cones from the same lens without stacking either source twice.
+		for _, name in ipairs({"Selected torch beam", "Selected torch core"}) do
+			local peerBeam = lens:FindFirstChild(name)
+			if peerBeam then peerBeam.Enabled = false end
+		end
 	else
 		origin = origin + camera.CFrame.RightVector * 0.45
 	end
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
-	torch.Enabled = lens ~= nil and flashlightOn and hasFlashlight and charge > 0
-		and not hidden and not dead and not finished
+	setTorchLights(lens ~= nil and flashlightOn and hasFlashlight and charge > 0
+		and not hidden and not dead and not finished)
 end)

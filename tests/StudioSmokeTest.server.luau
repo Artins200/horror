@@ -5,8 +5,8 @@ assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-	and world:GetAttribute("GenerationBuild") == "InteractiveItems-v11",
-	"Old place loaded: open Nocturne-v11.rbxl in a NEW Studio tab")
+	and world:GetAttribute("GenerationBuild") == "ReturnEchoBrightTorch-v12",
+	"Old place loaded: open Nocturne-v12.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -42,7 +42,7 @@ for index = 0, 1 do
 			COFFERED = "Deep coffered cross-vault"}
 		assert(not required[shape] or room:FindFirstChild(required[shape]),
 			"A random architecture label did not build a visible structure")
-		print("NOCTURNE v11 seed", world:GetAttribute("Seed"), "first room",
+		print("NOCTURNE v12 seed", world:GetAttribute("Seed"), "first room",
 			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
 	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),

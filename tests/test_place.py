@@ -174,7 +174,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
         self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "InteractiveItems-v11")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "ReturnEchoBrightTorch-v12")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -280,8 +280,37 @@ class PlaceTests(unittest.TestCase):
         for warning in (self.server.split('startRush = function(room, epoch)', 1)[1].split(
                 'local entity, claws, glow, jaw, jawHinge, legs = makeRush()', 1)[0],
                         self.server.split('startEcho = function(room, epoch)', 1)[1].split(
-                'local entity, claws, glow, jaw, jawHinge, legs = makeRush()', 1)[0]):
+                'local entity, arms, glow, jaw, jawHinge, legs, veils, marks, mist, shrouds = makeEcho()', 1)[0]):
             self.assertNotIn(':Play()', warning, 'light flicker must be silent')
+
+    def test_returning_echo_and_torch_have_distinct_physical_effects(self):
+        echo = self.server.split('local function makeEcho()', 1)[1].split(
+            'makeFinalWitness = function(parent)', 1)[0]
+        rush = self.server.split('local function makeRush()', 1)[1].split(
+            'local function makeEcho()', 1)[0]
+        patrol = self.server.split('startEcho = function(room, epoch)', 1)[1].split(
+            'local function resetWorld()', 1)[0]
+        for part in ('Sunken echo thorax', 'Long hollow porcelain face',
+                     'Left pendulum arm', 'Right pendulum arm', 'Torn echo shroud',
+                     'Echo joined hip', 'Echo shutter jaw', 'Receding echo dust'):
+            self.assertIn(part, echo)
+            self.assertNotIn(part, rush)
+        self.assertIn('local entity, arms, glow, jaw, jawHinge, legs, veils, marks, mist, shrouds = makeEcho()', patrol)
+        self.assertNotIn('local entity, claws, glow, jaw, jawHinge, legs = makeRush()', patrol)
+        self.assertIn('entity:SetAttribute("Returning", returning)', patrol)
+        self.assertIn('shroud.Transparency = returning and 0.22 or 0.57', patrol)
+        self.assertIn('mark.Transparency = returning and 0.07 or 0.94', patrol)
+        self.assertIn('local path = {farZ, nearZ, farZ, nearZ, farZ}', patrol)
+        self.assertIn('beam.Brightness = 3.4', self.server)
+        self.assertIn('beam.Range = 32', self.server)
+        self.assertIn('core.Brightness = 4.6', self.server)
+        self.assertIn('core.Range = 56', self.server)
+        self.assertIn('torch.Brightness = 3.4', self.client)
+        self.assertIn('torchCore.Brightness = 4.6', self.client)
+        self.assertIn('torchBounce.Brightness = 0.85', self.client)
+        self.assertIn('setTorchLights(lens ~= nil and flashlightOn and hasFlashlight and charge > 0', self.client)
+        self.assertIn('TorchDrain = 2.8', self.server)  # brightness must not grant infinite light
+        self.assertNotIn('Weak hand torch', self.client)
 
     def test_no_hint_overlays_and_physical_lighting(self):
         self.assertNotIn('showNotice(', self.client)
@@ -327,7 +356,7 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v11.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v12.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
 
 

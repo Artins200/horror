@@ -168,4 +168,4 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v11 / native first person] actual R6/R15 hands, key and selected item")
+print("[NOCTURNE v12 / native first person] actual R6/R15 hands, key and selected item")
