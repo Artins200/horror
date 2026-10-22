@@ -158,8 +158,10 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("if root and not state.hidden[player]", self.server)
         self.assertIn("state.opened == CONFIG.Doors", self.server)
         self.assertIn("function() startRush(room, mySession)", self.server)
-        self.assertIn("function() startBlind(room, mySession)", self.server)
-        self.assertIn("function() startMoth(room, mySession)", self.server)
+        self.assertIn("startBlind(nextRoom, session)", self.server)
+        self.assertIn("startMoth(nextRoom, session)", self.server)
+        self.assertNotIn("function() startBlind(room, mySession)", self.server)
+        self.assertNotIn("function() startMoth(room, mySession)", self.server)
         self.assertIn("function() startEcho(room, mySession)", self.server)
         self.assertIn("RunService:BindToRenderStep", self.client)
         self.assertIn("Enum.CameraType.Custom", self.client)
@@ -171,8 +173,8 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v9")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "SparseLootCompactHUD-v9")', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "SharedLootHeldItemsAudio-v10")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -184,7 +186,9 @@ class PlaceTests(unittest.TestCase):
         self.assertNotIn('Opening title card', self.client)
         self.assertNotRegex(self.client + self.perspective, r"\broot\.CFrame\s*=")
         self.assertNotIn('player.Character:GetDescendants()', self.perspective)
-        self.assertNotIn("rbxasset://sounds/", self.client + self.perspective)
+        self.assertIn('"rbxasset://sounds/" .. file', self.client)
+        self.assertIn('"rbxasset://sounds/" .. file', self.server)
+        self.assertNotIn("rbxassetid://", self.client + self.server)
         render = self.client.split('RunService:BindToRenderStep(', 1)[1]
         self.assertNotIn('camera.CFrame =', render.split('if hidden and peekCF then', 1)[0])
         self.assertIn('if hidden and peekCF then', render)
@@ -246,6 +250,35 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('remote:FireClient(player, "Finale", witness)', self.server)
         self.assertIn('Solid wall behind the final light', self.server)
 
+    def test_single_shared_cache_real_held_models_and_spatial_audio(self):
+        for fragment in ('local claimed = false', 'claimed = true',
+                         'if not award(player, lootKind, amount) then claimed = false; return end',
+                         'lootPrompt.Enabled = false', 'drawer:SetAttribute("LootClaimed", true)',
+                         'loot:Destroy() -- replicated to EVERY player',
+                         'updateHeldItem = function(player)', 'grip.Part0 = hand',
+                         'grip.Part1 = core', 'held:SetAttribute("GripHand", side)',
+                         'beam.Enabled = info.torchOn',
+                         'soundAt(air, "Low draught in the masonry"',
+                         'local reflection = Instance.new("EchoSoundEffect")',
+                         'local reverb = Instance.new("ReverbSoundEffect")',
+                         'remote:FireAllClients("MonsterSpawn", kind, room.index)'):
+            self.assertIn(fragment, self.server)
+        self.assertNotIn('taken[player]', self.server)
+        self.assertIn('local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"',
+                      self.client)
+        self.assertIn('elseif event == "MonsterSpawn" then', self.client)
+        self.assertIn('if lens and lens:IsA("BasePart") then', self.client)
+        self.assertIn('local item = character:FindFirstChild("HeldItem")', self.perspective)
+        door = self.server.split('openDoor = function(player, index)', 1)[1].split(
+            '-- Four hazards', 1)[0]
+        for resident in ('startBlind(nextRoom, session)', 'startMoth(nextRoom, session)'):
+            self.assertLess(door.index(resident), door.index('swingDoor(room, true)'))
+        for warning in (self.server.split('startRush = function(room, epoch)', 1)[1].split(
+                'local entity, claws, glow, jaw, jawHinge, legs = makeRush()', 1)[0],
+                        self.server.split('startEcho = function(room, epoch)', 1)[1].split(
+                'local entity, claws, glow, jaw, jawHinge, legs = makeRush()', 1)[0]):
+            self.assertNotIn(':Play()', warning, 'light flicker must be silent')
+
     def test_no_hint_overlays_and_physical_lighting(self):
         self.assertNotIn('showNotice(', self.client)
         self.assertNotIn('"Controls",', self.client)
@@ -271,12 +304,14 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('player:SetAttribute("HeldKey", room.index + 1)', self.server)
         self.assertIn('if state.keys[player] == index then', self.server)
         self.assertIn('putBackKey(player)', self.server)
-        self.assertIn('local visible = key ~= nil and not peek', self.perspective)
+        self.assertIn('local rightVisible = alive and (key ~= nil', self.perspective)
         self.assertIn('shoulder = character:FindFirstChild(r15 and "RightShoulder"', self.perspective)
         self.assertIn('elbow = r15 and character:FindFirstChild("RightElbow"', self.perspective)
         self.assertIn('wrist = r15 and character:FindFirstChild("RightWrist"', self.perspective)
+        self.assertIn('leftShoulder = character:FindFirstChild(r15 and "LeftShoulder"', self.perspective)
         self.assertIn('motor.C0 = CFrame.new(base.Position)', self.perspective)
-        self.assertIn('part.LocalTransparencyModifier = visible and 0 or 1', self.perspective)
+        self.assertIn('part.LocalTransparencyModifier = rightVisible and 0 or 1', self.perspective)
+        self.assertIn('part.LocalTransparencyModifier = leftVisible and 0 or 1', self.perspective)
         self.assertNotIn('source:Clone()', self.perspective)
         self.assertNotIn('viewModel', self.perspective)
         self.assertIn('player:GetAttribute("KeyTurning")', self.perspective)
@@ -288,7 +323,7 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v9.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v10.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
 
 

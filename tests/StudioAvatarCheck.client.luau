@@ -1,5 +1,5 @@
--- CLIENT Command Bar during Play (not Run): once without a key, again with
--- one from any LOCKED room. A native Roblox R6/R15 avatar stays grounded.
+-- CLIENT Command Bar during Play (not Run): run empty-handed, after a loot
+-- pickup/selection, and with a key. Both actual R6/R15 hands stay grounded.
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 assert(player, "Run this in the CLIENT Command Bar during Play")
@@ -9,8 +9,8 @@ local humanoid = character:WaitForChild("Humanoid")
 local head = character:WaitForChild("Head")
 task.wait(0.3)
 local world = workspace:FindFirstChild("NocturneWorld")
-assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v9",
-	"Open Nocturne-v9.rbxl in a NEW Studio tab")
+assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10",
+	"Open Nocturne-v10.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
@@ -37,6 +37,37 @@ local shoulder = character:FindFirstChild("RightShoulder", true)
 	or character:FindFirstChild("Right Shoulder", true)
 assert(right and shoulder and shoulder:IsA("Motor6D") and right.Transparency < 0.95,
 	"Right hand must be part of the actual R6/R15 character and its joints")
+local selected = player:GetAttribute("EquippedItem")
+local item = selected and character:WaitForChild("HeldItem", 5) or character:FindFirstChild("HeldItem")
+if selected then
+	local side = player:GetAttribute("HeldKey") and "Left" or "Right"
+	local hand = character:FindFirstChild(side .. "Hand") or character:FindFirstChild(side .. " Arm")
+	local grip = item and item:FindFirstChild("Item grip in Roblox hand", true)
+	local details = 0
+	assert(item and item:GetAttribute("ItemKind") == selected
+		and item:GetAttribute("GripHand") == side and grip and grip.Part0 == hand,
+		"Selected item has no server-owned model welded to a real hand")
+	for _, part in ipairs(item:GetDescendants()) do
+		if part:IsA("BasePart") then
+			details = details + 1
+			assert(not part.Anchored and not part.CanCollide and not part.CanQuery,
+				"Held item has a frozen/free-standing piece or an invisible collision")
+		end
+	end
+	assert(details >= 5 and hand.LocalTransparencyModifier < 0.1,
+		"Detailed item or genuine Roblox holding arm is invisible")
+	local relative = camera.CFrame:PointToObjectSpace(grip.Part1.Position)
+	assert(relative.Z < 1.5 and relative.Z > -4 and math.abs(relative.X) < 3.5,
+		"Held model drifted away from the visible first-person hand")
+	if selected == "FLASHLIGHT" then
+		local lens = item:FindFirstChild("Torch lens", true)
+		local beam = lens and lens:FindFirstChild("Selected torch beam")
+		assert(lens and beam and player:GetAttribute("HasFlashlight"),
+			"Selected hand torch has no lens/beam")
+	end
+else
+	assert(not item, "Item model remained in the hand after use or discharge")
+end
 local held = player:GetAttribute("HeldKey")
 if held then
 	local model = character:FindFirstChild("HeldKey")
@@ -51,8 +82,13 @@ if held then
 	assert(cam.Z < 1.5, "Key arm is behind the player's head; inspect pose in Studio")
 else
 	assert(not character:FindFirstChild("HeldKey"), "A key is visible before pickup")
-	assert(right.LocalTransparencyModifier > 0.9,
-		"An arm hovers onscreen even when no key is held")
+	if not selected then
+		assert(right.LocalTransparencyModifier > 0.9,
+			"An arm hovers onscreen even when nothing is held")
+	else
+		assert(right.LocalTransparencyModifier < 0.1,
+			"Equipped item in right hand was hidden by first-person fading")
+	end
 end
-print("NOCTURNE v9: native first person, grounded humanoid, actual joined right arm",
-	held or "no key", right.LocalTransparencyModifier)
+print("NOCTURNE v10: first-person grounded real Roblox hands",
+	held or "no key", selected or "no selected item", right.LocalTransparencyModifier)

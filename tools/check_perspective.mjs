@@ -126,8 +126,8 @@ local function avatar(rig)
     human.Health=100
     human.RigType=rig=="R15" and Enum.HumanoidRigType.R15 or Enum.HumanoidRigType.R6
     human.Parent=character
-    local names=rig=="R15" and {"RightUpperArm","RightLowerArm","RightHand","LeftHand"}
-        or {"Right Arm","Left Arm"}
+    local names=rig=="R15" and {"RightUpperArm","RightLowerArm","RightHand",
+        "LeftUpperArm","LeftLowerArm","LeftHand"} or {"Right Arm","Left Arm"}
     local parts={}
     for _,name in ipairs(names) do
         local part=Instance.new("Part")
@@ -150,12 +150,17 @@ local function avatar(rig)
     local arm=parts[rig=="R15" and "RightUpperArm" or "Right Arm"]
     local shoulder=joint(rig=="R15" and "RightShoulder" or "Right Shoulder",torso,torso,arm)
     local elbow,wrist
+    local leftArm=parts[rig=="R15" and "LeftUpperArm" or "Left Arm"]
+    local leftShoulder=joint(rig=="R15" and "LeftShoulder" or "Left Shoulder",
+        torso,torso,leftArm)
     if rig=="R15" then
         elbow=joint("RightElbow",arm,arm,parts.RightLowerArm)
         wrist=joint("RightWrist",parts.RightLowerArm,parts.RightLowerArm,parts.RightHand)
+        joint("LeftElbow",leftArm,leftArm,parts.LeftLowerArm)
+        joint("LeftWrist",parts.LeftLowerArm,parts.LeftLowerArm,parts.LeftHand)
     end
     character.Parent=workspace
-    return character,human,root,parts,shoulder,elbow,wrist
+    return character,human,root,parts,shoulder,elbow,wrist,leftShoulder
 end
 local avatar15,human15,root15,arms15,shoulder,elbow,wrist=avatar("R15")
 player.Character=avatar15
@@ -220,6 +225,46 @@ runService.render(0.016)
 assert(shoulder.C0.pitch==0 and elbow.C0.pitch==0
     and arms15.RightHand.LocalTransparencyModifier==1 and bow.LocalTransparencyModifier==1,
     "right arm/key stayed in front of camera after consuming the key")
+local heldItem=Instance.new("Model")
+heldItem.Name="HeldItem"
+heldItem:SetAttribute("ItemKind","PILL")
+heldItem:SetAttribute("GripHand","Right")
+heldItem.Parent=avatar15
+local vial=Instance.new("Part")
+vial.Name="Amber apothecary vial"
+vial.LocalTransparencyModifier=1
+vial.Parent=heldItem
+local itemGrip=Instance.new("WeldConstraint")
+itemGrip.Name="Item grip in Roblox hand"
+itemGrip.Part0=arms15.RightHand
+itemGrip.Part1=vial
+itemGrip.Parent=vial
+for _=1,7 do runService.render(0.07) end
+assert(shoulder.C0.pitch>0.6 and arms15.RightHand.LocalTransparencyModifier==0
+    and vial.LocalTransparencyModifier==0 and arms15.LeftHand.LocalTransparencyModifier==1
+    and itemGrip.Part0==arms15.RightHand,
+    "selected detailed consumable is not shown in the actual R15 right hand")
+local leftShoulder=avatar15:FindFirstChild("LeftShoulder",true)
+heldItem:SetAttribute("GripHand","Left")
+itemGrip.Part0=arms15.LeftHand
+player:SetAttribute("HeldKey",12)
+for _=1,8 do runService.render(0.07) end
+assert(leftShoulder.C0.pitch>0.5 and arms15.LeftHand.LocalTransparencyModifier==0
+    and arms15.RightHand.LocalTransparencyModifier==0 and vial.LocalTransparencyModifier==0
+    and bow.LocalTransparencyModifier==0 and itemGrip.Part0==arms15.LeftHand,
+    "the key hid or displaced the selected item instead of using the real left hand")
+player:SetAttribute("Hidden",true)
+runService.render(0.016)
+assert(leftShoulder.C0.pitch==0 and arms15.LeftHand.LocalTransparencyModifier==1
+    and vial.LocalTransparencyModifier==1 and bow.LocalTransparencyModifier==1,
+    "hiding left the item visible in the wardrobe")
+player:SetAttribute("Hidden",false)
+player:SetAttribute("HeldKey",nil)
+heldItem.Parent=nil
+runService.render(0.016)
+assert(leftShoulder.C0.pitch==0 and arms15.LeftHand.LocalTransparencyModifier==1
+    and arms15.RightHand.LocalTransparencyModifier==1,
+    "using/losing an item left both arms hovering in first person")
 local avatar6,human6,root6,arms6,shoulder6=avatar("R6")
 player.Character=avatar6
 player.CharacterAdded:Fire(avatar6)
@@ -233,6 +278,20 @@ for _=1,7 do runService.render(0.07) end
 assert(shoulder6.C0.pitch>0.45 and arms6["Right Arm"].LocalTransparencyModifier==0
     and arms6["Left Arm"].LocalTransparencyModifier==1,
     "normal-size R6 right arm cannot hold its actual key")
+local kit=Instance.new("Model")
+kit.Name="HeldItem"
+kit:SetAttribute("ItemKind","MEDKIT")
+kit:SetAttribute("GripHand","Left")
+kit.Parent=avatar6
+local tin=Instance.new("Part")
+tin.Name="Enamelled medical tin"
+tin.LocalTransparencyModifier=1
+tin.Parent=kit
+for _=1,8 do runService.render(0.07) end
+assert(arms6["Left Arm"].LocalTransparencyModifier==0
+    and arms6["Right Arm"].LocalTransparencyModifier==0
+    and tin.LocalTransparencyModifier==0 and avatar6:FindFirstChild("Left Shoulder",true).C0.pitch>0.5,
+    "R6 medical tin was not held by the real left arm while a key uses the right")
 local replacement=Instance.new("Camera")
 replacement.CameraType=Enum.CameraType.Fixed
 replacement.Parent=workspace
@@ -253,4 +312,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Independent first-person test failed: ${message}\n${nearby}`);
 }
-console.log("Perspective smoke test OK: real R6/R15 Motor6D arms, welded key, lock turn and wardrobe, no viewmodel");
+console.log("Perspective smoke test OK: real R6/R15 hands, key plus selected item, lock turn and wardrobe, no viewmodel");

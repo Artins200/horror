@@ -101,6 +101,12 @@ function methods:GetAttributeChangedSignal(name)
     return self._attributeSignals[name]
 end
 function methods:IsA(class) return self._class == class or (class == "BasePart" and self._class == "Part") end
+function methods:Play()
+    assert(self._class == "Sound" and self.SoundId:match("^rbxasset://sounds/"))
+    self.IsPlaying = true
+    self.Plays = (self.Plays or 0) + 1
+end
+function methods:Stop() self.IsPlaying = false end
 function methods:Destroy() self.Parent = nil end
 local instMeta = {
     __index = function(t, k)
@@ -157,12 +163,13 @@ function tweenService:Create(target, _, props)
     end}
 end
 local lighting = Instance.new("Lighting")
+local soundService = Instance.new("SoundService")
 local starterGui = Instance.new("StarterGui")
 starterGui.disabled = {}
 function starterGui:SetCoreGuiEnabled(which, enabled) self.disabled[which] = not enabled end
 local services = {Players=Instance.new("Players"), ReplicatedStorage=replicated, Workspace=workspace,
     RunService=runService, UserInputService=uiService, TweenService=tweenService,
-    Lighting=lighting, StarterGui=starterGui}
+    Lighting=lighting, SoundService=soundService, StarterGui=starterGui}
 services.Players.LocalPlayer = player
 game = {GetService=function(_, name) return services[name] end}
 local timers = {}
@@ -223,6 +230,16 @@ player.CharacterAdded:Fire(avatar)
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson
     and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
     "HUD's camera transition detached from the actual Humanoid")
+local arrival = soundService:FindFirstChild("Creature at the threshold")
+local impact = soundService:FindFirstChild("Corridor arrival impact")
+assert(arrival and impact and arrival:FindFirstChildOfClass("EchoSoundEffect")
+    and arrival:FindFirstChildOfClass("ReverbSoundEffect"),
+    "loud near-field monster cues or masonry echo are missing")
+remote.OnClientEvent:Fire("MonsterSpawn", "BLIND", 0)
+assert(arrival.IsPlaying and impact.IsPlaying and arrival.Plays == 1,
+    "opening a resident monster room played no arrival sound")
+remote.OnClientEvent:Fire("MonsterSpawn", "MOTH", 80)
+assert(arrival.Plays == 1, "sound blasted a teammate eighty rooms away")
 local gui = playerGui:FindFirstChild("NocturneHUD")
 local reticle = gui:FindFirstChild("Reticle")
 local scare = gui:FindFirstChild("Creature close-up")
@@ -299,13 +316,28 @@ assert(wallet.Text:find("12") and wallet.Text:find("2") and wallet.Text:find("1"
     and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible
     and gui:FindFirstChild("Mobile torch").Visible == uiService.TouchEnabled,
     "five unique items, money or the compact battery indicator did not render")
+-- In Play this is the server-replicated model, not a fake client viewmodel.
+local heldTorch = Instance.new("Model")
+heldTorch.Name = "HeldItem"
+heldTorch:SetAttribute("ItemKind", "FLASHLIGHT")
+heldTorch.Parent = avatar
+local lens = Instance.new("Part")
+lens.Name = "Torch lens"
+lens.Position = Vector3.new(0.5, 4.1, 10)
+lens.Parent = heldTorch
+local teammateBeam = Instance.new("SpotLight")
+teammateBeam.Name = "Selected torch beam"
+teammateBeam.Enabled = true
+teammateBeam.Parent = lens
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == true,
     "found torch did not request server-owned light")
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
 local light = camera:FindFirstChild("Invisible torch light source"):FindFirstChild("Weak hand torch")
-assert(light.Enabled, "server-authorized flashlight did not illuminate")
+assert(light.Enabled and not teammateBeam.Enabled
+    and (camera:FindFirstChild("Invisible torch light source").CFrame.Position - lens.Position).Magnitude < 0.1,
+    "torch beam did not emerge from the actual selected hand-held lens")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Two}, false)
 assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
     "number keys did not select the custom pill slot")
@@ -419,6 +451,14 @@ assert(replacement.CameraType == Enum.CameraType.Custom
     "HUD camera replacement stopped following the living avatar")
 local torch=replacement:FindFirstChild("Invisible torch light source")
     :FindFirstChild("Weak hand torch")
+local carried = Instance.new("Model")
+carried.Name = "HeldItem"
+carried:SetAttribute("ItemKind", "FLASHLIGHT")
+carried.Parent = nextAvatar
+local newLens = Instance.new("Part")
+newLens.Name = "Torch lens"
+newLens.Position = Vector3.new(0.4, 4, 10)
+newLens.Parent = carried
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)

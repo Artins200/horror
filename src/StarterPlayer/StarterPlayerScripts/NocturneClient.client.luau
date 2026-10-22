@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -374,11 +375,40 @@ exitButton.Visible = false
 -- No tutorial captions or button hints at the bottom of the screen.
 -- Mobile action buttons are controls, not on-screen survival instructions.
 
--- Studio cannot reliably read local built-in sound files. Do not create or
--- preload failing Sound instances; threats are intentionally signalled visually.
+-- Close arrival is mixed locally so a monster three rooms behind is still
+-- LOUD when it actually appears. Files are shipped with Roblox's own character
+-- audio; no third-party/private asset permission or download is required.
+-- The light-flicker code never plays a sound (only a monster's arrival does).
+local function localCue(name, file, volume, pitch)
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	sound.SoundId = "rbxasset://sounds/" .. file
+	sound.Volume = volume
+	sound.PlaybackSpeed = pitch
+	local echo = Instance.new("EchoSoundEffect")
+	echo.Delay = 0.23
+	echo.Feedback = 0.26
+	echo.WetLevel = -12
+	echo.DryLevel = 0
+	echo.Parent = sound
+	local reverb = Instance.new("ReverbSoundEffect")
+	reverb.DecayTime = 2.9
+	reverb.Density = 0.72
+	reverb.Diffusion = 0.82
+	reverb.WetLevel = -8
+	reverb.DryLevel = 0
+	reverb.Parent = sound
+	sound.Parent = SoundService
+	return sound
+end
+local arrivalVoice = localCue("Creature at the threshold", "uuhhh.mp3", 1.65, 0.62)
+local arrivalImpact = localCue("Corridor arrival impact", "action_jump_land.mp3", 1.12, 0.64)
+local itemClick = localCue("Physical item used", "action_get_up.mp3", 0.31, 1.18)
+local spiderImpact = localCue("Drawer spider strike", "action_jump_land.mp3", 0.88, 1.35)
+local roomLength = 44
 
 -- Keep the real character and its collisions untouched. The separate native
--- perspective controller locally reveals only its ordinary key-holding arm.
+-- perspective controller locally reveals its ordinary item-holding arms.
 local peekCF = nil
 local root = nil
 local humanoid = nil
@@ -713,9 +743,23 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
 		redrawEquipment()
 	elseif event == "State" then
+		roomLength = type(c) == "number" and c or roomLength
 		if not dead and not finished then modal.Visible = false end
+	elseif event == "MonsterSpawn" then
+		-- A loud cue for living players near the OPENED room, including a
+		-- teammate still hiding one door behind it. Not a flicker cue.
+		if root and not dead and (not finished or a == "FINAL")
+			and type(b) == "number" and math.abs(root.Position.Z - b * roomLength) < roomLength * 3.7 then
+			arrivalVoice.PlaybackSpeed = a == "MOTH" and 0.88 or a == "ECHO" and 0.74 or 0.60
+			arrivalVoice:Stop()
+			arrivalImpact:Stop()
+			arrivalVoice:Play()
+			arrivalImpact:Play()
+		end
+	elseif event == "ItemUsed" then
+		if not dead then itemClick:Play() end
 	elseif event == "Spider" then
-		if not dead and not finished then showSpider(a) end
+		if not dead and not finished then spiderImpact:Play(); showSpider(a) end
 	elseif event == "Hide" then
 		hidden = a
 		player:SetAttribute("NocturnePeek", hidden)
@@ -890,9 +934,18 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local running = moving and not crouching and horizontalSpeed > 15
 	camera.FieldOfView = camera.FieldOfView + ((hidden and (70 - pressure * 9) or (running and 79 or 73))
 		- camera.FieldOfView) * damp(4, dt)
+	local held = player.Character and player.Character:FindFirstChild("HeldItem")
+	local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"
+		and held:FindFirstChild("Torch lens", true)
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
-	origin = origin + camera.CFrame.RightVector * 0.45
+	if lens and lens:IsA("BasePart") then
+		origin = lens.Position -- the beam begins in the REAL hand, not the head
+		local otherPlayersBeam = lens:FindFirstChild("Selected torch beam")
+		if otherPlayersBeam then otherPlayersBeam.Enabled = false end -- one local beam, aimed by native camera
+	else
+		origin = origin + camera.CFrame.RightVector * 0.45
+	end
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
-	torch.Enabled = flashlightOn and hasFlashlight and charge > 0
+	torch.Enabled = lens ~= nil and flashlightOn and hasFlashlight and charge > 0
 		and not hidden and not dead and not finished
 end)

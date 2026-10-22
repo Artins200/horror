@@ -118,6 +118,49 @@ local function newPart(parent, name, size, cf, color, material, transparency, co
 	return p
 end
 
+-- These filenames are shipped with Roblox's own character sounds (not
+-- unpublished marketplace audio). Each sound has a real 3-D source, a soft
+-- reflection and room reverb. Light flickers NEVER call this helper.
+local function soundAt(part, name, file, volume, pitch, range, looped)
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	sound.SoundId = "rbxasset://sounds/" .. file
+	sound.Volume = volume
+	sound.PlaybackSpeed = pitch
+	sound.RollOffMode = Enum.RollOffMode.Inverse
+	sound.RollOffMinDistance = 8
+	sound.RollOffMaxDistance = range
+	sound.Looped = looped or false
+	local reflection = Instance.new("EchoSoundEffect")
+	reflection.Name = "Short corridor reflection"
+	reflection.Delay = 0.19
+	reflection.Feedback = 0.21
+	reflection.DryLevel = 0
+	reflection.WetLevel = -16
+	reflection.Parent = sound
+	local reverb = Instance.new("ReverbSoundEffect")
+	reverb.Name = "Hotel masonry tail"
+	reverb.DecayTime = 2.5
+	reverb.Density = 0.62
+	reverb.Diffusion = 0.78
+	reverb.DryLevel = 0
+	reverb.WetLevel = -12
+	reverb.Parent = sound
+	sound.Parent = part
+	return sound
+end
+
+local function announceMonster(room, kind, entity)
+	local body = entity.PrimaryPart
+	if not body then return end
+	soundAt(body, "Arrival in the hall", "uuhhh.mp3", 1.4,
+		kind == "MOTH" and 0.82 or 0.58, 135):Play()
+	soundAt(body, "Heavy arrival", "action_jump_land.mp3", 1.1, 0.55, 115):Play()
+	-- A close, loud cue reaches the player even when the Rush begins three
+	-- rooms behind. The local client checks that the player is near the room.
+	remote:FireAllClients("MonsterSpawn", kind, room.index)
+end
+
 -- Keep the native E/touch/gamepad interaction affordance, but never show
 -- explanatory action/object text over the scene.
 local function iconPrompt(prompt)
@@ -341,6 +384,7 @@ local function swingDoor(room, opening)
 	if room.busy or not room.door.Parent then return end
 	room.busy = true
 	room.prompt.Enabled = false
+	if room.creak then room.creak:Play() end
 	setModelCollision(room.door, false)
 	local from = room.hinge * CFrame.Angles(0, room.open and -math.rad(105) or 0, 0)
 	local to = room.hinge * CFrame.Angles(0, opening and -math.rad(105) or 0, 0)
@@ -364,8 +408,9 @@ local function playerRoot(player)
 	return root, humanoid
 end
 
--- Only the server can award loot, spend money or enable a beam. Every teammate
--- has their own wallet and one search per drawer; keys and room geometry stay shared.
+-- Only the server can award loot, spend money or enable a beam. The wallet
+-- and inventory are personal; each actual drawer prize belongs to its first taker.
+local updateHeldItem -- defined after the shared drawer/hand item modeller
 local function syncInventory(player)
 	local info = state.players[player]
 	if not info then return end
@@ -382,6 +427,9 @@ local function syncInventory(player)
 	player:SetAttribute("TorchCharge", math.ceil(info.charge))
 	player:SetAttribute("Health", math.ceil(info.health))
 	player:SetAttribute("SelectedItem", SLOTS[info.selected])
+	player:SetAttribute("EquippedItem", info.items[SLOTS[info.selected]] > 0
+		and playerRoot(player) and SLOTS[info.selected] or nil)
+	if updateHeldItem then updateHeldItem(player) end
 	local items = {}
 	for _, id in ipairs(SLOTS) do items[id] = info.items[id] end
 	remote:FireClient(player, "Inventory", {
@@ -397,8 +445,8 @@ local function award(player, kind, amount)
 		local field = ({COIN = "coins", NOTE = "notes", GOLD = "gold"})[kind]
 		info[field] = info[field] + amount
 	elseif info.items[kind] ~= nil then
-		-- One per TYPE, not one item in total. A refused drawer stays available
-		-- to this player after the held copy is consumed, lost or discharged.
+		-- One per TYPE, not one item in total. A refused prize stays in its
+		-- shared drawer until somebody eligible takes it (or the run resets).
 		if amount ~= 1 or info.items[kind] > 0 then return false end
 		local selectedID = SLOTS[info.selected]
 		local selectedWasEmpty = info.items[selectedID] == 0
@@ -484,6 +532,7 @@ local function swingCloset(closet, opening)
 	if closet.epoch ~= session or not closet.model.Parent then return end
 	closet.motion = (closet.motion or 0) + 1
 	local motion = closet.motion
+	if closet.creak then closet.creak:Play() end
 	closet.prompt.Enabled = false
 	closet.closePrompt.Enabled = false
 	closet.barrier.CanCollide = false
@@ -656,6 +705,8 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	closePrompt.Parent = handles[1]
 	local closet = {
 		model = model, barrier = barrier, leaves = leaves, prompt = prompt, closePrompt = closePrompt,
+		creak = soundAt(handles[-1], "Wardrobe wood and hinges", "action_get_up.mp3",
+			0.38, 0.62, 48),
 		roomIndex = room.index, front = (cf * CFrame.new(0, 4, -1.6)).Position,
 		rootCF = cf * CFrame.new(0, 3, 0.1),
 		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
@@ -694,6 +745,7 @@ local function putBackKey(player)
 		room.key.prompt.Enabled = true
 		room.model:SetAttribute("KeyFound", false)
 	end
+	if updateHeldItem then updateHeldItem(player) end -- release the left hand
 end
 
 local function holdKey(player, key)
@@ -741,8 +793,8 @@ local function holdKey(player, key)
 	return true
 end
 
--- Drawer contents are seeded once on the server, but each teammate can take a
--- given cache once. The props move WITH the real drawer and are never client gifts.
+-- Drawer contents are seeded once on the server. They belong to the first
+-- eligible taker, not to every client; props ride the real drawer until claimed.
 local function rollLoot(rng)
 	-- Over half the drawers are empty. Cash is more common than equipment;
 	-- the latter drops in only 13.5% of unlocked, non-key drawers.
@@ -763,9 +815,10 @@ local function makeLoot(drawer, cf, y, kind, amount)
 	model.Name = "Loot_" .. kind
 	model.Parent = drawer
 	local base = cf * CFrame.new(0, y - 0.20, -0.62)
-	local function piece(name, size, offset, tint, material, shape)
-		local p = newPart(model, name, size, base * offset, tint, material, 0, false)
+	local function piece(name, size, offset, tint, material, shape, alpha)
+		local p = newPart(model, name, size, base * offset, tint, material, alpha or 0, false)
 		if shape then p.Shape = shape end
+		p.CanQuery = false
 		return p
 	end
 	local primary
@@ -786,35 +839,183 @@ local function makeLoot(drawer, cf, y, kind, amount)
 		piece("Ingot stamp", Vector3.new(0.50, 0.025, 0.22), CFrame.new(0, 0.15, 0),
 			C.brassDark, Enum.Material.Metal)
 	elseif kind == "FLASHLIGHT" then
-		primary = piece("Found hand torch", Vector3.new(0.78, 0.35, 0.35),
+		local steel = Color3.fromRGB(98, 107, 108)
+		primary = piece("Machined torch barrel", Vector3.new(1.18, 0.35, 0.35),
 			CFrame.new(), C.woodDark, Enum.Material.Metal, Enum.PartType.Cylinder)
-		piece("Glass torch lens", Vector3.new(0.15, 0.39, 0.39),
-			CFrame.new(-0.43, 0, 0), C.lamp, Enum.Material.Glass, Enum.PartType.Cylinder)
+		for _, x in ipairs({-0.15, -0.02, 0.11, 0.24}) do
+			piece("Crosshatched grip ring", Vector3.new(0.055, 0.39, 0.39),
+				CFrame.new(x, 0, 0), steel, Enum.Material.Metal, Enum.PartType.Cylinder)
+		end
+		piece("Knurled tail cap", Vector3.new(0.18, 0.40, 0.40),
+			CFrame.new(0.64, 0, 0), steel, Enum.Material.Metal, Enum.PartType.Cylinder)
+		piece("Flared torch head", Vector3.new(0.28, 0.53, 0.53),
+			CFrame.new(-0.56, 0, 0), steel, Enum.Material.Metal, Enum.PartType.Cylinder)
+		piece("Lens retaining ring", Vector3.new(0.10, 0.58, 0.58),
+			CFrame.new(-0.72, 0, 0), C.brassDark, Enum.Material.Metal, Enum.PartType.Cylinder)
+		local lens = piece("Torch lens", Vector3.new(0.055, 0.45, 0.45),
+			CFrame.new(-0.79, 0, 0), Color3.fromRGB(222, 203, 157),
+			Enum.Material.Glass, Enum.PartType.Cylinder, 0.17)
+		piece("Recessed lamp filament", Vector3.new(0.067, 0.16, 0.16),
+			CFrame.new(-0.83, 0, 0), Color3.fromRGB(255, 234, 193),
+			Enum.Material.Neon, Enum.PartType.Cylinder, 0.18)
+		piece("Raised power switch", Vector3.new(0.21, 0.09, 0.16),
+			CFrame.new(0.28, 0.23, 0), steel, Enum.Material.Metal)
+		local beam = Instance.new("SpotLight")
+		beam.Name = "Selected torch beam"
+		beam.Enabled = false
+		beam.Face = Enum.NormalId.Left
+		beam.Angle = 67
+		beam.Range = 28
+		beam.Brightness = 1.3
+		beam.Color = Color3.fromRGB(255, 221, 179)
+		beam.Shadows = false
+		beam.Parent = lens
 	elseif kind == "PILL" then
-		primary = piece("Stoppered pill vial", Vector3.new(0.34, 0.58, 0.34),
-			CFrame.new(), Color3.fromRGB(176, 175, 152), Enum.Material.Glass)
-		piece("Pill bottle label", Vector3.new(0.35, 0.20, 0.02),
-			CFrame.new(0, -0.06, -0.18), Color3.fromRGB(130, 47, 50), Enum.Material.Fabric)
+		local amber = Color3.fromRGB(186, 146, 92)
+		local vertical = CFrame.Angles(0, 0, math.pi / 2)
+		primary = piece("Vial grip spine", Vector3.new(0.29, 0.65, 0.29),
+			CFrame.new(), amber, Enum.Material.Glass, nil, 0.55)
+		piece("Amber apothecary vial", Vector3.new(0.72, 0.46, 0.46),
+			vertical, amber, Enum.Material.Glass, Enum.PartType.Cylinder, 0.23)
+		piece("Dark sealed vial base", Vector3.new(0.09, 0.48, 0.48),
+			CFrame.new(0, -0.35, 0) * vertical, C.brassDark,
+			Enum.Material.Metal, Enum.PartType.Cylinder)
+		piece("Wax bottle collar", Vector3.new(0.11, 0.52, 0.52),
+			CFrame.new(0, 0.37, 0) * vertical, C.brass,
+			Enum.Material.Metal, Enum.PartType.Cylinder)
+		piece("Faceted glass stopper", Vector3.new(0.22, 0.30, 0.30),
+			CFrame.new(0, 0.52, 0) * vertical, Color3.fromRGB(214, 202, 168),
+			Enum.Material.Glass, Enum.PartType.Cylinder, 0.08)
+		piece("Hand-printed medicine label", Vector3.new(0.32, 0.32, 0.025),
+			CFrame.new(0, -0.07, -0.25), Color3.fromRGB(226, 208, 173), Enum.Material.Fabric)
+		piece("Red dose seal", Vector3.new(0.23, 0.08, 0.027),
+			CFrame.new(0, -0.07, -0.272), Color3.fromRGB(132, 50, 55), Enum.Material.Fabric)
+		for _, x in ipairs({-0.1, 0.1}) do
+			piece("Capsule inside glass", Vector3.new(0.14, 0.09, 0.10),
+				CFrame.new(x, -0.22, 0), Color3.fromRGB(229, 225, 202),
+				Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		end
 	elseif kind == "CRUCIFIX" then
-		primary = piece("Cast iron crucifix", Vector3.new(0.14, 0.85, 0.19),
-			CFrame.new(), Color3.fromRGB(156, 149, 137), Enum.Material.Metal)
-		piece("Crucifix arms", Vector3.new(0.62, 0.13, 0.19),
-			CFrame.new(0, 0.19, 0), Color3.fromRGB(156, 149, 137), Enum.Material.Metal)
+		local silver = Color3.fromRGB(158, 153, 135)
+		primary = piece("Forged crucifix shaft", Vector3.new(0.17, 1.12, 0.19),
+			CFrame.new(), silver, Enum.Material.Metal)
+		piece("Forged crucifix arms", Vector3.new(0.77, 0.17, 0.19),
+			CFrame.new(0, 0.24, 0), silver, Enum.Material.Metal)
+		for _, x in ipairs({-0.37, 0.37}) do
+			piece("Hammered arm finial", Vector3.new(0.15, 0.22, 0.24),
+				CFrame.new(x, 0.24, 0), C.brassDark, Enum.Material.Metal, Enum.PartType.Ball)
+		end
+		piece("Lower finial", Vector3.new(0.23, 0.17, 0.22),
+			CFrame.new(0, -0.58, 0), C.brassDark, Enum.Material.Metal, Enum.PartType.Ball)
+		piece("Dark enamel heart", Vector3.new(0.30, 0.30, 0.08),
+			CFrame.new(0, 0.24, -0.13), C.woodDark, Enum.Material.Slate, Enum.PartType.Ball)
+		piece("Chipped ivory inset", Vector3.new(0.16, 0.16, 0.05),
+			CFrame.new(0, 0.24, -0.18), Color3.fromRGB(227, 215, 183), Enum.Material.Marble)
+		piece("Iron hanging loop", Vector3.new(0.13, 0.23, 0.16),
+			CFrame.new(0, 0.64, 0), C.brassDark, Enum.Material.Metal, Enum.PartType.Ball)
 	elseif kind == "BANDAGE" then
-		primary = piece("Rolled clean bandage", Vector3.new(0.42, 0.48, 0.48),
-			CFrame.new(), Color3.fromRGB(219, 211, 181), Enum.Material.Fabric, Enum.PartType.Cylinder)
+		local cloth = Color3.fromRGB(220, 212, 187)
+		primary = piece("Rolled linen bandage", Vector3.new(0.58, 0.52, 0.52),
+			CFrame.new(), cloth, Enum.Material.Fabric, Enum.PartType.Cylinder)
+		for _, x in ipairs({-0.30, 0.30}) do
+			piece("Wound linen edge", Vector3.new(0.045, 0.56, 0.56),
+				CFrame.new(x, 0, 0), Color3.fromRGB(185, 173, 152),
+				Enum.Material.Fabric, Enum.PartType.Cylinder)
+			piece("Hollow roll centre", Vector3.new(0.052, 0.20, 0.20),
+				CFrame.new(x * 1.12, 0, 0), C.woodDark,
+				Enum.Material.Slate, Enum.PartType.Cylinder)
+		end
+		piece("Loose linen tab", Vector3.new(0.58, 0.05, 0.36),
+			CFrame.new(0, -0.27, -0.27) * CFrame.Angles(math.rad(18), 0, 0),
+			cloth, Enum.Material.Fabric)
+		piece("Cloth wrapper stitching", Vector3.new(0.60, 0.03, 0.05),
+			CFrame.new(0, -0.29, -0.36), C.brassDark, Enum.Material.Fabric)
 	else
-		primary = piece("Medical tin", Vector3.new(0.80, 0.30, 0.58),
-			CFrame.new(), Color3.fromRGB(133, 42, 47), Enum.Material.Metal)
-		piece("White medical cross", Vector3.new(0.42, 0.03, 0.10),
-			CFrame.new(0, 0.16, 0), Color3.fromRGB(232, 216, 194))
-		piece("White medical cross", Vector3.new(0.1, 0.03, 0.38),
-			CFrame.new(0, 0.17, 0), Color3.fromRGB(232, 216, 194))
+		local enamel = Color3.fromRGB(151, 47, 52)
+		primary = piece("Enamelled medical tin", Vector3.new(1.14, 0.46, 0.84),
+			CFrame.new(), enamel, Enum.Material.Metal)
+		piece("Tin lid seam", Vector3.new(1.17, 0.06, 0.87),
+			CFrame.new(0, 0.18, 0), C.brassDark, Enum.Material.Metal)
+		piece("Raised medical lid", Vector3.new(1.11, 0.12, 0.81),
+			CFrame.new(0, 0.27, 0), enamel, Enum.Material.Metal)
+		piece("Ivory enamel cross", Vector3.new(0.51, 0.025, 0.12),
+			CFrame.new(0, 0.342, 0), Color3.fromRGB(238, 224, 196))
+		piece("Ivory enamel cross", Vector3.new(0.12, 0.026, 0.51),
+			CFrame.new(0, 0.345, 0), Color3.fromRGB(238, 224, 196))
+		for _, x in ipairs({-0.39, 0.39}) do
+			piece("Medical case hinge", Vector3.new(0.15, 0.14, 0.10),
+				CFrame.new(x, 0.02, 0.44), C.brass, Enum.Material.Metal)
+		end
+		piece("Pressed brass clasp", Vector3.new(0.20, 0.24, 0.09),
+			CFrame.new(0, 0, -0.46), C.brass, Enum.Material.Metal)
+		piece("Leather carrying strap", Vector3.new(0.61, 0.09, 0.16),
+			CFrame.new(0, 0.43, 0.12), C.woodDark, Enum.Material.Fabric)
 	end
 	model.PrimaryPart = primary
 	model:SetAttribute("LootKind", kind)
 	model:SetAttribute("LootAmount", amount)
 	return model
+end
+
+-- The same detailed physical model used in the drawer/shop is welded to an
+-- actual R6/R15 hand. It is server-owned, so teammates see it too; there is
+-- no extra floating first-person arm, Tool or Roblox Backpack. A carried key
+-- reserves the right hand and moves the selected item to the LEFT real hand.
+updateHeldItem = function(player)
+	local info = state.players[player]
+	local character = player.Character
+	if not info or not character then return end
+	local alive = playerRoot(player) ~= nil
+	local id = alive and info.items[SLOTS[info.selected]] > 0 and SLOTS[info.selected] or nil
+	local side = state.keys[player] ~= nil and "Left" or "Right"
+	local hand = character:FindFirstChild(side .. "Hand") or character:FindFirstChild(side .. " Arm")
+	local held = character:FindFirstChild("HeldItem")
+	if held and (not id or not hand or held:GetAttribute("ItemKind") ~= id
+		or held:GetAttribute("GripHand") ~= side) then
+		held:Destroy()
+		held = nil
+	end
+	if not id or not hand or not hand:IsA("BasePart") then return end
+	if not held then
+		held = makeLoot(nil, CFrame.new(), 0.2, id, 1)
+		held.Name = "HeldItem"
+		held:SetAttribute("ItemKind", id)
+		held:SetAttribute("GripHand", side)
+		local palmY = hand.Name:find(" Arm") and -hand.Size.Y * 0.42 or -hand.Size.Y * 0.16
+		local offset = id == "FLASHLIGHT" and -0.43 or id == "CRUCIFIX" and -0.52 or -0.30
+		local orientation = id == "FLASHLIGHT" and CFrame.Angles(math.rad(-12), -math.pi / 2, 0)
+			or id == "BANDAGE" and CFrame.Angles(0, math.pi / 2, 0)
+			or CFrame.Angles(math.rad(-16), 0, 0)
+		held:PivotTo(hand.CFrame * CFrame.new(side == "Left" and -0.08 or 0.08,
+			palmY, offset) * orientation)
+		local core = held.PrimaryPart
+		if not core then held:Destroy(); return end
+		for _, part in ipairs(held:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.CanTouch = false
+				part.CanQuery = false
+				part.Massless = true
+				if part ~= core then
+					local weld = Instance.new("WeldConstraint")
+					weld.Part0 = core
+					weld.Part1 = part
+					weld.Parent = core
+				end
+			end
+		end
+		local grip = Instance.new("WeldConstraint")
+		grip.Name = "Item grip in Roblox hand"
+		grip.Part0 = hand
+		grip.Part1 = core
+		grip.Parent = core
+		held.Parent = character
+		for _, part in ipairs(held:GetDescendants()) do
+			if part:IsA("BasePart") then part.Anchored = false end
+		end
+	end
+	local beam = held:FindFirstChild("Selected torch beam", true)
+	if beam then beam.Enabled = info.torchOn end
 end
 
 -- The key is in exactly one of three physical drawers in the SAME room as its
@@ -862,6 +1063,8 @@ local function makeDresser(room, rng)
 		end
 		local handle = drawerPart("Brass drawer pull", Vector3.new(0.82, 0.22, 0.18),
 			CFrame.new(0, drawerY, -1.58), C.brass, Enum.Material.Metal)
+		local slide = soundAt(handle, "Sliding old drawer", "action_get_up.mp3", 0.42, 0.75, 43)
+		local pickup = soundAt(handle, "Cache gathered", "action_jump_land.mp3", 0.25, 1.25, 28)
 		drawer.WorldPivot = pivot
 		local openPrompt = Instance.new("ProximityPrompt")
 		openPrompt.Name = "OpenDrawer"
@@ -917,14 +1120,16 @@ local function makeDresser(room, rng)
 				state.keys[player] = room.index
 				room.model:SetAttribute("KeyFound", true)
 				player:SetAttribute("HeldKey", room.index + 1)
+				updateHeldItem(player) -- key in the right hand, item in the left
 			end)
 		end
 		local lootKind, amount = slot == keySlot and nil, 0
 		if slot ~= keySlot then lootKind, amount = rollLoot(rng) end
 		local loot = lootKind and makeLoot(drawer, cf, drawerY, lootKind, amount)
 		local lootPrompt
-		local taken = {}
+		local claimed = false -- a drawer is a single physical cache for the WHOLE team
 		if loot then
+			drawer:SetAttribute("LootClaimed", false)
 			lootPrompt = Instance.new("ProximityPrompt")
 			lootPrompt.Name = "TakeLoot"
 			iconPrompt(lootPrompt)
@@ -934,12 +1139,19 @@ local function makeDresser(room, rng)
 			lootPrompt.Enabled = false
 			lootPrompt.Parent = loot.PrimaryPart
 			lootPrompt.Triggered:Connect(function(player)
-				if room.epoch ~= session or not lootPrompt.Enabled or taken[player] then return end
+				if room.epoch ~= session or claimed or not lootPrompt.Enabled
+					or not loot.Parent or not loot.PrimaryPart then return end
 				local root = playerRoot(player)
 				if not root or state.hidden[player]
 					or (root.Position - loot.PrimaryPart.Position).Magnitude > 9 then return end
-				if not award(player, lootKind, amount) then return end
-				taken[player] = true
+				-- Reserve BEFORE giving the prize: two simultaneous prompts cannot
+				-- both pass. If a full inventory refuses it, release the cache.
+				claimed = true
+				if not award(player, lootKind, amount) then claimed = false; return end
+				lootPrompt.Enabled = false
+				drawer:SetAttribute("LootClaimed", true)
+				pickup:Play()
+				loot:Destroy() -- replicated to EVERY player, including late joiners
 				recordNoise(root.Position, 29)
 			end)
 		end
@@ -952,6 +1164,7 @@ local function makeDresser(room, rng)
 				or (root.Position - handle.Position).Magnitude > 10 then return end
 			opened = true
 			openPrompt.Enabled = false
+			slide:Play()
 			recordNoise(handle.Position, 65)
 			maybeSpider(player, room.index, spiderRoll, pivot * CFrame.new(0, 0.5, -1.4))
 			tweenPivot(drawer, pivot, pivot * CFrame.new(0, 0, -1.25), 0.5, function()
@@ -1838,6 +2051,22 @@ buildRoom = function(index)
 		open = false, busy = false, epoch = session,
 	}
 	state.rooms[index] = room
+	-- Spatial room tone travels through an open door; old sections stop
+	-- naturally when their containing room is pruned. No audio follows lamps.
+	local air = newPart(model, "Unseen air in the corridor", Vector3.new(0.18, 0.18, 0.18),
+		CFrame.new(0, room.entryY + 7, z + L / 2), C.shadow,
+		Enum.Material.SmoothPlastic, 1, false)
+	air.CanQuery = false
+	room.air = soundAt(air, "Low draught in the masonry", "action_falling.ogg",
+		room.dark and 0.10 or 0.075, 0.62, 58, true)
+	room.air:Play()
+	room.settling = soundAt(air, "Building settles", "action_get_up.mp3",
+		0.25, 0.5, 66)
+	if kind == "FLOODED" then
+		room.water = soundAt(air, "Water beneath the boards", "action_swim.mp3",
+			0.09, 0.68, 50, true)
+		room.water:Play()
+	end
 	if isStair then stairRoom(room) else flatRoom(room, rng) end
 
 	local door, leaf, prompt, hinge = hingeDoor(model, index + 1, z + L - 0.65, room.exitY)
@@ -1845,6 +2074,8 @@ buildRoom = function(index)
 	room.leaf = leaf
 	room.prompt = prompt
 	room.hinge = hinge
+	room.creak = soundAt(leaf, "Old door hinges", "action_get_up.mp3", 0.62, 0.67, 70)
+	room.rattle = soundAt(leaf, "Locked brass rattle", "action_jump_land.mp3", 0.58, 0.78, 55)
 	prompt.Enabled = index == state.opened
 	local mySession = session
 	prompt.Triggered:Connect(function(player)
@@ -1869,12 +2100,6 @@ buildRoom = function(index)
 		if room.threat == "RUSH" and not state.rush then
 			room.threat = nil
 			task.spawn(function() startRush(room, mySession) end)
-		elseif room.threat == "BLIND" and not state.blind then
-			room.threat = nil
-			task.spawn(function() startBlind(room, mySession) end)
-		elseif room.threat == "MOTH" and not state.moth then
-			room.threat = nil
-			task.spawn(function() startMoth(room, mySession) end)
 		elseif room.threat == "ECHO" and not state.echo then
 			room.threat = nil
 			task.spawn(function() startEcho(room, mySession) end)
@@ -1925,6 +2150,10 @@ local function makeExit()
 			player:SetAttribute("Finished", true)
 			humanoid.WalkSpeed = 0
 			root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			if not witness:GetAttribute("Announced") then
+				witness:SetAttribute("Announced", true)
+				announceMonster({index = CONFIG.Doors}, "FINAL", witness)
+			end
 			remote:FireClient(player, "Finale", witness)
 		end
 	end)
@@ -2011,6 +2240,7 @@ openDoor = function(player, index)
 		else
 			-- A physical rattle instead of advice about drawers or a key.
 			recordNoise(room.leaf.Position, 62)
+			room.rattle:Play()
 			room.busy = true
 			room.prompt.Enabled = false
 			tweenPivot(room.door, room.hinge,
@@ -2033,7 +2263,22 @@ openDoor = function(player, index)
 	for nextIndex = state.opened, math.min(CONFIG.Doors - 1, state.opened + CONFIG.Ahead - 1) do
 		buildRoom(nextIndex)
 	end
-	if state.rooms[state.opened] then state.rooms[state.opened].prompt.Enabled = true end
+	local nextRoom = state.rooms[state.opened]
+	if nextRoom then
+		nextRoom.prompt.Enabled = true
+		-- Build BOTH the figure and its initial pose BEFORE the hinge moves.
+		-- A teammate can see it through the doorway without touching a sensor.
+		if nextRoom.threat == "BLIND" and not state.blind then
+			nextRoom.threat = nil
+			startBlind(nextRoom, session)
+		elseif nextRoom.threat == "MOTH" and not state.moth then
+			nextRoom.threat = nil
+			startMoth(nextRoom, session)
+		end
+		if Random.new(state.seed + index * 283 + 7):NextNumber() < 0.32 then
+			nextRoom.settling:Play()
+		end
+	end
 	swingDoor(room, true)
 	pruneRooms()
 end
@@ -2353,6 +2598,7 @@ startRush = function(room, epoch)
 	rush.entity = entity
 	local z = rush.positionZ
 	entity:PivotTo(CFrame.lookAt(pathPoint(z), pathPoint(z) + Vector3.new(0, 0, 1)))
+	announceMonster(room, "RUSH", entity) -- the flicker itself remains SILENT
 	local maxZ = (limit + 1) * L - 4
 	local elapsed, stalled = 0, 0
 	while epoch == session and not rush.banished and elapsed < CONFIG.RushMaximumSeconds do
@@ -2683,77 +2929,82 @@ end
 
 startBlind = function(room, epoch)
 	if epoch ~= session or state.blind then return end
-	local blind = {index = room.index, lastSerial = state.noiseSerial}
+	-- Opening this very door makes a sound: the Guest is already inside and
+	-- may investigate it, but never learns the location of a still player.
+	local blind = {index = room.index, lastSerial = state.noiseSerial - 1}
 	state.blind = blind
-	for _, lamp in ipairs(room.lamps) do
-		if lamp.normallyOn then setLamp(lamp, true, nil, 0.45) end
-	end
-	task.wait(0.8)
-	if epoch ~= session then return end
 	local entity, mask, maskHinge, limbs = makeBlind()
 	blind.entity = entity
 	local startZ = room.index * L
-	local position = Vector3.new(0, room.entryY + 4.7, startZ + 35)
+	local position = Vector3.new(0, room.entryY + 4.7, startZ + 26)
 	entity:PivotTo(CFrame.lookAt(position, position + Vector3.new(0, 0, -1)))
-	local patrolZ = startZ + 7 -- walk from the FAR end to the entry and back
-	local elapsed = 0
-	-- Remain in this room across exits and re-entries. Only retiring the
-	-- inaccessible rear segment or a crucifix ends this encounter.
-	while epoch == session and room.model.Parent and not blind.banished
-		and state.opened <= room.index + CONFIG.KeepBehind do
-		local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
-		if epoch ~= session or blind.banished then break end
-		elapsed = elapsed + dt
-		local nearZ, farZ = roamBounds(room)
-		local destination, nearest = blindTarget(blind, position, nearZ, farZ, patrolZ)
-		if nearest == math.huge and math.abs(position.Z - patrolZ) < 1.1 then
-			patrolZ = patrolZ == startZ + 7 and startZ + 37 or startZ + 7
-			destination = Vector3.new(0, position.Y, patrolZ)
-		end
-		local old = position
-		position = walkRoute(position, destination, nearest < math.huge and 19 or 9, dt, 4.7)
-		local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
-		if heading.Magnitude > 0.01 then
-			local facing = CFrame.lookAt(position, position + heading)
-			entity:PivotTo(facing)
-			-- It tilts its head to listen while its shoulders and feet walk.
-			mask:PivotTo(facing * maskHinge
-				* CFrame.Angles(0, math.sin(elapsed * 1.7) * 0.17, math.sin(elapsed * 2.3) * 0.04))
-			for _, limb in ipairs(limbs) do
-				local step = math.sin(elapsed * 6.6 + (limb.side == -1 and 0 or math.pi))
-				local rootCF = facing * limb.hinge * CFrame.Angles(step * limb.sway, 0, 0)
-				limb.model:PivotTo(rootCF)
-				if limb.shin then
-				limb.shin:PivotTo(rootCF * CFrame.new(limb.kneeOffset)
-						* CFrame.Angles(math.max(0, step) * 0.42, 0, 0))
-				end
-			end
-		end
-		for _, player in ipairs(Players:GetPlayers()) do
-			local root, humanoid = playerRoot(player)
-			if root and root.Position.Z >= nearZ and root.Position.Z <= farZ then
-				local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
-				local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
-				if math.abs(root.Position.Y - floorY - 3) < 5 then
-					local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
-					local hiding = state.hidden[player]
-					if hiding and delta.Magnitude < 7 and not hiding.closet.inspected then
-						hiding.closet.inspected = true
-						swingCloset(hiding.closet, true)
-					end
-					-- Contact is lethal even for crouching players in the PREVIOUS room.
-					if delta.Magnitude < (hiding and 5.1 or 3.7) then
-						killPlayer(player, humanoid, "BLIND", entity)
-					end
-				end
-			end
-		end
+	for _, lamp in ipairs(room.lamps) do
+		if lamp.normallyOn then setLamp(lamp, true, nil, 0.45) end
 	end
-	retireMonster(entity)
-	if epoch ~= session then return end
-	for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
-	state.blind = nil
-	pruneRooms()
+	announceMonster(room, "BLIND", entity)
+	-- All initialization above is synchronous with opening the door; ONLY
+	-- the patrol yields, so no player needs to enter to make it appear.
+	task.spawn(function()
+		local patrolZ = startZ + 7 -- walk from the FAR end to the entry and back
+		local elapsed = 0
+		-- Remain in this room across exits and re-entries. Only retiring the
+		-- inaccessible rear segment or a crucifix ends this encounter.
+		while epoch == session and room.model.Parent and not blind.banished
+			and state.opened <= room.index + CONFIG.KeepBehind do
+			local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
+			if epoch ~= session or blind.banished then break end
+			elapsed = elapsed + dt
+			local nearZ, farZ = roamBounds(room)
+			local destination, nearest = blindTarget(blind, position, nearZ, farZ, patrolZ)
+			if nearest == math.huge and math.abs(position.Z - patrolZ) < 1.1 then
+				patrolZ = patrolZ == startZ + 7 and startZ + 37 or startZ + 7
+				destination = Vector3.new(0, position.Y, patrolZ)
+			end
+			local old = position
+			position = walkRoute(position, destination, nearest < math.huge and 19 or 9, dt, 4.7)
+			local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
+			if heading.Magnitude > 0.01 then
+				local facing = CFrame.lookAt(position, position + heading)
+				entity:PivotTo(facing)
+				-- It tilts its head to listen while its shoulders and feet walk.
+				mask:PivotTo(facing * maskHinge
+					* CFrame.Angles(0, math.sin(elapsed * 1.7) * 0.17, math.sin(elapsed * 2.3) * 0.04))
+				for _, limb in ipairs(limbs) do
+					local step = math.sin(elapsed * 6.6 + (limb.side == -1 and 0 or math.pi))
+					local rootCF = facing * limb.hinge * CFrame.Angles(step * limb.sway, 0, 0)
+					limb.model:PivotTo(rootCF)
+					if limb.shin then
+					limb.shin:PivotTo(rootCF * CFrame.new(limb.kneeOffset)
+							* CFrame.Angles(math.max(0, step) * 0.42, 0, 0))
+					end
+				end
+			end
+			for _, player in ipairs(Players:GetPlayers()) do
+				local root, humanoid = playerRoot(player)
+				if root and root.Position.Z >= nearZ and root.Position.Z <= farZ then
+					local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
+					local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
+					if math.abs(root.Position.Y - floorY - 3) < 5 then
+						local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
+						local hiding = state.hidden[player]
+						if hiding and delta.Magnitude < 7 and not hiding.closet.inspected then
+							hiding.closet.inspected = true
+							swingCloset(hiding.closet, true)
+						end
+						-- Contact is lethal even for crouching players in the PREVIOUS room.
+						if delta.Magnitude < (hiding and 5.1 or 3.7) then
+							killPlayer(player, humanoid, "BLIND", entity)
+						end
+					end
+				end
+			end
+		end
+		retireMonster(entity)
+		if epoch ~= session then return end
+		for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
+		state.blind = nil
+		pruneRooms()
+	end)
 end
 
 -- The Pale Moth listens for a beam rather than footsteps. Turning the
@@ -2837,62 +3088,70 @@ startMoth = function(room, epoch)
 	local entity, insects = makeMoth()
 	hunt.entity = entity
 	local startZ = room.index * L
-	local position = Vector3.new(0, room.entryY + 6.1, startZ + 36)
+	local position = Vector3.new(0, room.entryY + 6.1, startZ + 24)
 	local facing = CFrame.lookAt(position, position + Vector3.new(0, 0, -1))
 	entity:PivotTo(facing)
-	-- Four seconds of physical green lamp colour and visible tiny fluttering
-	-- bodies, not text, a GUI flash or instant damage.
+	-- The whole swarm is behind the opening door, already visible. The
+	-- four-second green-tinted grace period begins NOW, without text or bites.
 	local cold = Color3.fromRGB(120, 197, 167)
-	for i = 1, 8 do
-		if epoch ~= session or hunt.banished then break end
-		for _, lamp in ipairs(room.lamps) do
-			if lamp.normallyOn or lamp == room.lamps[#room.lamps] then
-				setLamp(lamp, true, cold, 0.25 + i * 0.026)
-			end
+	for _, lamp in ipairs(room.lamps) do
+		if lamp.normallyOn or lamp == room.lamps[#room.lamps] then
+			setLamp(lamp, true, cold, 0.28)
 		end
-		flutterMoths(insects, facing, i * CONFIG.MothGraceSeconds / 8)
-		task.wait(CONFIG.MothGraceSeconds / 8)
 	end
-	local patrolZ, elapsed = startZ + 9, 0
-	while epoch == session and not hunt.banished and elapsed < CONFIG.MothLifetime do
-		local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
-		if epoch ~= session or hunt.banished then break end
-		elapsed = elapsed + dt
-		local nearZ, farZ = roamBounds(room)
-		local destination, nearest = roamingTarget(position, nearZ, farZ, patrolZ, "MOTH")
-		if nearest == math.huge and math.abs(position.Z - patrolZ) < 1.1 then
-			patrolZ = patrolZ == startZ + 9 and startZ + 36 or startZ + 9
-			destination = Vector3.new(0, position.Y, patrolZ)
+	announceMonster(room, "MOTH", entity)
+	task.spawn(function()
+		for i = 1, 8 do
+			if epoch ~= session or hunt.banished then break end
+			for _, lamp in ipairs(room.lamps) do
+				if lamp.normallyOn or lamp == room.lamps[#room.lamps] then
+					setLamp(lamp, true, cold, 0.25 + i * 0.026)
+				end
+			end
+			flutterMoths(insects, facing, i * CONFIG.MothGraceSeconds / 8)
+			task.wait(CONFIG.MothGraceSeconds / 8)
 		end
-		local old = position
-		local onRoute = walkRoute(position, destination,
-			nearest < math.huge and CONFIG.MothSpeed or 7, dt, 6.1)
-		position = Vector3.new(onRoute.X, onRoute.Y + math.sin(elapsed * 4) * 0.24, onRoute.Z)
-		local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
-		if heading.Magnitude > 0.01 then facing = CFrame.lookAt(position, position + heading) end
-		entity:PivotTo(facing)
-		flutterMoths(insects, facing, elapsed + CONFIG.MothGraceSeconds)
-		for _, player in ipairs(Players:GetPlayers()) do
-			local root = playerRoot(player)
-			local info = state.players[player]
-			if root and info and info.torchOn and not state.hidden[player]
-				and root.Position.Z >= nearZ and root.Position.Z <= farZ then
-				local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
-				local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
-				local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
-				if math.abs(root.Position.Y - floorY - 3) < 5 and delta.Magnitude < 5.5
-					and state.clock >= (hunt.bites[player] or 0) then
-					hunt.bites[player] = state.clock + 1.1
-					damagePlayer(player, 7, "MOTH", entity) -- gradual; light OFF = no bites
+		local patrolZ, elapsed = startZ + 9, 0
+		while epoch == session and not hunt.banished and elapsed < CONFIG.MothLifetime do
+			local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
+			if epoch ~= session or hunt.banished then break end
+			elapsed = elapsed + dt
+			local nearZ, farZ = roamBounds(room)
+			local destination, nearest = roamingTarget(position, nearZ, farZ, patrolZ, "MOTH")
+			if nearest == math.huge and math.abs(position.Z - patrolZ) < 1.1 then
+				patrolZ = patrolZ == startZ + 9 and startZ + 36 or startZ + 9
+				destination = Vector3.new(0, position.Y, patrolZ)
+			end
+			local old = position
+			local onRoute = walkRoute(position, destination,
+				nearest < math.huge and CONFIG.MothSpeed or 7, dt, 6.1)
+			position = Vector3.new(onRoute.X, onRoute.Y + math.sin(elapsed * 4) * 0.24, onRoute.Z)
+			local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
+			if heading.Magnitude > 0.01 then facing = CFrame.lookAt(position, position + heading) end
+			entity:PivotTo(facing)
+			flutterMoths(insects, facing, elapsed + CONFIG.MothGraceSeconds)
+			for _, player in ipairs(Players:GetPlayers()) do
+				local root = playerRoot(player)
+				local info = state.players[player]
+				if root and info and info.torchOn and not state.hidden[player]
+					and root.Position.Z >= nearZ and root.Position.Z <= farZ then
+					local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
+					local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
+					local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
+					if math.abs(root.Position.Y - floorY - 3) < 5 and delta.Magnitude < 5.5
+						and state.clock >= (hunt.bites[player] or 0) then
+						hunt.bites[player] = state.clock + 1.1
+						damagePlayer(player, 7, "MOTH", entity) -- gradual; light OFF = no bites
+					end
 				end
 			end
 		end
-	end
-	retireMonster(entity)
-	if epoch ~= session then return end
-	for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
-	state.moth = nil
-	pruneRooms()
+		retireMonster(entity)
+		if epoch ~= session then return end
+		for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
+		state.moth = nil
+		pruneRooms()
+	end)
 end
 
 -- The Echo crosses the SAME open route five alternating times: forward,
@@ -2926,6 +3185,8 @@ startEcho = function(room, epoch)
 	if face then face.Color = Color3.fromRGB(183, 183, 205) end
 	glow.Color = Color3.fromRGB(167, 157, 211)
 	local z, elapsed = nearZ, 0
+	entity:PivotTo(CFrame.lookAt(pathPoint(z), pathPoint(z) + Vector3.new(0, 0, 1)))
+	announceMonster(room, "ECHO", entity) -- not during the light warning
 	local path = {farZ, nearZ, farZ, nearZ, farZ}
 	for pass, target in ipairs(path) do
 		if echo.banished or epoch ~= session then break end
@@ -3030,14 +3291,14 @@ local function resetWorld()
 	end
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
-	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v9")
-	state.world:SetAttribute("GenerationBuild", "SparseLootCompactHUD-v9")
+	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
+	state.world:SetAttribute("GenerationBuild", "SharedLootHeldItemsAudio-v10")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v9] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v10] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -3131,6 +3392,11 @@ local function registerPlayer(player)
 			remote:FireClient(player, "Death")
 		end)
 	end)
+	-- CharacterAdded can precede the native R6/R15 hands. After Roblox
+	-- finishes loading the appearance, reattach any carried selected model.
+	player.CharacterAppearanceLoaded:Connect(function(character)
+		if player.Character == character and state.players[player] then syncInventory(player) end
+	end)
 	player.RespawnLocation = state.spawn
 	player:LoadCharacter()
 end
@@ -3175,6 +3441,7 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 		end
 		info.items[id] = info.items[id] - 1
 		syncInventory(player)
+		remote:FireClient(player, "ItemUsed", id)
 		return
 	end
 	if action == "Exit" then
@@ -3349,4 +3616,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v9] 100 enclosed doors, rare loot, compact HUD and four physical threats.")
+print("[NOCTURNE v10] shared prizes, real held items and echoed threats in 100 enclosed rooms.")

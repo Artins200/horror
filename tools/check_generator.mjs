@@ -22,7 +22,7 @@ local function drainTasks()
         current()
     end
 end
-local observed = {events = {}, monsterPositions = {}, monsterLooks = {},
+local observed = {events = {}, monsterPositions = {}, monsterLooks = {}, sounds = {},
     wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0,
     jawFrames = 0, graceElapsed = 0, sconceChanges = 0}
 local function signal()
@@ -132,6 +132,14 @@ function methods:FindFirstAncestorOfClass(class)
     end
 end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
+function methods:Play()
+    assert(self._class == "Sound" and self.SoundId:match("^rbxasset://sounds/"),
+        "invalid or external sound asset")
+    self.IsPlaying = true
+    table.insert(observed.sounds, {name = self.Name, parent = self.Parent,
+        id = self.SoundId, source = self})
+end
+function methods:Stop() if self._class == "Sound" then self.IsPlaying = false end end
 function methods:SetAttribute(name, value) self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes[name] end
 function methods:IsA(class) return self._class == class or (class == "BasePart" and
@@ -166,7 +174,7 @@ function methods:Clone()
 end
 function methods:GetPivot() return self.WorldPivot or (self.PrimaryPart and self.PrimaryPart.CFrame) or CFrame.new() end
 function methods:PivotTo(cf)
-    if self.Name == "HeldKey" then
+    if self.Name == "HeldKey" or self.Name == "HeldItem" then
         local previous = self.PrimaryPart.CFrame
         local shift = cf.Position - previous.Position
         for _, descendant in ipairs(self:GetDescendants()) do
@@ -235,7 +243,8 @@ local instMeta = {
 Instance = {new = function(class)
     local obj = setmetatable({_class=class, _children={}, _attributes={}, Name=class,
         Touched=signal(), Changed=signal(), Triggered=signal(), Died=signal(),
-        CharacterAdded=signal(), OnServerEvent=signal(), Completed=signal()}, instMeta)
+        CharacterAdded=signal(), CharacterAppearanceLoaded=signal(),
+        OnServerEvent=signal(), Completed=signal()}, instMeta)
     if class == "ProximityPrompt" or class == "PointLight" then obj.Enabled = true end
     return obj
 end}
@@ -269,6 +278,7 @@ task = {spawn = function(f) table.insert(deferred, f) end,
     delay = function(_, f) f() end,
     wait = function(seconds)
         seconds = seconds or 0.1
+        if seconds == 0.2 and observed.warningCheck then observed.warningCheck() end
         if seconds == 0.5 then
             observed.graceElapsed = observed.graceElapsed + seconds
             if observed.graceCheck then observed.graceCheck() end
@@ -442,6 +452,12 @@ local function addPlayer(name)
         hand.CFrame = root.CFrame * CFrame.new(0.7, 1.1, 0)
         hand.Anchored = false
         hand.Parent = character
+        local leftHand = Instance.new("Part")
+        leftHand.Name = "LeftHand"
+        leftHand.Size = hand.Size
+        leftHand.CFrame = root.CFrame * CFrame.new(-0.7, 1.1, 0)
+        leftHand.Anchored = false
+        leftHand.Parent = character
         local human = Instance.new("Humanoid")
         human.Name = "Humanoid"
         human.Health = 100
@@ -449,6 +465,7 @@ local function addPlayer(name)
         human.Parent = character
         self.Character = character
         self.CharacterAdded:Fire(character)
+        self.CharacterAppearanceLoaded:Fire(character)
     end
     table.insert(services.Players._players, player)
     services.Players.PlayerAdded:Fire(player)
@@ -463,9 +480,11 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v9"
-    and world:GetAttribute("GenerationBuild") == "SparseLootCompactHUD-v9", "old place was loaded")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
+    and world:GetAttribute("GenerationBuild") == "SharedLootHeldItemsAudio-v10", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
+assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
+    "hotel walls no longer have physical audio reverb")
 assert(services.Lighting.Ambient.R > 0.13 and services.Lighting.Ambient.B > 0.17
     and services.Lighting.ExposureCompensation > 0
     and services.Lighting:FindFirstChild("CorridorHaze").Density < 0.25
@@ -536,6 +555,19 @@ assert(empty > 5000 and cash > 2900 and cash < 3850
 local collector = addPlayer("SingleCopyCollector")
 assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 1)
 assert(observed.award(collector, "PILL", 1) and inventoryOf(collector).selected == 2)
+local pill = collector.Character:FindFirstChild("HeldItem")
+local pillGrip = pill and pill:FindFirstChild("Item grip in Roblox hand", true)
+assert(pill and pill:GetAttribute("ItemKind") == "PILL"
+    and pill:FindFirstChild("Amber apothecary vial", true)
+    and pill:FindFirstChild("Hand-printed medicine label", true)
+    and pillGrip and pillGrip.Part0 == collector.Character:FindFirstChild("RightHand")
+    and not pillGrip.Part1.Anchored and not pillGrip.Part1.CanCollide,
+    "selected medicine is not modelled and welded to the actual hand")
+pill:Destroy()
+collector.CharacterAppearanceLoaded:Fire(collector.Character)
+pill = collector.Character:FindFirstChild("HeldItem")
+assert(pill and pill:GetAttribute("ItemKind") == "PILL",
+    "late native hand/appearance failed to reattach the selected item")
 assert(observed.award(collector, "MEDKIT", 1)
     and not observed.award(collector, "PILL", 1)
     and inventoryOf(collector).items.PILL == 1
@@ -544,12 +576,39 @@ assert(observed.award(collector, "MEDKIT", 1)
 remote.OnServerEvent:Fire(collector, "Select", 4)
 assert(inventoryOf(collector).selected == 2, "empty item slot can be selected")
 remote.OnServerEvent:Fire(collector, "Use", "PILL")
-assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 5,
-    "consuming the selected pill did not select the remaining owned item")
+assert(inventoryOf(collector).items.PILL == 0 and inventoryOf(collector).selected == 5
+    and not pill.Parent and collector.Character:FindFirstChild("HeldItem")
+        :FindFirstChild("Ivory enamel cross", true)
+    and countEvent("ItemUsed", "PILL") >= 1,
+    "pill use did not replace its held model, emit feedback and select the next item")
 assert(observed.award(collector, "PILL", 1)
     and inventoryOf(collector).items.PILL == 1,
     "consumed item type cannot be picked up again")
 removePlayer(collector)
+local torchOwner = addPlayer("HandTorchActuallyWorks")
+assert(observed.award(torchOwner, "FLASHLIGHT", 1))
+local handheld = torchOwner.Character:FindFirstChild("HeldItem")
+local lens = handheld and handheld:FindFirstChild("Torch lens", true)
+local light = lens and lens:FindFirstChild("Selected torch beam")
+assert(handheld and handheld:GetAttribute("ItemKind") == "FLASHLIGHT"
+    and handheld:FindFirstChild("Machined torch barrel", true)
+    and handheld:FindFirstChild("Crosshatched grip ring", true)
+    and handheld:FindFirstChild("Item grip in Roblox hand", true).Part0
+        == torchOwner.Character:FindFirstChild("RightHand")
+    and light and not light.Enabled and torchOwner:GetAttribute("EquippedItem") == "FLASHLIGHT",
+    "the physical, detailed flashlight is not in the player's real hand")
+remote.OnServerEvent:Fire(torchOwner, "Torch", true)
+assert(torchOwner:GetAttribute("TorchOn") and light.Enabled,
+    "switching the actual selected hand torch on did not create a visible beam")
+assert(observed.award(torchOwner, "PILL", 1))
+remote.OnServerEvent:Fire(torchOwner, "Select", 2)
+assert(not handheld.Parent and not torchOwner:GetAttribute("TorchOn")
+    and torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "PILL",
+    "switching items left the flashlight visibly lit in the wrong hand")
+remote.OnServerEvent:Fire(torchOwner, "Use", "PILL")
+assert(torchOwner.Character:FindFirstChild("HeldItem"):GetAttribute("ItemKind") == "FLASHLIGHT"
+    and not torchOwner:GetAttribute("TorchOn"), "consumed item did not re-equip the torch")
+removePlayer(torchOwner)
 -- Even forced successful spider rolls must leave a 12-room gap per player.
 local startled = addPlayer("RareSpiderCooldown")
 local spiderPos = CFrame.new(0, 4, 20 * L + 14)
@@ -576,6 +635,12 @@ for index = 0, 99 do
     assert(room, "missing generated room " .. index)
     assert(room:GetAttribute("EntryY") == NocturneLayout.EntranceY(index))
     assert(room:GetAttribute("ExitY") == NocturneLayout.ExitY(index))
+    local air = room:FindFirstChild("Low draught in the masonry", true)
+    assert(air and air.IsPlaying and air.Looped
+        and air:FindFirstChild("Short corridor reflection")
+        and air:FindFirstChild("Hotel masonry tail")
+        and room:FindFirstChild("Old door hinges", true),
+        "generated room has no echoing ambient bed or physical door sound")
     variants[room:GetAttribute("Variant")] = true
     local shape, dark = room:GetAttribute("Shape"), room:GetAttribute("Dark")
     physicalShapes[shape] = true
@@ -885,10 +950,16 @@ for index = 0, 99 do
                 and keyPrompt.Enabled and not room:GetAttribute("KeyFound")
                 and room:GetAttribute("Locked"), "death permanently lost the only key")
             local teammate = addPlayer("KeyCarrierWhoDisconnected")
+            assert(observed.award(teammate, "PILL", 1))
             rootOf(teammate).CFrame = CFrame.new(keyPrompt.Parent.Position)
             keyPrompt.Triggered:Fire(teammate)
-            assert(teammate:GetAttribute("HeldKey") == index + 1 and not keyPrompt.Enabled,
-                "teammate cannot pick up the returned key")
+            local otherItem = teammate.Character:FindFirstChild("HeldItem")
+            local leftGrip = otherItem and otherItem:FindFirstChild("Item grip in Roblox hand", true)
+            assert(teammate:GetAttribute("HeldKey") == index + 1 and not keyPrompt.Enabled
+                and otherItem:GetAttribute("GripHand") == "Left"
+                and leftGrip.Part0 == teammate.Character:FindFirstChild("LeftHand")
+                and teammate.Character:FindFirstChild("HeldKey"),
+                "key must remain in the right hand while a selected item uses the real left hand")
             removePlayer(teammate)
             assert(keyPrompt.Enabled and not room:GetAttribute("KeyFound"),
                 "disconnect permanently lost the team's only key")
@@ -912,45 +983,64 @@ for index = 0, 99 do
             local prize = drawer:FindFirstChild("TakeLoot", true)
             if prize and prize.Enabled then
                 lootCount = lootCount + 1
+                local item = prize.Parent.Parent
+                local id = item:GetAttribute("LootKind")
+                local position = prize.Parent.Position
                 local before = inventoryOf(player)
-                local value = walletValue(before)
-                rootOf(player).CFrame = CFrame.new(prize.Parent.Position)
-                prize.Triggered:Fire(player)
-                local after = inventoryOf(player)
-                local id = prize.Parent.Parent:GetAttribute("LootKind")
-                if id == "COIN" or id == "NOTE" or id == "GOLD" then
-                    assert(walletValue(after) > value, "coins, notes or gold were not awarded")
-                end
-                prize.Triggered:Fire(player)
-                assert(inventoryOf(player) == after, "same player farmed one drawer twice")
-                if not observed.lootTeamTested and id == "COIN" then
-                    observed.lootTeamTested = true
-                    local teammate = addPlayer("IndependentLootWallet")
-                    rootOf(teammate).CFrame = CFrame.new(prize.Parent.Position)
-                    prize.Triggered:Fire(teammate)
-                    assert(inventoryOf(teammate).coins > 0
-                        and walletValue(inventoryOf(player)) == walletValue(after),
-                        "shared drawer did not allow EACH teammate one pickup")
-                    removePlayer(teammate)
-                end
+                rootOf(player).CFrame = CFrame.new(position)
                 if not observed.duplicateDrawerTested and id == "PILL" then
                     observed.duplicateDrawerTested = true
-                    local teammate = addPlayer("RevisitDrawerAfterPill")
-                    rootOf(teammate).CFrame = CFrame.new(prize.Parent.Position)
+                    local teammate = addPlayer("FullInventoryCannotReserveLoot")
+                    rootOf(teammate).CFrame = CFrame.new(position)
                     assert(observed.award(teammate, "PILL", 1))
-                    local held = inventoryOf(teammate)
+                    local owned = inventoryOf(teammate)
                     prize.Triggered:Fire(teammate)
-                    assert(inventoryOf(teammate) == held,
-                        "drawer consumed or stacked a duplicate held item")
+                    assert(inventoryOf(teammate) == owned and item.Parent == drawer
+                        and prize.Enabled and not drawer:GetAttribute("LootClaimed"),
+                        "failed duplicate pickup removed the team's physical prize")
                     remote.OnServerEvent:Fire(teammate, "Use", "PILL")
                     assert(inventoryOf(teammate).items.PILL == 0)
                     prize.Triggered:Fire(teammate)
-                    assert(inventoryOf(teammate).items.PILL == 1,
-                        "revisiting the SAME drawer after consumption still refuses pickup")
-                    prize.Triggered:Fire(teammate)
-                    assert(inventoryOf(teammate).items.PILL == 1,
-                        "one teammate collected the same drawer twice")
+                    assert(inventoryOf(teammate).items.PILL == 1 and not item.Parent
+                        and not prize.Enabled and drawer:GetAttribute("LootClaimed"),
+                        "first eligible teammate did not consume the shared cache")
+                    prize.Triggered:Fire(player)
+                    assert(inventoryOf(player) == before, "other player farmed consumed loot")
                     removePlayer(teammate)
+                else
+                    local teammate
+                    if not observed.lootTeamTested and id == "COIN" then
+                        observed.lootTeamTested = true
+                        teammate = addPlayer("LateToSharedWallet")
+                        rootOf(teammate).CFrame = CFrame.new(position)
+                    end
+                    local priorValue = walletValue(before)
+                    prize.Triggered:Fire(player)
+                    local after = inventoryOf(player)
+                    local duplicate = before.items[id] and before.items[id] > 0
+                    if duplicate then
+                        assert(after == before and item.Parent == drawer and prize.Enabled
+                            and not drawer:GetAttribute("LootClaimed"),
+                            "full personal slot destroyed the prize before anybody could take it")
+                    else
+                        assert(item.Parent == nil and not prize.Enabled
+                            and drawer:GetAttribute("LootClaimed") and not drawer:FindFirstChild("Loot_" .. id),
+                            "taking a prize did not remove its visible model for everyone")
+                        if id == "COIN" or id == "NOTE" or id == "GOLD" then
+                            assert(walletValue(after) > priorValue, "cash went into the wrong wallet")
+                        else
+                            assert(after.items[id] == 1, "picked item was not equipped")
+                        end
+                        prize.Triggered:Fire(player)
+                        assert(inventoryOf(player) == after, "same player farmed a cleared drawer")
+                    end
+                    if teammate then
+                        prize.Triggered:Fire(teammate)
+                        assert(walletValue(inventoryOf(teammate)) == 0
+                            and inventoryOf(player) == after and item.Parent == nil,
+                            "two clients both claimed one physical cache")
+                        removePlayer(teammate)
+                    end
                 end
             end
         end
@@ -969,9 +1059,11 @@ for index = 0, 99 do
             remote.OnServerEvent:Fire(player, "Select", 1)
             remote.OnServerEvent:Fire(player, "Torch", true)
             for _ = 1, 100 do services.RunService.Heartbeat:Fire(0.4) end
+            local heldAfterDrain = player.Character:FindFirstChild("HeldItem")
             assert(not player:GetAttribute("HasFlashlight") and not player:GetAttribute("TorchOn")
-                and player:GetAttribute("TorchCharge") == 0,
-                "dead battery did not remove the item or kill the beam")
+                and player:GetAttribute("TorchCharge") == 0
+                and (not heldAfterDrain or heldAfterDrain:GetAttribute("ItemKind") ~= "FLASHLIGHT"),
+                "dead battery did not remove the held flashlight or kill the beam")
         end
         rootOf(player).CFrame = CFrame.new(offer.Parent.Position)
         local cash = walletValue(inventoryOf(player))
@@ -986,8 +1078,10 @@ for index = 0, 99 do
         remote.OnServerEvent:Fire(player, "Select", 1)
         remote.OnServerEvent:Fire(player, "Torch", true)
         for _ = 1, 100 do services.RunService.Heartbeat:Fire(0.4) end
+        local discharged = player.Character:FindFirstChild("HeldItem")
         assert(not player:GetAttribute("HasFlashlight") and not player:GetAttribute("TorchOn")
-            and player:GetAttribute("TorchCharge") == 0)
+            and player:GetAttribute("TorchCharge") == 0
+            and (not discharged or discharged:GetAttribute("ItemKind") ~= "FLASHLIGHT"))
         rootOf(player).CFrame = CFrame.new(offer.Parent.Position)
         local rechargeCash = walletValue(inventoryOf(player))
         offer.Triggered:Fire(player)
@@ -1020,8 +1114,24 @@ for index = 0, 99 do
             "shop refused a medkit after the old one was used")
     end
     rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
+    local behindDoor = roomAt(index + 1)
+    local dueThreat = behindDoor and behindDoor:GetAttribute("Threat")
+    if dueThreat == "BLIND" then
+        assert(not observed.state.blind or observed.state.blind.index ~= index + 1,
+            "Guest spawned before its room was opened")
+    elseif dueThreat == "MOTH" then
+        assert(not observed.state.moth or observed.state.moth.index ~= index + 1,
+            "swarm spawned before its room was opened")
+    end
     prompt.Triggered:Fire(player)
     assert(world:GetAttribute("DoorsOpened") == index + 1, "player trapped by door " .. index + 1)
+    if dueThreat == "BLIND" or dueThreat == "MOTH" then
+        local guard = dueThreat == "BLIND" and observed.state.blind or observed.state.moth
+        local name = dueThreat == "BLIND" and "TheBlindGuest" or "ThePaleMoth"
+        assert(guard and guard.index == index + 1 and world:FindFirstChild(name) == guard.entity
+            and countEvent("MonsterSpawn", dueThreat) >= 1,
+            "door finished opening before its resident appeared")
+    end
     assert(prompt.Enabled and door:GetAttribute("Open") and leaf.CanCollide,
         "hinged door did not restore collision after opening")
     if room:GetAttribute("KeyFound") then
@@ -1134,7 +1244,16 @@ for index = 0, 99 do
         rootOf(runner).CFrame = CFrame.new(0, NocturneLayout.WalkwayY(index + 1, 19) + 3,
             (index + 1) * L + 19)
         local flickers = observed.sconceChanges
+        local soundCount = #observed.sounds
+        observed.warningCheck = function()
+            assert(#observed.sounds == soundCount and countEvent("MonsterSpawn", "RUSH") == 0,
+                "the light flicker made a noise BEFORE the monster itself appeared")
+        end
         drainTasks()
+        observed.warningCheck = nil
+        assert(countEvent("MonsterSpawn", "RUSH") >= 1
+            and world:FindFirstChild("TheRush") == nil,
+            "arrival was silent or a Rush stayed after the pass")
         assert(healthOf(player) == 100 and player:GetAttribute("Hidden"),
             "a real wardrobe did not shield the runner")
         assert(healthOf(runner) == 0 and observed.sconceChanges > flickers + 12,
@@ -1149,8 +1268,18 @@ for index = 0, 99 do
     elseif kind == "BLIND" and not observed.blindTested then
         observed.blindTested = true
         local root = rootOf(player)
+        local waiting = observed.state.blind
+        assert(waiting and waiting.index == index and waiting.entity and waiting.entity.Parent
+            and world:FindFirstChild("TheBlindGuest") == waiting.entity
+            and countEvent("MonsterSpawn", "BLIND") >= 1,
+            "opening the door did not reveal the Guest BEFORE crossing its threshold")
+        local arrivals = countEvent("MonsterSpawn", "BLIND")
         root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 9)
         room:FindFirstChild("Room entry sensor").Touched:Fire(root)
+        assert(observed.state.blind == waiting and countEvent("MonsterSpawn", "BLIND") == arrivals,
+            "entry sensor spawned a second delayed Guest")
+        waiting.lastSound = nil
+        waiting.lastSerial = observed.state.noiseSerial -- discard sounds of earlier test drawer interactions
         root.CFrame = CFrame.new(-10.5, NocturneLayout.EntranceY(index) + 3, index * L + 5)
         local ticks = 0
         observed.onWait = function()
@@ -1191,9 +1320,15 @@ for index = 0, 99 do
     elseif kind == "MOTH" and not observed.mothTested then
         observed.mothTested = true
         local root = rootOf(player)
+        local waiting = observed.state.moth
+        assert(waiting and waiting.index == index and waiting.entity and waiting.entity.Parent
+            and world:FindFirstChild("ThePaleMoth") == waiting.entity
+            and countEvent("MonsterSpawn", "MOTH") >= 1,
+            "the swarm did not exist on the OTHER side when the door opened")
         remote.OnServerEvent:Fire(player, "Torch", false)
         root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 9)
         room:FindFirstChild("Room entry sensor").Touched:Fire(root)
+        assert(observed.state.moth == waiting, "entering spawned a replacement swarm")
         root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 30)
         local bright = addPlayer("LongExposureToTheMoths")
         observed.award(bright, "FLASHLIGHT", 1)
@@ -1219,6 +1354,12 @@ for index = 0, 99 do
             and healthOf(bright) == 0 and healthOf(player) == 100,
             "the swarm did not pursue a lit torch or killed a dark player")
         removePlayer(bright)
+    elseif kind == "BLIND" then
+        local guard = observed.state.blind
+        if guard then guard.banished = true; drainTasks() end -- fast-forward later mock patrols
+    elseif kind == "MOTH" then
+        local guard = observed.state.moth
+        if guard then guard.banished = true; drainTasks() end
     elseif kind == "ECHO" and not observed.echoTested and index < 98 then
         observed.echoTested = true
         local root = rootOf(player)
@@ -1364,4 +1505,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Server generator smoke test failed: ${message}\n${nearby}`);
 }
-console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; rare loot/spiders, one of each item per player, art-deco lighting and four threats`);
+console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; first-taker shared loot, held models, atmospheric audio and four threats`);
