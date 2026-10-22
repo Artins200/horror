@@ -133,6 +133,7 @@ local camera = Instance.new("Camera")
 camera.CFrame = CFrame.new(0, 6, 3)
 camera.CameraType = Enum.CameraType.Custom
 camera.FieldOfView = 70
+camera.ViewportSize = {X=1920, Y=1080}
 local workspace = Instance.new("Workspace")
 workspace.CurrentCamera = camera
 camera.Parent = workspace
@@ -264,17 +265,22 @@ assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == h
 local monster = Instance.new("Model")
 monster.Name = "TheBlindGuest"
 local face = Instance.new("Part")
-face.Name = "Sculpted ivory eyeless face"
+face.Name = "Oval ashen face"
 face.Parent = monster
 monster.Parent = workspace
 remote.OnClientEvent:Fire("Jumpscare", "BLIND", monster)
 assert(scare.Visible and not modal.Visible and not reticle.Visible
     and stage:FindFirstChild("TheBlindGuest")
-    and stage:FindFirstChild("TheBlindGuest"):FindFirstChild("Sculpted ivory eyeless face"),
+    and stage:FindFirstChild("TheBlindGuest"):FindFirstChild("Oval ashen face"),
     "death close-up did not display the attacking monster")
 remote.OnClientEvent:Fire("Death")
 assert(not modal.Visible and scare.Visible,
     "retry menu erased the monster close-up instantly")
+local deathHold=false
+for _,timer in ipairs(timers) do
+    if timer.at>=1.8 then deathHold=true end
+end
+assert(deathHold, "creature close-up ends before the unsettling second beat")
 drainTimers()
 assert(modal.Visible and not scare.Visible, "full-screen scare did not finish before retry screen")
 -- Respawn cancels any old delayed modal and leaves a real R6 character.
@@ -287,23 +293,62 @@ assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == n
     and not scare.Visible and not modal.Visible and reticle.Visible
     and nextHead.LocalTransparencyModifier == 0 and nextArm.LocalTransparencyModifier == 0
     and not nextRoot.Anchored, "HUD respawn left a detached or hidden avatar")
+camera.ViewportSize={X=380,Y=780}
 remote.OnClientEvent:Fire("Jumpscare", "MOTH", nil)
 assert(scare.Visible and stage:FindFirstChild("Last glimpse of MOTH"),
     "a monster not yet replicated to the client left the jumpscare blank")
 remote.OnClientEvent:Fire("Death")
 drainTimers()
-assert(modal.Visible and not scare.Visible)
+assert(modal.Visible and not scare.Visible and view.CurrentCamera.CFrame.Position.Z < -6.5,
+    "portrait phone close-up cuts off both eyes instead of showing the whole mask")
+camera.ViewportSize={X=1920,Y=1080}
 player.CharacterAdded:Fire(nextAvatar)
 local replacement = Instance.new("Camera")
 replacement.CFrame = CFrame.new(0, 6, 3)
 replacement.CameraType = Enum.CameraType.Fixed
 replacement.FieldOfView = 70
+replacement.ViewportSize = {X=1920, Y=1080}
 replacement.Parent = workspace
 workspace.CurrentCamera = replacement
 runService.render(0.016)
 assert(replacement.CameraType == Enum.CameraType.Custom
     and replacement.CameraSubject == nextHumanoid,
     "HUD camera replacement stopped following the living avatar")
+local torch=replacement:FindFirstChild("Invisible torch light source")
+    :FindFirstChild("Weak hand torch")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
+runService.render(0.016)
+assert(torch.Enabled, "pre-finale torch did not work")
+local witness=Instance.new("Model")
+witness.Name="TheLastWitness"
+local finalFace=Instance.new("Part")
+finalFace.Name="The face behind the dawn"
+finalFace.Parent=witness
+witness.Parent=workspace
+remote.OnClientEvent:Fire("Finale", witness)
+assert(scare.Visible and not modal.Visible and not reticle.Visible
+    and stage:FindFirstChild("TheLastWitness")
+    and stage:FindFirstChild("TheLastWitness"):FindFirstChild("The face behind the dawn"),
+    "door 100 did not show its REAL final creature BEFORE the victory screen")
+local finaleHold=false
+for _,timer in ipairs(timers) do if timer.at>=2.4 then finaleHold=true end end
+assert(finaleHold and not torch.Enabled, "finale has no held beat or leaves the torch on")
+drainTimers()
+assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
+    and not scare.Visible and replacement.CameraSubject==nextHumanoid,
+    "final scare did not lead to victory without detaching the real camera")
+-- Even if the last model has not replicated, the giant ring-eyed face remains.
+player.CharacterAdded:Fire(nextAvatar)
+remote.OnClientEvent:Fire("Finale", nil)
+local blank=stage:FindFirstChild("Last glimpse of FINAL")
+local rings=0
+for _,piece in ipairs(blank:GetChildren()) do
+    if piece.Name=="Pale orbital rim" then rings=rings+1 end
+end
+assert(scare.Visible and rings==28 and not modal.Visible,
+    "late final-model replication produced a blank jumpscare")
+drainTimers()
+assert(modal.Visible and not scare.Visible, "fallback finale never completed")
 return true
 `;
 const state = lauxlib.luaL_newstate();

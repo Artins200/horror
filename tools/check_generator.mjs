@@ -202,8 +202,7 @@ function methods:PivotTo(cf)
     elseif self.Name == "Hinged split mandible" then
         observed.jawFrames = observed.jawFrames + 1
     elseif self.Name == "Left walking leg" or self.Name == "Right walking leg"
-        or self.Name == "Left articulated sleeve" or self.Name == "Right articulated sleeve"
-        or self.Name == "Left swaying coat hem" or self.Name == "Right swaying coat hem" then
+        or self.Name == "Left searching arm" or self.Name == "Right searching arm" then
         observed.limbFrames = observed.limbFrames + 1
     end
 end
@@ -294,16 +293,25 @@ ${server}
 -- Different runs must rearrange ACTUAL room types; the same seed is replayable.
 local a, b, repeated = planRooms(154511), planRooms(984451), planRooms(154511)
 local differences, threatDifferences, shapeDifferences, darkCount, lastKind = 0, 0, 0, 0, nil
-local kinds = {}
+local kinds, shapesSeen, combinedLayouts, recentShapes = {}, {}, {}, {}
 for index = 0, 99 do
     local roomA, roomB = a[index], b[index]
     if roomA.kind ~= roomB.kind then differences = differences + 1 end
     if roomA.threat ~= roomB.threat then threatDifferences = threatDifferences + 1 end
     if roomA.shape ~= roomB.shape then shapeDifferences = shapeDifferences + 1 end
     if roomA.dark then darkCount = darkCount + 1 end
+    if roomA.shape ~= "FIXED" then
+        assert(roomA.shape ~= recentShapes[1] and roomA.shape ~= recentShapes[2],
+            "recognisable architecture repeats after one door")
+        table.insert(recentShapes, roomA.shape)
+        if #recentShapes > 2 then table.remove(recentShapes, 1) end
+        shapesSeen[roomA.shape] = true
+        combinedLayouts[roomA.kind .. ":" .. roomA.shape] = true
+    end
     assert(roomA.kind == repeated[index].kind and roomA.threat == repeated[index].threat
         and roomA.locked == repeated[index].locked and roomA.dark == repeated[index].dark
-        and roomA.shape == repeated[index].shape and roomA.decorSeed == repeated[index].decorSeed,
+        and roomA.shape == repeated[index].shape and roomA.decorSeed == repeated[index].decorSeed
+        and roomA.lightPower == repeated[index].lightPower,
         "room plan changed for the same seed")
     if not NocturneLayout.IsStair(index) and not NocturneLayout.IsTurn(index, 154511) then
         assert(roomA.kind ~= lastKind or index == 0, "consecutive rooms repeated")
@@ -311,11 +319,15 @@ for index = 0, 99 do
         kinds[roomA.kind] = true
     end
 end
-local total = 0
+local total, forms, combinations = 0, 0, 0
 for _ in pairs(kinds) do total = total + 1 end
+for _ in pairs(shapesSeen) do forms = forms + 1 end
+for _ in pairs(combinedLayouts) do combinations = combinations + 1 end
 assert(differences > 38 and threatDifferences > 8 and shapeDifferences > 35
-    and darkCount >= 10 and total >= 11,
-    "seed did not independently regenerate interiors, geometry, threats and unlit rooms")
+    and darkCount >= 10 and total >= 11 and forms == 8 and combinations > 40,
+    "seed did not vary the actual eight geometries and furniture combinations")
+assert(a[0].kind ~= "HALL" or b[0].kind ~= "HALL" or a[0].shape ~= b[0].shape,
+    "the starting lobby is always the same static room")
 local ordinary = {}
 for index = 2, 99 do
     if a[index].kind ~= "STAIRWELL" and a[index].kind ~= "TURN" then
@@ -332,6 +344,31 @@ for block = 0, 3 do
 end
 assert(repeatsWithinTwelve >= 2,
     "interiors still arrive in fixed bags containing each of the 12 types once")
+-- An AISLE is a real wall, not just a label. Follow a target around its
+-- lateral doorway; the roaming enemy must NEVER cross x=6.2 at z7.
+local first = state.rooms[0]
+local originalShape = first.shape
+first.shape = "AISLE"
+for _, points in ipairs({{{0, 6.5}, {9, 6.5}}, {{9, 6.5}, {0, 6.5}}}) do
+    local from, goal = points[1], points[2]
+    local current = Vector3.new(from[1], 4.7, from[2])
+    local destination = Vector3.new(goal[1], 4.7, goal[2])
+    local crossed = false
+    for _ = 1, 120 do
+        local nextPosition = walkRoute(current, destination, 9, 0.1, 4.7)
+        if (current.X < 6.2 and nextPosition.X >= 6.2)
+            or (current.X > 6.2 and nextPosition.X <= 6.2) then
+            crossed = true
+            assert(nextPosition.Z > 8.35 and nextPosition.Z < 11.65,
+                "a monster crossed THROUGH the aisle wall instead of the side opening")
+        end
+        current = nextPosition
+    end
+    assert(crossed and math.abs(current.X - goal[1]) < 1.5
+        and math.abs(current.Z - goal[2]) < 1.5,
+        "a real aisle left the player unreachable from the main passage")
+end
+first.shape = originalShape
 end)()
 services.Players._players = {}
 local function addPlayer(name)
@@ -375,8 +412,12 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6", "old place was loaded")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v7"
+    and world:GetAttribute("GenerationBuild") == "EightRoomPlans-v7", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
+assert(services.Lighting.Ambient.R > 0.11 and services.Lighting.Ambient.B > 0.15
+    and services.Lighting.ExposureCompensation >= 0,
+    "blackout shading crushes the image to zero visibility")
 local spawn = world:FindFirstChild("CheckpointSpawn")
 assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
     and math.abs(spawn.Position.Y + spawn.Size.Y / 2 - NocturneLayout.EntranceY(0)) < 0.01
@@ -428,6 +469,7 @@ for index = 0, 99 do
     signatures[index] = structures[index] .. ":" .. tostring(room:GetAttribute("DecorSeed"))
     local wardrobes, treads, solidFlanks, partitions, arches, drawers, walls = 0, 0, 0, 0, 0, 0, 0
     local crossWalls, columns, vaults, lamps = 0, 0, 0, 0
+    local aisleScreens, rotunda, nave, crypt, guides, mosaic = 0, 0, 0, 0, 0, 0
     -- Collision belongs to the real structural parts, not to the decorative
     -- non-colliding carpet. Test EACH streamed room so a missing floor in a
     -- later storey cannot pass a foyer-only check.
@@ -437,6 +479,9 @@ for index = 0, 99 do
         ["Upper stair landing"] = true, ["Solid stair tread"] = true,
         ["Doorway threshold"] = true, ["Vestibule cross-wall"] = true,
         ["Freestanding marble arcade column"] = true,
+        ["Side aisle masonry screen"] = true, ["Rotunda monolithic column"] = true,
+        ["Nave transept masonry"] = true, ["Crypt sealed plinth"] = true,
+        ["Solid wall behind the final light"] = true,
     }
     for _, child in ipairs(room:GetDescendants()) do
         if child.Name == "Wardrobe_A" or child.Name == "Wardrobe_B" then wardrobes = wardrobes + 1 end
@@ -455,6 +500,32 @@ for index = 0, 99 do
             assert(math.abs(child.Position.X) > 8.6, "column blocks the main route")
         end
         if child.Name == "Deep coffered cross-vault" then vaults = vaults + 1 end
+        if child.Name == "Side aisle masonry screen" then
+            aisleScreens = aisleScreens + 1
+            assert(math.abs(child.Position.X) - child.Size.X / 2 > 5.9,
+                "an aisle wall blocks the route down the middle")
+        end
+        if child.Name == "Rotunda monolithic column" then
+            rotunda = rotunda + 1
+            assert(math.abs(child.Position.X) >= 8.9, "rotunda obstructs the door")
+        end
+        if child.Name == "Nave transept masonry" then
+            nave = nave + 1
+            assert(math.abs(child.Position.X) - child.Size.X / 2 >= 6.79,
+                "a transept seals its central arch")
+        end
+        if child.Name == "Crypt sealed plinth" then crypt = crypt + 1 end
+        if child.Name == "Rotunda circular floor mosaic" then
+            mosaic = mosaic + 1
+            assert(not child.CanCollide, "the mosaic raised an impassable step")
+        end
+        if child._class == "PointLight" and child.Name == "Blackout floor glow" then
+            guides = guides + 1
+            assert(child.Enabled and child.Brightness > 0.25 and child.Brightness < 0.55
+                and child.Range >= 19 and child.Parent.Name == "Emergency glass"
+                and not child.Parent.CanCollide,
+                "a dark room has no gentle PHYSICAL light at the floor")
+        end
         if child._class == "PointLight" and child.Parent.Name == "Warm filament" then
             lamps = lamps + 1
             assert(child.Enabled == (not dark), "dark rooms must have OFF physical lamps")
@@ -470,8 +541,15 @@ for index = 0, 99 do
     assert(wardrobes == 2 and lamps > 0, "room without two wardrobes or physical fixtures at " .. index)
     assert(crossWalls == (shape == "VESTIBULE" and 4 or 0)
         and columns == (shape == "ARCADE" and 4 or 0)
-        and vaults == (shape == "COFFERED" and 4 or 0),
-        "room shape attribute did not produce DIFFERENT traversable masonry")
+        and vaults == (shape == "COFFERED" and 4 or 0)
+        and aisleScreens == (shape == "AISLE" and 8 or 0)
+        and rotunda == (shape == "ROTUNDA" and 4 or 0)
+        and mosaic == (shape == "ROTUNDA" and 1 or 0)
+        and nave == (shape == "NAVE" and 4 or 0)
+        and crypt == (shape == "CRYPT" and 2 or 0),
+        "shape label did not construct eight DISTINCT, connected interiors")
+    assert(guides == (dark and not NocturneLayout.IsStair(index) and 3 or 0),
+        "dark interiors must stay navigable with or WITHOUT the torch")
     for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
         local wardrobe = room:FindFirstChild(name)
         assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
@@ -665,7 +743,33 @@ for index = 0, 99 do
     if index < 99 then
         assert(roomAt(index + 1), "door opens into a void at " .. index + 1)
     else
-        assert(world:FindFirstChild("Exit"), "door 100 has no finale")
+        local exit = world:FindFirstChild("Exit")
+        assert(exit, "door 100 has no finale")
+        local wall = exit:FindFirstChild("Solid wall behind the final light")
+        local floor = exit:FindFirstChild("Last floor")
+        local witness = exit:FindFirstChild("TheLastWitness")
+        assert(wall and wall.Anchored and wall.CanCollide and floor and floor.CanCollide
+            and witness and witness.PrimaryPart and witness:FindFirstChild("The face behind the dawn", true),
+            "final chamber has an open edge or no physical apparition")
+        local rings = 0
+        for _, piece in ipairs(witness:GetDescendants()) do
+            if piece.Name == "Chalk orbital ring" then rings = rings + 1 end
+        end
+        assert(rings == 28, "last encounter has no recognizable face")
+        local root = rootOf(player)
+        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(100) + 3, 100 * L + 25)
+        local trigger = exit:FindFirstChild("End of the nightmare")
+        trigger.Touched:Fire(root)
+        assert(player:GetAttribute("Finished") and healthOf(player) == 100
+            and player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 0
+            and countEvent("Finale") == 1 and countEvent("Victory") == 0,
+            "last door skipped the model-driven finale before the victory card")
+        local lastEvent = observed.events[#observed.events]
+        assert(lastEvent.event == "Finale" and lastEvent.a == witness,
+            "finale sent the wrong model to the client")
+        trigger.Touched:Fire(root)
+        assert(countEvent("Finale") == 1, "touching the end twice replayed the scare")
+        assert(healthOf(player) == 100, "completed player died during the victory scene")
     end
     if room:GetAttribute("Threat") == "RUSH" then rushCount = rushCount + 1 end
     if room:GetAttribute("Threat") == "BLIND" then blindCount = blindCount + 1 end
@@ -814,8 +918,9 @@ for index = 0, 99 do
 end
 assert(lockCount >= 8 and turnCount == 10, "insufficient locked rooms or turns")
 assert(darkCount >= 10 and physicalShapes.ARCADE and physicalShapes.COFFERED
-    and physicalShapes.VESTIBULE and physicalShapes.OPEN,
-    "new runs need multiple actual room structures and fully unlit rooms")
+    and physicalShapes.VESTIBULE and physicalShapes.OPEN and physicalShapes.AISLE
+    and physicalShapes.ROTUNDA and physicalShapes.NAVE and physicalShapes.CRYPT,
+    "new runs need ALL eight tangible room plans and readable blackouts")
 assert(rushCount >= 4 and blindCount >= 4 and mothCount >= 4
     and rushCount + blindCount + mothCount >= 15,
     "seeded threat spacing omitted one of the three survival mechanics")
@@ -836,24 +941,30 @@ assert(scareEvents >= 6, "threats no longer trigger their own death scenes")
 local rushLook = observed.monsterLooks.TheRush
 local blindLook = observed.monsterLooks.TheBlindGuest
 local mothLook = observed.monsterLooks.ThePaleMoth
-assert(rushLook and rushLook.parts >= 32 and rushLook.mist >= 5 and rushLook.halos == 1
+assert(rushLook and rushLook.parts >= 60 and rushLook.mist >= 5 and rushLook.halos == 1
     and rushLook.names["Cracked funeral mask"] == 1
+    and rushLook.names["Chalk orbital ring"] == 28
+    and not rushLook.names["Dim ember behind bone"]
     and rushLook.names["Three hooked talons"] == 6 and observed.clawFrames > 3
     and rushLook.names["Mandible tendon"] == 2 and observed.jawFrames > 3,
-    "Rush lost its face, moving claws or corridor-wide ash wake")
+    "Rush lost its hollow face, moving claws or corridor-wide ash wake")
 assert(blindLook and blindLook.parts >= 65 and blindLook.blocks == 0 and blindLook.halos == 1
-    and blindLook.names["Sculpted ivory eyeless face"] == 1
-    and blindLook.names["Overlapping hanging coat fold"] == 5
-    and blindLook.names["Hand-sewn eyelid stitch"] == 8
-    and blindLook.names["Uneven trailing wool coat tail"] == 2
+    and blindLook.names["Oval ashen face"] == 1
+    and blindLook.names["Hunched hollow thorax"] == 1
+    and blindLook.names["Chalk orbital ring"] == 28
+    and blindLook.names["Threadlike feeling finger"] == 10
+    and blindLook.names["Ribs under stretched skin"] == 10
+    and not blindLook.names["Overlapping hanging coat fold"]
     and observed.maskFrames > 2 and observed.limbFrames > 8,
-    "Blind Guest lost its smooth sculpted face, tailored silhouette or walking gait")
-assert(mothLook and mothLook.parts >= 45 and mothLook.wings == 2 and mothLook.halos == 1
+    "Blind Guest no longer matches the emaciated, ring-eyed humanoid reference")
+assert(mothLook and mothLook.parts >= 65 and mothLook.wings == 2 and mothLook.halos == 1
+    and mothLook.names["Chalk orbital ring"] == 28
     and mothLook.names["Soft layered wing"] == 4
     and mothLook.names["Dark eye on the wing"] == 4
     and mothLook.names["Translucent scalloped wing fringe"] == 16
+    and not mothLook.names["Light caught in the eye"]
     and observed.wingFrames > 3,
-    "Pale Moth lost its layered, animated wings")
+    "Moth lost its eerie ashen face or veined, animated wings")
 local first = 100 - 8
 assert(not roomAt(first - 1), "old rooms were never culled")
 local backSeal = roomAt(first):FindFirstChild("The corridor closes behind you")
@@ -867,7 +978,11 @@ remote.OnServerEvent:Fire(player, "Retry")
 local nextWorld = services.Workspace:FindFirstChild("NocturneWorld")
 assert(nextWorld ~= world and nextWorld:GetAttribute("Seed") ~= oldSeed,
     "solo replay reused the previous run's random seed")
-local nextFirst = nextWorld:FindFirstChild("Room_000_HALL")
+local nextFirst
+for _, child in ipairs(nextWorld:GetChildren()) do
+    if child:GetAttribute("RoomIndex") == 0 then nextFirst = child end
+end
+assert(nextFirst, "randomly themed first room did not build")
 local nextDoor = nextFirst:FindFirstChild("Door_001"):FindFirstChild("OpenDoor", true)
 rootOf(player).CFrame = CFrame.new(0, 3, L - 5)
 nextDoor.Triggered:Fire(player)

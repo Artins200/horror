@@ -8,8 +8,8 @@ local humanoid = character:WaitForChild("Humanoid")
 local head = character:WaitForChild("Head")
 task.wait(0.25)
 local world = workspace:FindFirstChild("NocturneWorld")
-assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6",
-	"Open Nocturne-v6.rbxl in a NEW Studio tab")
+assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v7",
+	"Open Nocturne-v7.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
@@ -22,6 +22,8 @@ local real = character:FindFirstChild("RightHand") or character:FindFirstChild("
 assert(real and real.Transparency < 0.95, "Normal Roblox avatar hands are missing")
 local view = camera:FindFirstChild("AvatarArmsFirstPerson")
 assert(view, "Key-only avatar display is missing")
+assert(not view:FindFirstChild("LeftHand") and not view:FindFirstChild("Left Arm"),
+	"An unrelated left arm is floating beside the key")
 local held = player:GetAttribute("HeldKey")
 local displayed, inFrame = 0, 0
 local vertical = math.tan(math.rad(camera.FieldOfView / 2))
@@ -41,11 +43,17 @@ for _, part in ipairs(view:GetChildren()) do
 	end
 end
 if held then
-	assert(character:FindFirstChild("HeldKey"), "Physical key is not in the right Roblox hand")
-	assert(view:FindFirstChild("Key in avatar hand"), "Visible first-person key is missing")
-	assert(displayed >= 2 and inFrame >= 1, "Small hands/key are not in the first-person frame")
+	local physical = character:FindFirstChild("HeldKey")
+	local replica = view:FindFirstChild("Key in avatar hand")
+	assert(physical and physical:FindFirstChild("Key stem"),
+		"Physical drawer key is not in the right Roblox hand")
+	assert(replica and replica:FindFirstChild("Key stem"),
+		"Visible first-person copy of the same key is missing")
+	assert(displayed >= 1 and inFrame >= 1,
+		"The normal-sized gripping arm is not in the camera frame")
 else
 	assert(displayed == 0 and not view:FindFirstChild("Key in avatar hand"),
-		"Hands appeared before a key was picked up")
+		"Arm appeared before a key was picked up")
 end
-print("NOCTURNE v6: real Humanoid grounded, key-only hands", held or "no key", displayed, inFrame)
+print("NOCTURNE v7: real Humanoid grounded, native right arm", held or "no key",
+	displayed, inFrame)

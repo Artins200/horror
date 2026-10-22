@@ -54,6 +54,15 @@ class PlaceTests(unittest.TestCase):
         self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMaxZoomDistance']")), 0.5)
         self.assertEqual(starter.findtext("Properties/bool[@name='EnableMouseLockOption']"), "false")
 
+    def test_editor_and_play_share_legible_lighting(self):
+        lighting = self.named("Lighting", "Lighting")
+        ambient = lighting.find("Properties/Color3[@name='Ambient']")
+        self.assertGreater(float(ambient.findtext("R")), 0.11)
+        self.assertGreater(float(ambient.findtext("B")), 0.15)
+        self.assertGreaterEqual(float(lighting.findtext(
+            "Properties/float[@name='ExposureCompensation']")), 0)
+        self.assertGreater(float(lighting.findtext("Properties/float[@name='FogEnd']")), 100)
+
     def test_editor_preview_has_door_wardrobes_and_lights(self):
         preview = self.named("Model", "StudioPreview")
         parts = preview.findall(".//Item[@class='Part']")
@@ -148,7 +157,8 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v6")', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v7")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "EightRoomPlans-v7")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -176,8 +186,9 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('info.crouching and CONFIG.CrouchSpeed', self.server)
         self.assertIn('state.hidden[player] or not info.crouching', self.server)
         self.assertIn('local function copyArm', self.perspective)
-        self.assertIn('copyArm(prefix .. "Hand"', self.perspective)
-        self.assertIn('copyArm("Left Arm"', self.perspective)
+        self.assertIn('copyArm("RightHand", 1, "hand")', self.perspective)
+        self.assertIn('copyArm("Right Arm", 1, "r6")', self.perspective)
+        self.assertNotIn('copyArm("Left Arm"', self.perspective)
         self.assertIn('part.CanCollide = false', self.perspective)
         self.assertIn('humanoid.CameraOffset = Vector3.new', self.client)
         self.assertIn('remote:FireServer("Crouch", on)', self.client)
@@ -196,6 +207,11 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local function planRooms(seed)', self.server)
         self.assertIn('local function walkRoute(position, destination, speed, dt, height)', self.server)
         self.assertIn('local function showScare(kind, source)', self.client)
+        self.assertIn('makeFinalWitness = function(parent)', self.server)
+        self.assertIn('remote:FireClient(player, "Finale", witness)', self.server)
+        self.assertIn('elseif event == "Finale" then', self.client)
+        self.assertIn('Solid wall behind the final light', self.server)
+        self.assertIn('hollowEyes(head, 0.55', self.server)
 
     def test_no_hint_overlays_and_physical_lighting(self):
         self.assertNotIn('showNotice(', self.client)
@@ -210,6 +226,8 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('setLamp(lamp, lamp.normallyOn)', self.server)
         self.assertIn('model:SetAttribute("Dark", plan.dark)', self.server)
         self.assertIn('bulb.Material = Enum.Material.Glass', self.server)
+        self.assertIn('light.Name = "Blackout floor glow"', self.server)
+        self.assertIn('Lighting.Ambient = Color3.fromRGB(31, 37, 43)', self.server)
         self.assertIn('MothGraceSeconds = 4', self.server)
         self.assertIn('task.wait(CONFIG.MothGraceSeconds / 8)', self.server)
         self.assertNotIn('remote:FireAllClients("Warning"', self.server)
@@ -223,6 +241,9 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local visible = keyNumber ~= nil and not peek', self.perspective)
         self.assertIn('local keyModel', self.perspective)
         self.assertIn('local function makeViewKey()', self.perspective)
+        self.assertIn('local clone = actual:Clone()', self.perspective)
+        self.assertIn('between(wrist, elbow)', self.perspective)
+        self.assertIn('between(elbow, shoulder)', self.perspective)
         self.assertIn('player:GetAttribute("KeyTurning")', self.perspective)
         self.assertIn('cameraCF = cf * CFrame.new(0, 5.0, -1.02)', self.server)
         self.assertIn('"Spaced wooden louvre"', self.server)
@@ -232,7 +253,7 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v6.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v7.rbxl").read_bytes())
 
 
 if __name__ == "__main__":

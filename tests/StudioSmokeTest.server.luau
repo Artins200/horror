@@ -4,8 +4,9 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6",
-	"Old place loaded: open Nocturne-v6.rbxl in a NEW Studio tab")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v7"
+	and world:GetAttribute("GenerationBuild") == "EightRoomPlans-v7",
+	"Old place loaded: open Nocturne-v7.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -24,6 +25,19 @@ for index = 0, 1 do
 	assert(room:GetAttribute("ExitY") == Layout.ExitY(index))
 	assert(type(room:GetAttribute("Shape")) == "string" and type(room:GetAttribute("Dark")) == "boolean",
 		"Room shape/darkness were not generated")
+	if index == 0 then
+		local shape = room:GetAttribute("Shape")
+		assert(shape ~= "FIXED", "First room is still the old, constant foyer")
+		local required = {AISLE = "Side aisle masonry screen",
+			ROTUNDA = "Rotunda monolithic column", NAVE = "Nave transept masonry",
+			CRYPT = "Crypt sealed plinth", VESTIBULE = "Vestibule cross-wall",
+			ARCADE = "Freestanding marble arcade column",
+			COFFERED = "Deep coffered cross-vault"}
+		assert(not required[shape] or room:FindFirstChild(required[shape]),
+			"A random architecture label did not build a visible structure")
+		print("NOCTURNE v7 seed", world:GetAttribute("Seed"), "first room",
+			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
+	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
 		"A generated room has fewer than two accessible hiding places")
 	for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do

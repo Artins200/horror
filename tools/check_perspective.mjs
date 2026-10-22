@@ -75,7 +75,7 @@ function methods:SetAttribute(name,value)
 end
 function methods:Destroy() self.Parent=nil end
 function methods:PivotTo(cf)
-    local previous=self.WorldPivot or CFrame.new()
+    local previous=self.PrimaryPart and self.PrimaryPart.CFrame or self.WorldPivot or CFrame.new()
     local shift=cf.Position-previous.Position
     for _,piece in ipairs(self:GetDescendants()) do
         if piece:IsA("BasePart") then piece.CFrame=CFrame.new(piece.Position+shift) end
@@ -89,6 +89,7 @@ function methods:Clone()
             and k~="_parent" and k~="CharacterAdded" and k~="CharacterAppearanceLoaded" then result[k]=v end
     end
     for _,child in ipairs(self:GetChildren()) do child:Clone().Parent=result end
+    if self.PrimaryPart then result.PrimaryPart=result:FindFirstChild(self.PrimaryPart.Name) end
     return result
 end
 local meta={
@@ -149,6 +150,10 @@ local function avatar(rig)
     for _,name in ipairs(names) do
         local arm=Instance.new("Part")
         arm.Name=name
+        arm.Size=rig=="R6" and Vector3.new(1,2,1)
+            or name:find("Hand") and Vector3.new(0.59,0.53,0.64)
+            or name:find("Upper") and Vector3.new(0.86,1.42,0.81)
+            or Vector3.new(0.67,1.13,0.66)
         arm.Archivable=false
         arm.Transparency=0
         arm.LocalTransparencyModifier=1 -- Roblox fades REAL limbs in first person
@@ -166,8 +171,9 @@ player.CharacterAdded:Fire(character)
 assert(camera.CameraType==Enum.CameraType.Custom and camera.CameraSubject==human,
     "camera bootstrap not attached to the real Humanoid")
 local display=camera:FindFirstChild("AvatarArmsFirstPerson")
-assert(display and #display:GetChildren()==6 and not realArm.Archivable,
-    "copies of real R15 avatar limbs were not made")
+assert(display and #display:GetChildren()==3 and not realArm.Archivable
+    and not display:FindFirstChild("LeftHand") and display:FindFirstChild("RightHand"),
+    "one native R15 arm was not copied from the avatar")
 local original=root.CFrame
 runService.render(0.016)
 assert(root.CFrame==original and not root.Anchored and realArm.LocalTransparencyModifier==1,
@@ -176,7 +182,11 @@ for _,part in ipairs(display:GetChildren()) do
     assert(part.Transparency==1, "avatar hands appeared BEFORE taking a key")
 end
 assert(not display:FindFirstChild("Key in avatar hand"), "key appeared before pickup")
-player:SetAttribute("HeldKey",5) -- server confirmed taking the physical key from a drawer
+player:SetAttribute("HeldKey",5) -- attribute can replicate BEFORE the key Model
+runService.render(0.016)
+local temporary=display:FindFirstChild("Key in avatar hand")
+assert(temporary and #temporary:GetDescendants()==13 and temporary:FindFirstChild("Key stem"),
+    "no correctly shaped temporary key while the physical key replicates")
 local realKey=Instance.new("Model")
 realKey.Name="HeldKey"
 realKey.Parent=character
@@ -185,10 +195,21 @@ realBow.Name="Brass key bow"
 realBow.CFrame=CFrame.new(0,4,10)
 realBow.LocalTransparencyModifier=0
 realBow.Parent=realKey
+realKey.PrimaryPart=realBow
+local realStem=Instance.new("Part")
+realStem.Name="Key stem"
+realStem.CFrame=CFrame.new(0,4,10.46)
+realStem.Parent=realKey
+local realCast=Instance.new("Part")
+realCast.Name="Unique real key casting"
+realCast.CFrame=CFrame.new(0.1,4,10.86)
+realCast.Parent=realKey
 runService.render(0.016)
 local key=display:FindFirstChild("Key in avatar hand")
-assert(key and #key:GetDescendants()>=10 and realBow.LocalTransparencyModifier==1,
-    "hand-held key not rendered first person / real one clips into owner camera")
+assert(key and key~=temporary and key:FindFirstChild("Unique real key casting")
+    and key:FindFirstChild("Brass key bow") and realBow.LocalTransparencyModifier==1
+    and not temporary.Parent,
+    "display did not switch to a clone of the ACTUAL held key")
 local vertical=math.tan(math.rad(camera.FieldOfView/2))
 local visible,inFrame=0,0
 for _,part in ipairs(display:GetChildren()) do
@@ -201,11 +222,17 @@ for _,part in ipairs(display:GetChildren()) do
         if v.Z< -0.2 and math.abs(v.Y)< -v.Z*vertical then inFrame=inFrame+1 end
     end
 end
-assert(visible==6 and inFrame>=2, "key-only hands are out of frame")
+assert(visible==3 and inFrame>=2, "the ordinary gripping arm is out of frame")
 local right=display:FindFirstChild("RightHand")
-local firstY=right.Position.Y
+local lower=display:FindFirstChild("RightLowerArm")
+local upper=display:FindFirstChild("RightUpperArm")
+assert(math.abs((lower.Position-right.Position).Magnitude-(lower.Size.Y+right.Size.Y)/2)<0.18
+    and math.abs((upper.Position-lower.Position).Magnitude-(upper.Size.Y+lower.Size.Y)/2)<0.18,
+    "R15 wrist/elbow pieces are separated or inverted instead of joined")
+local firstY, firstKeyY=right.Position.Y, key.WorldPivot.Position.Y
 runService.render(0.30)
-assert(right.Position.Y>firstY+0.15, "key pickup did not raise the same Roblox hand and key")
+assert(right.Position.Y>firstY+0.15 and key.WorldPivot.Position.Y>firstKeyY+0.15,
+    "key pickup did not raise the same Roblox hand AND its real key copy")
 player:SetAttribute("KeyTurning",true)
 local beforeTurn=right.Position.Y
 runService.render(0.3)
@@ -216,12 +243,12 @@ camera.ViewportSize={X=380,Y=780}
 runService.render(0.016)
 local horizontal=vertical*(camera.ViewportSize.X/camera.ViewportSize.Y)
 local portrait=0
-for _,name in ipairs({"LeftHand","RightHand"}) do
+for _,name in ipairs({"RightHand","RightLowerArm"}) do
     local part=display:FindFirstChild(name)
     local v=part.Position-camera.CFrame.Position
     if v.Z<0 and math.abs(v.X)< -v.Z*horizontal then portrait=portrait+1 end
 end
-assert(portrait==2, "phone portrait cropped the SMALL key-only Roblox hands")
+assert(portrait>=1, "phone portrait cropped the normal gripping hand")
 camera.ViewportSize={X=1920,Y=1080}
 player.CameraMode=Enum.CameraMode.Classic
 camera.CameraType=Enum.CameraType.Fixed
@@ -233,7 +260,7 @@ player:SetAttribute("Hidden",true)
 camera.CameraType=Enum.CameraType.Scriptable
 runService.render(0.016)
 assert(camera.CameraType==Enum.CameraType.Scriptable and right.Transparency==1
-    and key:FindFirstChild("Forged key shaft").Transparency==1,
+    and key:FindFirstChild("Key stem").Transparency==1,
     "wardrobe camera did not hide the arms and key")
 player:SetAttribute("Hidden",false)
 runService.render(0.016)
@@ -248,8 +275,8 @@ player.Character=nextAvatar
 player.CharacterAdded:Fire(nextAvatar)
 player.CharacterAppearanceLoaded:Fire(nextAvatar)
 runService.render(0.016)
-assert(camera.CameraSubject==nextHuman and #display:GetChildren()==2
-    and display:FindFirstChild("Left Arm") and not nextRoot.Anchored
+assert(camera.CameraSubject==nextHuman and #display:GetChildren()==1
+    and not display:FindFirstChild("Left Arm") and not nextRoot.Anchored
     and display:FindFirstChild("Right Arm").Transparency==1,
     "R6 respawn has floating arms before the next key")
 player:SetAttribute("HeldKey",9)
@@ -279,4 +306,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Independent first-person test failed: ${message}\n${nearby}`);
 }
-console.log("Perspective smoke test OK: native R6/R15 arms hidden without key, compact carried key and raise/turn poses, wardrobe and respawn");
+console.log("Perspective smoke test OK: connected R6/R15 right arm, exact held-key replica, raise/turn poses, wardrobe and respawn");

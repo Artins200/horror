@@ -253,11 +253,13 @@ local function toggleTorch()
 	remote:FireServer("Torch", flashlightOn)
 end
 local function fallbackScareFace(kind)
+	-- Streaming/order-of-replication fallback. Even without the source model,
+	-- the final room and death scene show the same huge hollow orbital rings.
 	local model = Instance.new("Model")
 	model.Name = "Last glimpse of " .. tostring(kind)
-	local color = kind == "MOTH" and Color3.fromRGB(149, 183, 167)
-		or kind == "BLIND" and Color3.fromRGB(195, 194, 177)
-		or Color3.fromRGB(114, 105, 97)
+	local color = kind == "MOTH" and Color3.fromRGB(177, 187, 175)
+		or kind == "BLIND" and Color3.fromRGB(196, 199, 182)
+		or Color3.fromRGB(207, 207, 189)
 	local function oval(name, size, cf, tint)
 		local part = Instance.new("Part")
 		part.Name = name
@@ -271,15 +273,25 @@ local function fallbackScareFace(kind)
 		part.Parent = model
 		return part
 	end
-	local face = oval("Last mask", Vector3.new(2.7, 3.5, 1.45), CFrame.new(0, 2.7, 0), color)
-	model.PrimaryPart = face
+	local body = oval("A body in the dark", Vector3.new(1.6, 4.3, 1),
+		CFrame.new(0, -0.3, 0.5), Color3.fromRGB(19, 23, 25))
+	model.PrimaryPart = body
+	oval("Last mask", Vector3.new(2.55, 3.22, 1.28), CFrame.new(0, 3.32, -0.47), color)
 	for _, side in ipairs({-1, 1}) do
-		oval("Hollow eye", Vector3.new(0.7, 0.78, 0.18),
-			CFrame.new(side * 0.67, 3.05, -0.7), DARK)
-		oval("Hairline shadow", Vector3.new(0.27, 1.2, 0.16),
-			CFrame.new(side * 0.7, 2.3, -0.58), RED)
+		oval("Continuous pale eye surround", Vector3.new(1.22, 1.35, 0.12),
+			CFrame.new(side * 0.63, 3.59, -1.12), color)
+		oval("Black orbital hollow", Vector3.new(0.98, 1.15, 0.15),
+			CFrame.new(side * 0.63, 3.59, -1.19), DARK)
+		for bead = 1, 14 do
+			local theta = bead * 2 * math.pi / 14
+			oval("Pale orbital rim", Vector3.new(0.15, 0.18, 0.13),
+				CFrame.new(side * 0.63 + math.cos(theta) * 0.45,
+					3.59 + math.sin(theta) * 0.52, -1.25), color)
+		end
+		oval("Black pupil", Vector3.new(0.58, 0.7, 0.12),
+			CFrame.new(side * 0.63, 3.57, -1.31), DARK)
 	end
-	oval("Open jaw", Vector3.new(0.8, 0.8, 0.2), CFrame.new(0, 1.82, -0.73), DARK)
+	oval("Still mouth", Vector3.new(0.83, 0.18, 0.13), CFrame.new(0, 2.53, -1.14), DARK)
 	return model
 end
 local function showScare(kind, source)
@@ -287,30 +299,60 @@ local function showScare(kind, source)
 	local token = scareToken
 	reticle.Visible = false
 	scare.Visible = true
-	scareVeil.BackgroundTransparency = 0.1
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
 	local monster = source
 	if not monster or not monster:IsA("Model") then
 		local world = Workspace:FindFirstChild("NocturneWorld")
-		local names = {RUSH = "TheRush", BLIND = "TheBlindGuest", MOTH = "ThePaleMoth"}
+		local names = {RUSH = "TheRush", BLIND = "TheBlindGuest",
+			MOTH = "ThePaleMoth", FINAL = "TheLastWitness"}
 		monster = world and world:FindFirstChild(names[kind] or "", true)
 	end
 	local copy = monster and monster:Clone()
 	if not copy then copy = fallbackScareFace(kind) end
 	copy.Parent = scareWorld
 	copy:PivotTo(CFrame.new(0, -0.15, 0))
-	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(65, 101, 87)
-		or kind == "BLIND" and Color3.fromRGB(95, 109, 99)
-		or Color3.fromRGB(124, 53, 49)
-	scareCamera.FieldOfView = 52
-	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, 2.75, -9.5), Vector3.new(0, 2.45, 0))
-	TweenService:Create(scareCamera, TweenInfo.new(0.43, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-		{CFrame = CFrame.lookAt(Vector3.new(0, 2.65, -2.3), Vector3.new(0, 2.5, 0))}):Play()
-	TweenService:Create(scareVeil, TweenInfo.new(0.17), {BackgroundTransparency = 0.86}):Play()
-	task.delay(0.26, function()
+	local eyeY = kind == "FINAL" and 3.93 or kind == "BLIND" and 3.75
+		or kind == "MOTH" and 3.18 or 3.5
+	local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+	local aspect = viewport.X / math.max(1, viewport.Y)
+	-- Keep BOTH dark eyes in frame on a tall phone as well as a wide monitor.
+	-- A fixed -2.4 close-up cropped the entire mask to its nose on mobile.
+	local nearDistance = math.clamp(1.4 + 1.23 / (math.tan(math.rad(20))
+		* math.max(0.42, aspect)), 3.1, 11)
+	local farDistance = math.max(10.5, nearDistance + 5)
+	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(124, 150, 140)
+		or kind == "RUSH" and Color3.fromRGB(137, 144, 146)
+		or Color3.fromRGB(157, 161, 151)
+	scareView.LightColor = Color3.fromRGB(243, 234, 211)
+	scareVeil.BackgroundColor3 = kind == "FINAL" and Color3.fromRGB(214, 225, 213)
+		or kind == "MOTH" and Color3.fromRGB(129, 171, 154)
+		or kind == "RUSH" and Color3.fromRGB(126, 141, 151)
+		or Color3.fromRGB(177, 190, 181)
+	scareVeil.BackgroundTransparency = 0.78
+	-- Hold the distant silhouette for a heartbeat, then snap to a face that
+	-- fills the screen. Two SHORT flashes and a clear hold replace a red wash
+	-- that used to cover the monster before the retry card appeared.
+	scareCamera.FieldOfView = 58
+	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
+		Vector3.new(0, eyeY, 0))
+	task.delay(0.28, function()
 		if token ~= scareToken then return end
-		scareVeil.BackgroundTransparency = 0.15
-		TweenService:Create(scareVeil, TweenInfo.new(0.3), {BackgroundTransparency = 0.93}):Play()
+		scareVeil.BackgroundTransparency = 0.12
+		TweenService:Create(scareCamera,
+			TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+			{CFrame = CFrame.lookAt(Vector3.new(0.12, eyeY + 0.16, -nearDistance - 0.4),
+				Vector3.new(0, eyeY, -0.2)), FieldOfView = 44}):Play()
+		TweenService:Create(scareVeil, TweenInfo.new(0.12),
+			{BackgroundTransparency = 0.93}):Play()
+	end)
+	task.delay(0.61, function()
+		if token ~= scareToken then return end
+		scareVeil.BackgroundTransparency = 0.38
+		TweenService:Create(scareVeil, TweenInfo.new(0.15),
+			{BackgroundTransparency = 0.96}):Play()
+		TweenService:Create(scareCamera, TweenInfo.new(0.12),
+			{CFrame = CFrame.lookAt(Vector3.new(-0.14, eyeY + 0.03, -nearDistance),
+				Vector3.new(0, eyeY, -0.3)), FieldOfView = 40}):Play()
 	end)
 end
 local function showEnd(win)
@@ -426,7 +468,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			dead = true
 			setSprint(false)
 			local token = scareToken
-			task.delay(1.1, function()
+			task.delay(1.85, function()
 				if scareToken ~= token or not dead then return end
 				scare.Visible = false
 				showEnd(false)
@@ -434,7 +476,19 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		else
 			showEnd(false)
 		end
+	elseif event == "Finale" then
+		finished = true
+		setSprint(false)
+		torch.Enabled = false
+		showScare("FINAL", a)
+		local token = scareToken
+		task.delay(2.4, function()
+			if scareToken ~= token or not finished then return end
+			scare.Visible = false
+			showEnd(true)
+		end)
 	elseif event == "Victory" then
+		-- Keep compatibility with older servers; v7 uses the physical finale.
 		showEnd(true)
 	end
 end)
