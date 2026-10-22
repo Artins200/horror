@@ -4,9 +4,9 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v7"
-	and world:GetAttribute("GenerationBuild") == "EightRoomPlans-v7",
-	"Old place loaded: open Nocturne-v7.rbxl in a NEW Studio tab")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v8"
+	and world:GetAttribute("GenerationBuild") == "LootShopThreats-v8",
+	"Old place loaded: open Nocturne-v8.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -35,7 +35,7 @@ for index = 0, 1 do
 			COFFERED = "Deep coffered cross-vault"}
 		assert(not required[shape] or room:FindFirstChild(required[shape]),
 			"A random architecture label did not build a visible structure")
-		print("NOCTURNE v7 seed", world:GetAttribute("Seed"), "first room",
+		print("NOCTURNE v8 seed", world:GetAttribute("Seed"), "first room",
 			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
 	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
@@ -104,6 +104,8 @@ if player then
 	local humanoid = character:WaitForChild("Humanoid")
 	task.wait(1) -- allow the avatar to settle on the floor after spawning
 	assert(not root.Anchored and humanoid.AutoRotate, "Avatar physics/rotation is disabled")
+	assert(player:GetAttribute("HasFlashlight") == false and player:GetAttribute("TorchOn") == false,
+		"Starting avatar received a free flashlight")
 	local cast = RaycastParams.new()
 	cast.FilterType = Enum.RaycastFilterType.Exclude
 	cast.FilterDescendantsInstances = {character}
