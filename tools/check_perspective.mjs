@@ -265,6 +265,20 @@ runService.render(0.016)
 assert(leftShoulder.C0.pitch==0 and arms15.LeftHand.LocalTransparencyModifier==1
     and arms15.RightHand.LocalTransparencyModifier==1,
     "using/losing an item left both arms hovering in first person")
+local physical15 = root15.CFrame
+player:SetAttribute("VoidWalk", true)
+for _=1,9 do runService.render(0.07) end
+assert(leftShoulder.C0.pitch>1.25 and arms15.LeftHand.LocalTransparencyModifier==0
+    and arms15.LeftUpperArm.LocalTransparencyModifier==0
+    and arms15.LeftLowerArm.LocalTransparencyModifier==0
+    and arms15.RightHand.LocalTransparencyModifier==1
+    and root15.CFrame==physical15 and not root15.Anchored
+    and camera.CameraType==Enum.CameraType.Custom and camera.CameraSubject==human15,
+    "white void did not raise the genuine R15 forearm without creating a detached camera")
+player:SetAttribute("VoidWalk", false)
+for _=1,7 do runService.render(0.07) end
+assert(leftShoulder.C0.pitch==0 and arms15.LeftHand.LocalTransparencyModifier==1,
+    "left R15 arm stayed in front of the face after leaving the white void")
 local avatar6,human6,root6,arms6,shoulder6=avatar("R6")
 player.Character=avatar6
 player.CharacterAdded:Fire(avatar6)
@@ -292,6 +306,21 @@ assert(arms6["Left Arm"].LocalTransparencyModifier==0
     and arms6["Right Arm"].LocalTransparencyModifier==0
     and tin.LocalTransparencyModifier==0 and avatar6:FindFirstChild("Left Shoulder",true).C0.pitch>0.5,
     "R6 medical tin was not held by the real left arm while a key uses the right")
+player:SetAttribute("HeldKey",nil)
+heldItem.Parent=nil
+kit.Parent=nil
+player:SetAttribute("VoidWalk",true)
+for _=1,9 do runService.render(0.07) end
+assert(avatar6:FindFirstChild("Left Shoulder",true).C0.pitch>1.25
+    and arms6["Left Arm"].LocalTransparencyModifier==0
+    and arms6["Right Arm"].LocalTransparencyModifier==1
+    and not root6.Anchored,
+    "an empty R6 hand did not shield the eyes in the final white chamber")
+player:SetAttribute("VoidWalk",false)
+for _=1,7 do runService.render(0.07) end
+assert(arms6["Left Arm"].LocalTransparencyModifier==1
+    and avatar6:FindFirstChild("Left Shoulder",true).C0.pitch==0,
+    "R6 eye-covering pose leaked into the normal hotel")
 local replacement=Instance.new("Camera")
 replacement.CameraType=Enum.CameraType.Fixed
 replacement.Parent=workspace
@@ -312,4 +341,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Independent first-person test failed: ${message}\n${nearby}`);
 }
-console.log("Perspective smoke test OK: real R6/R15 hands, key plus selected item, lock turn and wardrobe, no viewmodel");
+console.log("Perspective smoke test OK: native R6/R15 key/items/wardrobe and real eye-shield arm, no viewmodel");

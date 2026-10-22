@@ -532,7 +532,7 @@ local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-    and world:GetAttribute("GenerationBuild") == "SinglePressWardrobe-v13", "old place was loaded")
+    and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
     "hotel walls no longer have physical audio reverb")
@@ -1412,30 +1412,82 @@ for index = 0, 99 do
     else
         local exit = world:FindFirstChild("Exit")
         assert(exit, "door 100 has no finale")
-        local wall = exit:FindFirstChild("Solid wall behind the final light")
+        local wall = exit:FindFirstChild("Sealed white horizon")
         local floor = exit:FindFirstChild("Last floor")
+        local ceiling = exit:FindFirstChild("White void ceiling")
         local witness = exit:FindFirstChild("TheLastWitness")
-        assert(wall and wall.Anchored and wall.CanCollide and floor and floor.CanCollide
-            and witness and witness.PrimaryPart and witness:FindFirstChild("The face behind the dawn", true),
-            "final chamber has an open edge or no physical apparition")
-        local rings = 0
+        local sides, lights, rings = 0, 0, 0
+        for _, piece in ipairs(exit:GetChildren()) do
+            if piece.Name == "White void wall" then
+                sides = sides + 1
+                assert(piece.Anchored and piece.CanCollide and piece.Color.R > 0.95
+                    and piece.Size.Z == 48 and math.abs(piece.Position.X) == 14.6)
+            elseif piece.Name == "Unseen white light" then
+                lights = lights + 1
+                assert(piece:FindFirstChildOfClass("PointLight").Brightness >= 6)
+            end
+        end
+        assert(wall and wall.Anchored and wall.CanCollide and wall.Color.R > 0.95
+            and math.abs(wall.Position.Z - (100 * L + 47.55)) < 0.001
+            and floor and floor.Anchored and floor.CanCollide and floor.Size.Z == 48
+            and floor.Size.X == 30 and floor.Position.Z == 100 * L + 24
+            and ceiling and ceiling.Anchored and ceiling.CanCollide and ceiling.Size.Z == 48
+            and sides == 2 and lights == 4 and not exit:FindFirstChild("Morning")
+            and witness and witness.PrimaryPart and witness:GetAttribute("Concealed")
+            and witness:FindFirstChild("The face behind the dawn", true),
+            "white emulation has a dark/open edge, missing lights or a visible portal")
         for _, piece in ipairs(witness:GetDescendants()) do
             if piece.Name == "Chalk orbital ring" then rings = rings + 1 end
+            if piece:IsA("BasePart") then
+                assert(piece.Transparency == 1, "last monster was revealed BEFORE the walk")
+            elseif piece:IsA("Highlight") or piece:IsA("PointLight") then
+                assert(piece.Enabled == false, "an invisible monster still glows")
+            end
         end
         assert(rings == 28, "last encounter has no recognizable face")
         local root = rootOf(player)
-        root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(100) + 3, 100 * L + 25)
+        local human = player.Character:FindFirstChildOfClass("Humanoid")
+        local y = NocturneLayout.EntranceY(100) + 3
         local trigger = exit:FindFirstChild("End of the nightmare")
+        root.CFrame = CFrame.new(0, y, 100 * L + 43)
+        trigger.Touched:Fire(root)
+        assert(not player:GetAttribute("Finished") and countEvent("Finale") == 0,
+            "touching the end before the white threshold skipped the slow walk")
+        root.CFrame = CFrame.new(0, y, 100 * L + 3.5)
+        exit:FindFirstChild("White threshold").Touched:Fire(root)
+        assert(player:GetAttribute("VoidWalk") and human.WalkSpeed == 5
+            and not player:GetAttribute("Crouching") and not player:GetAttribute("TorchOn"),
+            "the real Humanoid did not slow down and extinguish the torch")
+        remote.OnServerEvent:Fire(player, "Sprint", true)
+        remote.OnServerEvent:Fire(player, "Crouch", true)
+        remote.OnServerEvent:Fire(player, "Torch", true)
+        services.RunService.Heartbeat:Fire(0.2)
+        assert(human.WalkSpeed == 5 and not player:GetAttribute("Crouching")
+            and not player:GetAttribute("TorchOn"),
+            "remote controls bypassed the server-owned slow walk")
+        root.CFrame = CFrame.new(0, y, 100 * L - 1)
+        services.RunService.Heartbeat:Fire(0.2)
+        assert(not player:GetAttribute("VoidWalk") and human.WalkSpeed == 12,
+            "returning through door 100 left the player permanently slow")
+        root.CFrame = CFrame.new(0, y, 100 * L + 3.5)
+        services.RunService.Heartbeat:Fire(0.2) -- fallback also detects entry
+        assert(player:GetAttribute("VoidWalk") and human.WalkSpeed == 5,
+            "a missed threshold touch cannot recover the finale")
+        root.CFrame = CFrame.new(0, y, 100 * L + 43)
+        trigger.Touched:Fire(root)
+        assert(not player:GetAttribute("Finished"), "end fired immediately without a walk")
+        for _ = 1, 11 do services.RunService.Heartbeat:Fire(0.4) end
         trigger.Touched:Fire(root)
         assert(player:GetAttribute("Finished") and healthOf(player) == 100
-            and player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 0
-            and countEvent("Finale") == 1 and countEvent("Victory") == 0,
-            "last door skipped the model-driven finale before the victory card")
+            and human.WalkSpeed == 0 and countEvent("Finale") == 1
+            and countEvent("Victory") == 0 and countEvent("MonsterSpawn", "FINAL") == 0,
+            "final scare was not personal, delayed, physical or model-driven")
         local lastEvent = observed.events[#observed.events]
         assert(lastEvent.event == "Finale" and lastEvent.a == witness,
             "finale sent the wrong model to the client")
         trigger.Touched:Fire(root)
-        assert(countEvent("Finale") == 1, "touching the end twice replayed the scare")
+        assert(countEvent("Finale") == 1 and witness.PrimaryPart.Transparency == 1,
+            "second touch replayed the scare or revealed the model to other players")
         assert(healthOf(player) == 100, "completed player died during the victory scene")
     end
     if room:GetAttribute("Threat") == "RUSH" then rushCount = rushCount + 1 end
@@ -1484,6 +1536,7 @@ for index = 0, 99 do
         local waiting = observed.state.blind
         assert(waiting and waiting.index == index and waiting.entity and waiting.entity.Parent
             and world:FindFirstChild("TheBlindGuest") == waiting.entity
+            and waiting.entity:GetAttribute("RoomIndex") == index
             and countEvent("MonsterSpawn", "BLIND") >= 1,
             "opening the door did not reveal the Guest BEFORE crossing its threshold")
         local arrivals = countEvent("MonsterSpawn", "BLIND")
@@ -1748,4 +1801,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Server generator smoke test failed: ${message}\n${nearby}`);
 }
-console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; first-taker shared loot, held models, atmospheric audio and four threats`);
+console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; four threats, shared loot, sealed white finale and real-avatar slow walk`);

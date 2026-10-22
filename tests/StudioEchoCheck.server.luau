@@ -1,8 +1,8 @@
 -- Optional SERVER Command Bar check: run while Echo is crossing or returning.
 -- Echo appears only in an Echo encounter, after the silent lamp warning.
 local world = workspace:WaitForChild("NocturneWorld", 10)
-assert(world and world:GetAttribute("GenerationBuild") == "SinglePressWardrobe-v13",
-	"Open Nocturne-v13.rbxl in a NEW Studio tab and press Play")
+assert(world and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15",
+	"Open Nocturne-v15.rbxl in a NEW Studio tab and press Play")
 local echo = world:FindFirstChild("TheEcho")
 assert(echo and echo.PrimaryPart,
 	"Wait for the returning Echo to appear, then run this BEFORE its fifth pass")
@@ -44,5 +44,5 @@ else
 	assert(mark.Transparency > 0.9 and leftShroud.Transparency > 0.5,
 		"Forward Echo did not fold its veil back")
 end
-print("NOCTURNE v13 Echo: separate model, pass", pass,
+print("NOCTURNE v15 Echo: separate model, pass", pass,
 	"returning", returning, "sculpted parts", total)

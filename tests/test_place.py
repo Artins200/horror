@@ -1,6 +1,8 @@
 """Offline checks for the committed Studio place; run with `npm test`."""
 
 from pathlib import Path
+import hashlib
+import json
 import unittest
 import xml.etree.ElementTree as ET
 
@@ -16,6 +18,7 @@ class PlaceTests(unittest.TestCase):
         cls.client = (ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau").read_text(encoding="utf-8")
         cls.perspective = (ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau").read_text(encoding="utf-8")
         cls.layout = (ROOT / "src/ReplicatedStorage/NocturneLayout.luau").read_text(encoding="utf-8")
+        cls.audio = json.loads((ROOT / "src/audio_assets.json").read_text(encoding="utf-8"))
 
     def named(self, class_name, name):
         matches = [item for item in self.xml.findall(".//Item") if item.get("class") == class_name
@@ -33,6 +36,29 @@ class PlaceTests(unittest.TestCase):
         self.assertEqual(workspace.findtext("Properties/bool[@name='StreamingEnabled']"), "false")
         self.assertEqual(len(self.xml.findall(".//Item[@class='SpawnLocation']")), 1)
         self.assertEqual(len(self.xml.findall(".//Item[@class='Camera']")), 1)
+
+    def test_v14_user_audio_is_embedded_without_changing_the_original(self):
+        original = ROOT / "Nocturne-v14.rbxl"
+        self.assertEqual(hashlib.sha256(original.read_bytes()).hexdigest(),
+                         "346e317ff98bd46ab85c3508410da2d8f7b677b5be7c3afd834b43353eb85ec8")
+        expected = {"музыка_для_слепого когда в одной комнате": 129758955680794,
+                    "Scary sound": 92039668540061, "scarygrowl 1": 136894310375981}
+        self.assertEqual({asset["name"]: asset["asset_id"] for asset in self.audio["sounds"]},
+                         expected)
+        workspace = self.named("Workspace", "Workspace")
+        sounds = workspace.findall("Item[@class='Sound']")
+        self.assertEqual(len(sounds), 3)
+        for sound in sounds:
+            name = sound.findtext("Properties/string[@name='Name']")
+            self.assertIn(name, expected)
+            props = sound.find("Properties")
+            self.assertEqual(props.findtext("Content[@name='AudioContent']/uri"),
+                             f"rbxassetid://{expected[name]}")
+            self.assertEqual(props.findtext("int64[@name='SourceAssetId']"), str(expected[name]))
+            self.assertEqual(float(props.findtext("float[@name='Volume']")), 0.5)
+            self.assertEqual(props.findtext("bool[@name='Playing']"), "false")
+            self.assertEqual(props.findtext("bool[@name='Looped']"), "false")
+            self.assertIsNone(props.find("Content[@name='SoundId']"))
 
     def test_scripts_are_embedded_unmodified_and_enabled(self):
         for class_name, name, expected in (("Script", "NocturneServer", self.server),
@@ -188,7 +214,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
         self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "SinglePressWardrobe-v13")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "WhiteVoidAndBlindAudio-v15")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -233,7 +259,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local function cycleOwnedSlot(direction)', self.client)
         self.assertIn('equipment.Visible = owned > 0', self.client)
         self.assertIn('slot.tile.Visible = hasItem', self.client)
-        self.assertIn('wallet.Visible = (a.coins or 0)', self.client)
+        self.assertIn('wallet.Visible = walletHasMoney and not voidWalking', self.client)
         self.assertIn('if amount ~= 1 or info.items[kind] > 0 then return false end', self.server)
         self.assertIn('or info.items[id] > 0 then return end -- no charge for a duplicate', self.server)
         self.assertIn('and info.items[SLOTS[argument]] > 0 then', self.server)
@@ -266,7 +292,50 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('local function showScare(kind, source)', self.client)
         self.assertIn('makeFinalWitness = function(parent)', self.server)
         self.assertIn('remote:FireClient(player, "Finale", witness)', self.server)
-        self.assertIn('Solid wall behind the final light', self.server)
+        self.assertIn('block(model, "Sealed white horizon"', self.server)
+        self.assertIn('entry.CanTouch, entry.CanQuery = true, false', self.server)
+        self.assertIn('and state.clock - info.voidStart >= 4', self.server)
+        self.assertIn('piece.Transparency = 1', self.server)
+        self.assertIn('if kind == "FINAL" then', self.client)
+        self.assertIn('if piece:IsA("BasePart") then piece.Transparency = 0 end', self.client)
+
+    def test_white_finale_and_personal_blind_audio_keep_native_character(self):
+        finale = self.server.split('local function makeExit()', 1)[1].split(
+            'local function pruneRooms()', 1)[0]
+        for fragment in ('VoidWalkSpeed = 5', 'VoidLength = 48',
+                         'info.voidWalk = true', 'info.sprinting, info.crouching, info.torchOn = false',
+                         'if info.voidWalk then return end',
+                         'info.voidWalk and CONFIG.VoidWalkSpeed',
+                         'player:SetAttribute("VoidWalk", false)'):
+            self.assertIn(fragment, self.server)
+        for fragment in ('"Last floor"', '"White void wall"', '"White void ceiling"',
+                         '"Sealed white horizon"', '"White threshold"',
+                         '"End of the nightmare"', 'witness:SetAttribute("Concealed", true)',
+                         'remote:FireClient(player, "Finale", witness)'):
+            self.assertIn(fragment, finale)
+        self.assertNotIn('announceMonster(', finale)
+        self.assertNotIn('"Morning"', finale)
+        for fragment in ('player:GetAttribute("VoidWalk") == true',
+                         'pose(leftShoulder, voidShade * (94 + breath), voidShade * 27)',
+                         'pose(leftElbow, -voidShade * 85',
+                         'part.LocalTransparencyModifier = leftVisible and 0 or 1'):
+            self.assertIn(fragment, self.perspective)
+        for fragment in ('local function uploadedCue(templateName, localName)',
+                         '"музыка_для_слепого когда в одной комнате"',
+                         '"Scary sound"', '"scarygrowl 1"',
+                         'blind:GetAttribute("RoomIndex") == math.floor(root.Position.Z / roomLength)',
+                         'blindTheme.Volume = 0.52 * blindBlend',
+                         'if not withBlind and blindStarted and blindBlend < 0.008 then',
+                         'panicColor.TintColor = attack and PANIC_TINTS',
+                         'local activeRare, rareBeganAt',
+                         'nextRareAt = elapsed + math.random(85, 145)',
+                         'if activeRare then', 'voidBloom.Intensity = voidBlend * 2.25',
+                         'camera.CFrame = camera.CFrame * CFrame.Angles(',
+                         'playFinalAudio()'):
+            self.assertIn(fragment, self.client)
+        self.assertNotIn('camera.CameraType = Enum.CameraType.Scriptable',
+                         self.client.split('if not hidden and not enteringCloset then', 1)[1]
+                         .split('local velocity =', 1)[0])
 
     def test_single_shared_cache_real_held_models_and_spatial_audio(self):
         for fragment in ('local claimed = false', 'claimed = true',
@@ -370,8 +439,9 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v13.rbxl").read_bytes())
-        self.assertNotEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v15.rbxl").read_bytes())
+        self.assertNotEqual(binary, (ROOT / "Nocturne-v14.rbxl").read_bytes())
+        self.assertNotEqual(binary, (ROOT / "Nocturne-v13.rbxl").read_bytes())
 
 
 if __name__ == "__main__":

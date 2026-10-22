@@ -31,8 +31,9 @@ local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
 local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
 local pendingSelection = nil -- do not undo a click with a late inventory snapshot
 local pillEffectUntil = 0
-local hidden, dead, finished, enteringCloset = false, false, false, false
-local entranceAge = 0
+local hidden, dead, finished, enteringCloset, voidWalking = false, false, false, false, false
+local entranceAge, elapsed = 0, 0
+local walletHasMoney = false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 local function hideRobloxBackpack()
 	pcall(function()
@@ -207,10 +208,10 @@ local function redrawEquipment()
 	end
 	local width = owned * SLOT_SIZE + math.max(0, owned - 1) * SLOT_GAP + BAR_PADDING * 2
 	equipment.Size = UDim2.fromOffset(width, SLOT_HEIGHT + BAR_PADDING * 2)
-	equipment.Visible = owned > 0
+	equipment.Visible = owned > 0 and not voidWalking
 	if useButton then
 		local id = SLOT_IDS[selected]
-		useButton.Visible = isTouch and not hidden and not enteringCloset
+		useButton.Visible = isTouch and not hidden and not enteringCloset and not voidWalking
 			and not dead and not finished and (counts[id] or 0) > 0 and id ~= "FLASHLIGHT"
 		useButton.Text = SLOT_GLYPHS[selected] or "◆"
 	end
@@ -343,6 +344,47 @@ for i = 1, 8 do
 end
 local closetPressure, visualPressure = 0, 0
 
+-- These are LOCAL post-effects. The hotel stays dark for the other players;
+-- the closed last chamber alone turns into a painful white emulation.
+local voidColor = Instance.new("ColorCorrectionEffect")
+voidColor.Name = "Void eye adaptation"
+voidColor.Brightness = 0
+voidColor.Contrast = 0
+voidColor.Saturation = 0
+voidColor.Parent = Lighting
+local voidBloom = Instance.new("BloomEffect")
+voidBloom.Name = "Void white bloom"
+voidBloom.Intensity = 0
+voidBloom.Threshold = 0.9
+voidBloom.Size = 48
+voidBloom.Parent = Lighting
+local voidGlare = frame(ui, "White void glare", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), Color3.fromRGB(255, 255, 255), 1)
+voidGlare.ZIndex = 3
+local panicColor = Instance.new("ColorCorrectionEffect")
+panicColor.Name = "Blind Guest colour panic"
+panicColor.Brightness = 0
+panicColor.Contrast = 0
+panicColor.Saturation = 0
+panicColor.TintColor = Color3.new(1, 1, 1)
+panicColor.Parent = Lighting
+local panicBlur = Instance.new("BlurEffect")
+panicBlur.Name = "Blind Guest double vision"
+panicBlur.Size = 0
+panicBlur.Parent = Lighting
+local panicBars = {}
+for i = 1, 12 do
+	local bar = frame(ui, "Blind signal fracture", UDim2.fromScale(1, 0.003),
+		UDim2.fromScale(0, i / 13), i % 2 == 0 and Color3.fromRGB(138, 224, 220)
+			or Color3.fromRGB(216, 98, 163), 1)
+	bar.ZIndex = 15
+	panicBars[i] = bar
+end
+local voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
+local wasWithBlind, blindStarted = false, false
+local PANIC_TINTS = {Color3.fromRGB(255, 95, 166),
+	Color3.fromRGB(81, 245, 229), Color3.fromRGB(172, 132, 255)}
+
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
 modal.Visible = false
@@ -383,10 +425,9 @@ exitButton.Visible = false
 -- No tutorial captions or button hints at the bottom of the screen.
 -- Mobile action buttons are controls, not on-screen survival instructions.
 
--- Close arrival is mixed locally so a monster three rooms behind is still
--- LOUD when it actually appears. Files are shipped with Roblox's own character
--- audio; no third-party/private asset permission or download is required.
--- The light-flicker code never plays a sound (only a monster's arrival does).
+-- Close arrival is mixed locally so a monster three rooms behind is loud.
+-- Built-in cues are supplemented by the three user-supplied v14 audio assets.
+-- None is triggered by lamp flicker: ONLY actual encounters play arrival audio.
 local function localCue(name, file, volume, pitch)
 	local sound = Instance.new("Sound")
 	sound.Name = name
@@ -414,6 +455,56 @@ local arrivalImpact = localCue("Corridor arrival impact", "action_jump_land.mp3"
 local itemClick = localCue("Physical item used", "action_get_up.mp3", 0.31, 1.18)
 local itemDenied = localCue("Item cannot be used yet", "action_get_up.mp3", 0.16, 0.67)
 local spiderImpact = localCue("Drawer spider strike", "action_jump_land.mp3", 0.88, 1.35)
+local voidDrone = localCue("White void sub-bass", "action_falling.ogg", 0, 0.42)
+voidDrone.Looped = true
+local finalImpact = localCue("Final bone impact", "action_jump_land.mp3", 1.8, 0.55)
+local finalVoice = localCue("Final close shriek", "uuhhh.mp3", 1.7, 0.85)
+local finalRumble = localCue("Final deep distortion", "action_falling.ogg", 1.1, 0.34)
+
+-- v14 serializes AudioContent rather than SoundId. Clone the ACTUAL supplied
+-- Sound objects; do not reconstruct an ID or play the shared Workspace copy.
+local function uploadedCue(templateName, localName)
+	local template = Workspace:FindFirstChild(templateName)
+	if not template or not template:IsA("Sound") then
+		warn("[NOCTURNE] Missing supplied audio:", templateName)
+		return nil
+	end
+	local cue = template:Clone()
+	cue.Name = localName
+	cue.Looped = false
+	cue.Volume = 0
+	cue.Parent = SoundService
+	return cue
+end
+local blindTheme = uploadedCue("музыка_для_слепого когда в одной комнате", "Blind Guest / local theme")
+if blindTheme then blindTheme.Looped = true end
+local scarySound = uploadedCue("Scary sound", "Rare scary sound")
+local scaryGrowl = uploadedCue("scarygrowl 1", "Rare scary growl")
+local rareSounds = {}
+if scarySound then table.insert(rareSounds, scarySound) end
+if scaryGrowl then table.insert(rareSounds, scaryGrowl) end
+local activeRare, rareBeganAt = nil, 0
+local nextRareAt = math.random(85, 145)
+local function stopRareCues()
+	for _, cue in ipairs(rareSounds) do cue:Stop(); cue.Volume = 0 end
+	activeRare = nil
+	nextRareAt = elapsed + math.random(85, 145)
+end
+local function playFinalAudio()
+	-- Never stack the two uploaded scares. Stop any ambient roll, choose ONE,
+	-- then layer its transient with several built-in low/close percussive cues.
+	stopRareCues()
+	voidDrone:Stop()
+	if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
+	if #rareSounds > 0 then
+		local strike = rareSounds[math.random(1, #rareSounds)]
+		strike.Volume = 0.75
+		strike:Play()
+	end
+	finalImpact:Stop(); finalImpact:Play()
+	task.delay(0.10, function() if finished and not dead and not modal.Visible then finalVoice:Play() end end)
+	task.delay(0.23, function() if finished and not dead and not modal.Visible then finalRumble:Play() end end)
+end
 local roomLength = 44
 
 -- Keep the real character and its collisions untouched. The separate native
@@ -423,7 +514,6 @@ local peekFrom, peekBlend = nil, 0
 local root = nil
 local humanoid = nil
 local head = nil
-local elapsed = 0
 local sprinting = false
 local crouching = false
 
@@ -475,13 +565,14 @@ local function setTorchLights(on)
 end
 
 local function setSprint(on)
-	if on and (crouching or hidden or enteringCloset or dead or finished) then return end
+	if on and (crouching or hidden or enteringCloset or voidWalking or dead or finished) then return end
 	if sprinting == on then return end
 	sprinting = on
 	remote:FireServer("Sprint", on)
 end
 local function setCrouch(on)
-	if hidden or enteringCloset or dead or finished or crouching == on then return end
+	if hidden or enteringCloset or dead or finished or (on and voidWalking)
+		or crouching == on then return end
 	if on then setSprint(false) end
 	crouching = on
 	crouchButton.Text = on and "↑" or "↓"
@@ -491,7 +582,8 @@ local function setCrouch(on)
 	remote:FireServer("Crouch", on)
 end
 local function toggleTorch()
-	if hidden or enteringCloset or dead or finished or not hasFlashlight or charge <= 0 then return end
+	if hidden or enteringCloset or voidWalking or dead or finished
+		or not hasFlashlight or charge <= 0 then return end
 	if selected ~= 1 then
 		selected = 1
 		pendingSelection = 1
@@ -502,7 +594,7 @@ local function toggleTorch()
 	remote:FireServer("Use", "FLASHLIGHT")
 end
 selectSlot = function(index, tapped)
-	if hidden or enteringCloset or dead or finished or not SLOT_IDS[index]
+	if hidden or enteringCloset or voidWalking or dead or finished or not SLOT_IDS[index]
 		or (counts[SLOT_IDS[index]] or 0) == 0 then return end
 	if tapped and selected == index then
 		remote:FireServer("Use", SLOT_IDS[index])
@@ -523,11 +615,30 @@ local function cycleOwnedSlot(direction)
 	end
 end
 local function useSelected()
-	if hidden or enteringCloset or dead or finished then return end
+	if hidden or enteringCloset or voidWalking or dead or finished then return end
 	local id = SLOT_IDS[selected]
 	if id and (counts[id] or 0) > 0 then
 		remote:FireServer("Use", id) -- torch, cross and medicines share the same action
 	end
+end
+local function setVoidWalking(on)
+	if voidWalking == on then return end
+	if on then
+		setSprint(false)
+		setCrouch(false)
+		setTorchLights(false)
+		stopRareCues()
+	end
+	voidWalking = on
+	reticle.Visible = not on and not hidden and not enteringCloset and not dead and not finished
+	healthTrack.Visible = not on
+	staminaTrack.Visible = not on
+	wallet.Visible = walletHasMoney and not on
+	sprintButton.Visible = isTouch and not on and not hidden and not enteringCloset
+	crouchButton.Visible = isTouch and not on and not hidden and not enteringCloset
+	lightButton.Visible = isTouch and not on and hasFlashlight and not hidden
+		and not enteringCloset and not dead and not finished
+	redrawEquipment()
 end
 local function fallbackScareFace(kind)
 	-- Streaming/order-of-replication fallback. Even without the source model,
@@ -627,6 +738,14 @@ local function showScare(kind, source)
 	end
 	local copy = monster and monster:Clone()
 	if not copy then copy = kind == "MOTH" and fallbackMothSwarm() or fallbackScareFace(kind) end
+	if kind == "FINAL" then
+		-- The physical template is invisible to everyone in the empty room.
+		-- Reveal only this personal clone inside the final ViewportFrame.
+		for _, piece in ipairs(copy:GetDescendants()) do
+			if piece:IsA("BasePart") then piece.Transparency = 0 end
+			if piece:IsA("Highlight") or piece:IsA("PointLight") then piece.Enabled = true end
+		end
+	end
 	copy.Parent = scareWorld
 	copy:PivotTo(CFrame.new(0, -0.15, 0))
 	local eyeY = kind == "FINAL" and 3.93 or kind == "BLIND" and 3.75
@@ -638,6 +757,8 @@ local function showScare(kind, source)
 	local nearDistance = math.clamp(1.4 + 1.23 / (math.tan(math.rad(20))
 		* math.max(0.42, aspect)), 3.1, 11)
 	local farDistance = math.max(10.5, nearDistance + 5)
+	scareView.Size = kind == "FINAL" and UDim2.fromScale(1.29, 1.29)
+		or UDim2.fromScale(1.14, 1.14)
 	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(124, 150, 140)
 		or kind == "RUSH" and Color3.fromRGB(137, 144, 146)
 		or Color3.fromRGB(157, 161, 151)
@@ -646,32 +767,57 @@ local function showScare(kind, source)
 		or kind == "MOTH" and Color3.fromRGB(129, 171, 154)
 		or kind == "RUSH" and Color3.fromRGB(126, 141, 151)
 		or Color3.fromRGB(177, 190, 181)
-	scareVeil.BackgroundTransparency = 0.78
-	-- Hold the distant silhouette for a heartbeat, then snap to a face that
-	-- fills the screen. Two SHORT flashes and a clear hold replace a red wash
-	-- that used to cover the monster before the retry card appeared.
+	scareVeil.BackgroundTransparency = kind == "FINAL" and 0.03 or 0.78
 	scareCamera.FieldOfView = 58
 	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
 		Vector3.new(0, eyeY, 0))
-	task.delay(0.28, function()
-		if token ~= scareToken then return end
-		scareVeil.BackgroundTransparency = 0.12
-		TweenService:Create(scareCamera,
-			TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-			{CFrame = CFrame.lookAt(Vector3.new(0.12, eyeY + 0.16, -nearDistance - 0.4),
-				Vector3.new(0, eyeY, -0.2)), FieldOfView = 44}):Play()
-		TweenService:Create(scareVeil, TweenInfo.new(0.12),
-			{BackgroundTransparency = 0.93}):Play()
-	end)
-	task.delay(0.61, function()
-		if token ~= scareToken then return end
-		scareVeil.BackgroundTransparency = 0.38
-		TweenService:Create(scareVeil, TweenInfo.new(0.15),
-			{BackgroundTransparency = 0.96}):Play()
-		TweenService:Create(scareCamera, TweenInfo.new(0.12),
-			{CFrame = CFrame.lookAt(Vector3.new(-0.14, eyeY + 0.03, -nearDistance),
-				Vector3.new(0, eyeY, -0.3)), FieldOfView = 40}):Play()
-	end)
+	if kind == "FINAL" then
+		-- First the white simulation tears; a hard, noisy face lunge follows.
+		-- Keep both eyes framed even on portrait phones, then HOLD the model
+		-- clearly before the win card instead of covering it in a red wash.
+		task.delay(0.11, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundTransparency = 0.94
+			TweenService:Create(scareCamera, TweenInfo.new(0.11, Enum.EasingStyle.Quart,
+				Enum.EasingDirection.In), {
+				CFrame = CFrame.lookAt(Vector3.new(0.15, eyeY + 0.08, -nearDistance),
+					Vector3.new(0, eyeY, -0.2)), FieldOfView = 40,
+			}):Play()
+		end)
+		task.delay(0.39, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundColor3 = Color3.fromRGB(242, 62, 76)
+			scareVeil.BackgroundTransparency = 0.44
+			TweenService:Create(scareVeil, TweenInfo.new(0.13),
+				{BackgroundTransparency = 0.97}):Play()
+			TweenService:Create(scareCamera, TweenInfo.new(0.10), {
+				CFrame = CFrame.lookAt(Vector3.new(-0.09, eyeY + 0.02,
+					-math.max(2.8, nearDistance - 0.55)), Vector3.new(0, eyeY, -0.3)),
+				FieldOfView = 38,
+			}):Play()
+		end)
+	else
+		-- Ordinary death scares retain their shorter silhouette-to-face move.
+		task.delay(0.28, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundTransparency = 0.12
+			TweenService:Create(scareCamera,
+				TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+				{CFrame = CFrame.lookAt(Vector3.new(0.12, eyeY + 0.16, -nearDistance - 0.4),
+					Vector3.new(0, eyeY, -0.2)), FieldOfView = 44}):Play()
+			TweenService:Create(scareVeil, TweenInfo.new(0.12),
+				{BackgroundTransparency = 0.93}):Play()
+		end)
+		task.delay(0.61, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundTransparency = 0.38
+			TweenService:Create(scareVeil, TweenInfo.new(0.15),
+				{BackgroundTransparency = 0.96}):Play()
+			TweenService:Create(scareCamera, TweenInfo.new(0.12),
+				{CFrame = CFrame.lookAt(Vector3.new(-0.14, eyeY + 0.03, -nearDistance),
+					Vector3.new(0, eyeY, -0.3)), FieldOfView = 40}):Play()
+		end)
+	end
 end
 local function showEnd(win)
 	if win then
@@ -775,7 +921,7 @@ player:GetAttributeChangedSignal("TorchOn"):Connect(function()
 end)
 player:GetAttributeChangedSignal("HasFlashlight"):Connect(function()
 	hasFlashlight = player:GetAttribute("HasFlashlight") == true
-	lightButton.Visible = isTouch and hasFlashlight and not hidden
+	lightButton.Visible = isTouch and hasFlashlight and not hidden and not voidWalking
 		and not enteringCloset and not dead and not finished
 end)
 player:GetAttributeChangedSignal("TorchCharge"):Connect(function()
@@ -785,6 +931,10 @@ end)
 player:GetAttributeChangedSignal("ClosetPressure"):Connect(function()
 	closetPressure = math.clamp((player:GetAttribute("ClosetPressure") or 0) / 100, 0, 1)
 end)
+player:GetAttributeChangedSignal("VoidWalk"):Connect(function()
+	setVoidWalking(player:GetAttribute("VoidWalk") == true)
+end)
+setVoidWalking(player:GetAttribute("VoidWalk") == true)
 
 local function restoreCamera()
 	camera = Workspace.CurrentCamera
@@ -810,9 +960,10 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		hasFlashlight = (counts.FLASHLIGHT or 0) > 0
 		wallet.Text = string.format("◉ %d  ▤ %d  ▰ %d",
 			a.coins or 0, a.notes or 0, a.gold or 0)
-		wallet.Visible = (a.coins or 0) + (a.notes or 0) + (a.gold or 0) > 0
+		walletHasMoney = (a.coins or 0) + (a.notes or 0) + (a.gold or 0) > 0
+		wallet.Visible = walletHasMoney and not voidWalking
 		healthFill.Size = UDim2.fromScale(math.clamp(a.health or 100, 0, 100) / 100, 1)
-		lightButton.Visible = isTouch and hasFlashlight and not hidden
+		lightButton.Visible = isTouch and hasFlashlight and not hidden and not voidWalking
 			and not enteringCloset and not dead and not finished
 		redrawEquipment()
 	elseif event == "State" then
@@ -906,6 +1057,9 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Jumpscare" then
 		showScare(a, b)
 	elseif event == "Death" then
+		stopRareCues()
+		voidDrone:Stop()
+		if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
 		if scare.Visible then
 			dead = true
 			setSprint(false)
@@ -922,9 +1076,10 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		finished = true
 		setSprint(false)
 		setTorchLights(false)
+		playFinalAudio()
 		showScare("FINAL", a)
 		local token = scareToken
-		task.delay(2.4, function()
+		task.delay(3.25, function()
 			if scareToken ~= token or not finished then return end
 			scare.Visible = false
 			showEnd(true)
@@ -953,6 +1108,19 @@ local function onCharacter(character)
 	finished = false
 	pendingSelection = nil
 	pillEffectUntil = 0
+	stopRareCues()
+	voidDrone:Stop()
+	if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
+	finalImpact:Stop(); finalVoice:Stop(); finalRumble:Stop()
+	voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
+	wasWithBlind, blindStarted = false, false
+	voidColor.Brightness, voidColor.Contrast, voidBloom.Intensity = 0, 0, 0
+	voidGlare.BackgroundTransparency = 1
+	panicColor.TintColor = Color3.new(1, 1, 1)
+	panicColor.Brightness, panicColor.Contrast, panicColor.Saturation = 0, 0, 0
+	panicBlur.Size = 0
+	for _, bar in ipairs(panicBars) do bar.BackgroundTransparency = 1 end
+	setVoidWalking(false)
 	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
 	scare.Visible = false
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
@@ -988,6 +1156,70 @@ player.CharacterAdded:Connect(onCharacter)
 if player.Character then task.spawn(onCharacter, player.Character) end
 remote:FireServer("Ready")
 
+local function updateSoundscape(dt)
+	local world = Workspace:FindFirstChild("NocturneWorld")
+	local blind = world and world:FindFirstChild("TheBlindGuest")
+	-- The model's room attribute changes when it follows noise through a door.
+	-- Hearing is based on the SAME ROOM, never a global SoundService radius.
+	local withBlind = blind ~= nil and not blind:GetAttribute("Banished")
+		and blind:GetAttribute("RoomIndex") == math.floor(root.Position.Z / roomLength)
+		and not dead and not finished and not voidWalking
+	local body = blind and blind.PrimaryPart
+	local proximity = withBlind and body
+		and math.clamp(1 - (body.Position - root.Position).Magnitude / 32, 0, 1) or 0
+	local themeTarget = withBlind and (0.72 + proximity * 0.28) or 0
+	blindBlend = blindBlend + (themeTarget - blindBlend)
+		* damp(withBlind and 2.3 or 1.1, dt)
+	if blindTheme then
+		if withBlind and not blindStarted then blindTheme:Play(); blindStarted = true end
+		blindTheme.Volume = 0.52 * blindBlend
+		if not withBlind and blindStarted and blindBlend < 0.008 then
+			blindTheme:Stop()
+			blindStarted = false
+		end
+	end
+	if withBlind and not wasWithBlind then nextPanicAt = elapsed + math.random(2, 4) end
+	if withBlind and elapsed >= nextPanicAt then
+		panicLeft = 0.38 + math.random() * 0.52
+		nextPanicAt = elapsed + math.random(6, 12)
+	end
+	if not withBlind then panicLeft = 0 end
+	wasWithBlind = withBlind
+	local attack = panicLeft > 0
+	local strength = attack and math.min(1, panicLeft * 2.3) or 0
+	panicLeft = math.max(0, panicLeft - dt)
+	panicColor.TintColor = attack and PANIC_TINTS[math.floor(elapsed * 29) % 3 + 1]
+		or Color3.new(1, 1, 1)
+	panicColor.Brightness = attack and (math.sin(elapsed * 47) * 0.17 * strength) or 0
+	panicColor.Saturation = strength * 1.05
+	panicColor.Contrast = strength * 0.36
+	panicBlur.Size = strength * 4.2
+	for index, bar in ipairs(panicBars) do
+		bar.BackgroundTransparency = attack and (1 - strength * (index % 3 == 0 and 0.42 or 0.24)) or 1
+		if attack then
+			bar.Position = UDim2.fromScale(math.random(-9, 9) / 100,
+				(index + math.random() * 0.8) / 13)
+			bar.Size = UDim2.fromScale(math.random(63, 117) / 100, math.random(1, 4) / 850)
+		end
+	end
+
+	-- Sparse, per-client ambient stingers: a single playing handle and a long
+	-- random cooldown after it ENDS make overlap of the two v14 sounds impossible.
+	if activeRare then
+		if not activeRare.IsPlaying and elapsed - rareBeganAt > 0.25 then
+			activeRare = nil
+			nextRareAt = elapsed + math.random(85, 145)
+		end
+	elseif #rareSounds > 0 and elapsed >= nextRareAt
+		and not dead and not finished and not voidWalking and not scare.Visible then
+		activeRare = rareSounds[math.random(1, #rareSounds)]
+		activeRare.Volume = 0.43
+		rareBeganAt = elapsed
+		activeRare:Play()
+	end
+	return withBlind, strength
+end
+
 -- Roblox's CameraModule drives the camera in every playable room. This
 -- callback touches only camera-local display parts, never the real character
 -- or HumanoidRootPart; collision stays with Roblox's physical avatar.
@@ -995,7 +1227,10 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	dt = math.min(dt, 0.07)
 	elapsed = elapsed + dt
 	if scare.Visible then
-		scareView.Position = UDim2.new(0.5, math.random(-12, 12), 0.5, math.random(-9, 9))
+		local shake = finished and 30 or 12
+		scareView.Position = UDim2.new(0.5, math.random(-shake, shake),
+			0.5, math.random(-shake, shake))
+		scareView.Rotation = finished and math.random(-3, 3) or 0
 	end
 	local current = Workspace.CurrentCamera
 	if current ~= camera then
@@ -1009,6 +1244,18 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if not camera or not root or not humanoid or not root.Parent then return end
+	local withBlind, panicStrength = updateSoundscape(dt)
+	local inVoid = voidWalking and not finished and not dead and not hidden
+	voidBlend = voidBlend + ((inVoid and 1 or 0) - voidBlend) * damp(4.3, dt)
+	voidColor.Brightness = voidBlend * 0.38
+	voidColor.Contrast = -voidBlend * 0.10
+	voidColor.Saturation = -voidBlend * 0.10
+	voidBloom.Intensity = voidBlend * 2.25
+	voidGlare.BackgroundTransparency = 1 - voidBlend * 0.17
+	if inVoid and not voidDrone.IsPlaying then voidDrone:Play() end
+	voidDrone.Volume = inVoid and (0.12 + 0.09 * math.clamp(
+		(root.Position.Z - 100 * roomLength) / 43, 0, 1)) * voidBlend or 0
+	if not inVoid and voidDrone.IsPlaying and voidBlend < 0.015 then voidDrone:Stop() end
 	if enteringCloset and not hidden then
 		entranceAge = entranceAge + dt
 		-- CameraOffset is on the actual Humanoid: the native camera follows its
@@ -1064,14 +1311,32 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	elseif camera.CameraType == Enum.CameraType.Scriptable then
 		restoreCamera() -- also recovers after death/respawn inside a wardrobe
 	end
+	if not hidden and not enteringCloset then
+		-- Subtle lean and head-lowering on the native Humanoid camera, not an
+		-- independent flying camera. Blend OUT too when returning to the hotel.
+		if not crouching then
+			humanoid.CameraOffset = Vector3.new(0, -0.25 * voidBlend, 0)
+		end
+		if voidBlend > 0.001 then
+			camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(-5) * voidBlend,
+				0, math.rad(2.4) * voidBlend)
+		end
+	end
+	if withBlind then
+		local tremor = panicStrength > 0 and 0.18 * panicStrength or 0.005
+		camera.CFrame = camera.CFrame * CFrame.new(
+			(math.random() - 0.5) * tremor, (math.random() - 0.5) * tremor, 0)
+			* CFrame.Angles(0, (math.random() - 0.5) * tremor * 0.13,
+				(math.random() - 0.5) * tremor * 0.45)
+	end
 	local velocity = root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 	local moving = not hidden and not dead and horizontalSpeed > 1.5
 		and humanoid.MoveDirection.Magnitude > 0.05
 	local running = moving and not crouching and horizontalSpeed > 15
 	local targetFOV = hidden and (70 - pressure * 9)
-		or enteringCloset and 70 or (running and 79 or 73)
-	if not hidden and not enteringCloset and os.clock() < pillEffectUntil then
+		or enteringCloset and 70 or inVoid and 69 or (running and 79 or 73)
+	if not hidden and not enteringCloset and not inVoid and os.clock() < pillEffectUntil then
 		targetFOV = targetFOV + 5
 	end
 	camera.FieldOfView = camera.FieldOfView + (targetFOV - camera.FieldOfView) * damp(4, dt)
@@ -1092,5 +1357,5 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	end
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
 	setTorchLights(lens ~= nil and flashlightOn and hasFlashlight and charge > 0
-		and not enteringCloset and not hidden and not dead and not finished)
+		and not enteringCloset and not hidden and not voidWalking and not dead and not finished)
 end)

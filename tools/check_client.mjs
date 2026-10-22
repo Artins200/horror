@@ -110,7 +110,9 @@ function methods:IsA(class) return self._class == class
     or (class == "BasePart" and self._class == "Part")
     or (class == "GuiButton" and (self._class == "TextButton" or self._class == "ImageButton")) end
 function methods:Play()
-    assert(self._class == "Sound" and self.SoundId:match("^rbxasset://sounds/"))
+    assert(self._class == "Sound" and (self.SoundId and self.SoundId:match("^rbxasset://sounds/")
+        or self.AudioContent and self.AudioContent:match("^rbxassetid://%d+$")),
+        "lost a built-in or the actual supplied AudioContent asset")
     self.IsPlaying = true
     self.Plays = (self.Plays or 0) + 1
 end
@@ -157,6 +159,18 @@ camera.ViewportSize = {X=1920, Y=1080}
 local workspace = Instance.new("Workspace")
 workspace.CurrentCamera = camera
 camera.Parent = workspace
+for name, id in pairs({
+    ["музыка_для_слепого когда в одной комнате"] = "129758955680794",
+    ["Scary sound"] = "92039668540061",
+    ["scarygrowl 1"] = "136894310375981",
+}) do
+    local source = Instance.new("Sound")
+    source.Name = name
+    source.AudioContent = "rbxassetid://" .. id -- v14 has NO SoundId
+    source.Volume = 0.5
+    source.IsPlaying = false
+    source.Parent = workspace
+end
 local runService = Instance.new("RunService")
 function runService:BindToRenderStep(_, _, callback) self.render = callback end
 local uiService = Instance.new("UserInputService")
@@ -247,6 +261,15 @@ local impact = soundService:FindFirstChild("Corridor arrival impact")
 assert(arrival and impact and arrival:FindFirstChildOfClass("EchoSoundEffect")
     and arrival:FindFirstChildOfClass("ReverbSoundEffect"),
     "loud near-field monster cues or masonry echo are missing")
+local music = soundService:FindFirstChild("Blind Guest / local theme")
+local scary = soundService:FindFirstChild("Rare scary sound")
+local growl = soundService:FindFirstChild("Rare scary growl")
+assert(music and music.Looped and scary and growl
+    and music.AudioContent == "rbxassetid://129758955680794"
+    and scary.AudioContent == "rbxassetid://92039668540061"
+    and growl.AudioContent == "rbxassetid://136894310375981"
+    and not workspace:FindFirstChild("Scary sound").IsPlaying,
+    "v14's genuine supplied AudioContent was not cloned for private local playback")
 remote.OnClientEvent:Fire("MonsterSpawn", "BLIND", 0)
 assert(arrival.IsPlaying and impact.IsPlaying and arrival.Plays == 1,
     "opening a resident monster room played no arrival sound")
@@ -624,26 +647,108 @@ player:SetAttribute("TorchOn", true)
 runService.render(0.016)
 assert(torch.Enabled and replacementReach.Enabled and replacementBounce.Enabled,
     "pre-finale found/bought torch lost its extra near and far light")
+-- Music belongs only to the player's CURRENT room, follows the roaming Guest,
+-- attacks briefly with disordered colours/lines/shake, then fades after exit.
+local world = Instance.new("Folder")
+world.Name = "NocturneWorld"
+world.Parent = workspace
+local blind = Instance.new("Model")
+blind.Name = "TheBlindGuest"
+blind:SetAttribute("RoomIndex", 0)
+blind.Parent = world
+local blindBody = Instance.new("Part")
+blindBody.Position = Vector3.new(0, 4.7, 18)
+blindBody.Parent = blind
+blind.PrimaryPart = blindBody
+local panicSeen = false
+for _ = 1, 85 do
+    replacement.CFrame = CFrame.new(0, 6, 3) -- Roblox's native CameraModule refreshes each frame
+    runService.render(0.07)
+    if lighting:FindFirstChild("Blind Guest double vision").Size > 0.1
+        and gui:FindFirstChild("Blind signal fracture").BackgroundTransparency < 1 then
+        panicSeen = true
+    end
+end
+assert(music.IsPlaying and music.Plays == 1 and music.Volume > 0.25 and panicSeen
+    and replacement.CameraType == Enum.CameraType.Custom
+    and replacement.CameraSubject == nextHumanoid
+    and not workspace:FindFirstChild("музыка_для_слепого когда в одной комнате").IsPlaying,
+    "same-room Blind Guest music, personal panic or native camera is missing")
+local beforeFade = music.Volume
+blind:SetAttribute("RoomIndex", 1) -- monster followed a sound through a door
+runService.render(0.07)
+assert(music.IsPlaying and music.Volume < beforeFade and music.Volume > 0
+    and lighting:FindFirstChild("Blind Guest double vision").Size == 0,
+    "music cut off suddenly or panic followed a monster into another room")
+for _ = 1, 115 do runService.render(0.07) end
+assert(not music.IsPlaying and music.Volume < 0.01
+    and music.Plays == 1 and not scary.IsPlaying and not growl.IsPlaying,
+    "music never faded/stopped after leaving the Blind Guest")
+blind.Parent = nil
+-- Two supplied stingers are rare and can NEVER be layered together, even if
+-- the first file is longer than the next random cooldown.
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 1
+    and scary.IsPlaying ~= growl.IsPlaying,
+    "rare sounds did not play independently after a long quiet interval")
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 1,
+    "the other scary clip overlapped one already playing")
+if scary.IsPlaying then scary.IsPlaying = false else growl.IsPlaying = false end
+runService.render(0.07)
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 2
+    and not (scary.IsPlaying and growl.IsPlaying),
+    "second rare sound did not wait until first ended and its long cooldown passed")
+nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 5)
+nextRoot.CFrame = CFrame.new(nextRoot.Position)
+player:SetAttribute("VoidWalk", true)
+local beforeVoidInput = #remote.actions
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.LeftShift, UserInputType=Enum.UserInputType.Keyboard}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F, UserInputType=Enum.UserInputType.Keyboard}, false)
+for _ = 1, 20 do runService.render(0.07) end
+assert(#remote.actions == beforeVoidInput and not torch.Enabled and not replacementReach.Enabled
+    and not replacementBounce.Enabled and not reticle.Visible and not bar.Visible
+    and not gui:FindFirstChild("Health track").Visible
+    and not gui:FindFirstChild("Mobile sprint").Visible
+    and not scary.IsPlaying and not growl.IsPlaying
+    and lighting:FindFirstChild("Void eye adaptation").Brightness > 0.25
+    and lighting:FindFirstChild("Void white bloom").Intensity > 1.4
+    and gui:FindFirstChild("White void glare").BackgroundTransparency < 1
+    and soundService:FindFirstChild("White void sub-bass").IsPlaying
+    and nextHumanoid.CameraOffset.Y < -0.1
+    and replacement.CameraType == Enum.CameraType.Custom and replacement.CameraSubject == nextHumanoid
+    and not nextRoot.Anchored,
+    "white-void lighting/lean/slow controls broke the grounded native first person")
 local witness=Instance.new("Model")
 witness.Name="TheLastWitness"
 local finalFace=Instance.new("Part")
 finalFace.Name="The face behind the dawn"
+finalFace.Transparency=1 -- invisible template must not spoil a teammate's walk
 finalFace.Parent=witness
-witness.Parent=workspace
+witness.Parent=world
+nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 43)
 remote.OnClientEvent:Fire("Finale", witness)
+local finalCopy = stage:FindFirstChild("TheLastWitness")
 assert(scare.Visible and not modal.Visible and not reticle.Visible
-    and stage:FindFirstChild("TheLastWitness")
-    and stage:FindFirstChild("TheLastWitness"):FindFirstChild("The face behind the dawn"),
-    "door 100 did not show its REAL final creature BEFORE the victory screen")
+    and finalCopy and finalCopy:FindFirstChild("The face behind the dawn").Transparency == 0
+    and finalFace.Transparency == 1 and view.Size[1] == 1.29
+    and soundService:FindFirstChild("Final bone impact").IsPlaying
+    and (scary.IsPlaying ~= growl.IsPlaying),
+    "end of the empty walk did not reveal a PRIVATE face with exclusive layered audio")
 local finaleHold=false
-for _,timer in ipairs(timers) do if timer.at>=2.4 then finaleHold=true end end
+for _,timer in ipairs(timers) do if timer.at>=3.25 then finaleHold=true end end
 assert(finaleHold and not torch.Enabled and not replacementReach.Enabled
     and not replacementBounce.Enabled, "finale left a bright beam on the death screen")
 drainTimers()
 assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
-    and not scare.Visible and replacement.CameraSubject==nextHumanoid,
-    "final scare did not lead to victory without detaching the real camera")
+    and not scare.Visible and replacement.CameraSubject==nextHumanoid
+    and soundService:FindFirstChild("Final close shriek").Plays == 1
+    and soundService:FindFirstChild("Final deep distortion").Plays == 1,
+    "final sound design/scare did not lead to victory without detaching the camera")
 -- Even if the last model has not replicated, the giant ring-eyed face remains.
+witness.Parent = nil
+player:SetAttribute("VoidWalk", false) -- authoritative respawn clears its old attribute
 player.CharacterAdded:Fire(nextAvatar)
 remote.OnClientEvent:Fire("Finale", nil)
 local blank=stage:FindFirstChild("Last glimpse of FINAL")
@@ -674,5 +779,5 @@ for (const device of ["desktop", "phone"]) {
       `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
     throw new Error(`${device} HUD/avatar smoke test failed: ${error}\n${nearby}`);
   }
-  console.log(`${device} HUD OK: empty bar hidden, only owned slots, compact wallet/touch actions`);
+  console.log(`${device} HUD OK: owned slots, v14 audio, same-room panic/music fade, rare cues and private finale`);
 }

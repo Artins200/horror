@@ -10,7 +10,7 @@ local shoulder, elbow, wrist
 local leftShoulder, leftElbow, leftWrist
 local original = {}
 local pieces, leftPieces = {}, {}
-local elapsed, pickup, itemPickup, turn = 0, 1, 1, 0
+local elapsed, pickup, itemPickup, turn, voidShade = 0, 1, 1, 0, 0
 local lastKey, lastItem, turning, posed = nil, nil, false, false
 
 local function lockCamera()
@@ -72,7 +72,7 @@ local function onCharacter(avatar)
 	if player.Character ~= avatar then return end
 	resetPose()
 	character, humanoid = avatar, human
-	lastKey, lastItem, turning, pickup, itemPickup, turn = nil, nil, false, 1, 1, 0
+	lastKey, lastItem, turning, pickup, itemPickup, turn, voidShade = nil, nil, false, 1, 1, 0, 0
 	player:SetAttribute("NocturnePeek", false)
 	lockCamera()
 	bindArm()
@@ -110,7 +110,7 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 	local gripHand = item and item:GetAttribute("GripHand") or nil
 	local alive = not peek and humanoid.Health > 0
 	local rightVisible = alive and (key ~= nil or itemId ~= nil and gripHand == "Right")
-	local leftVisible = alive and itemId ~= nil and gripHand == "Left"
+	local leftItem = itemId ~= nil and gripHand == "Left"
 	if key ~= lastKey then
 		pickup = key and 0 or 1
 		lastKey = key
@@ -127,6 +127,12 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 	pickup = math.min(1, pickup + dt / 0.42)
 	itemPickup = math.min(1, itemPickup + dt / 0.34)
 	turn = nowTurning and math.min(1, turn + dt / 0.35) or math.max(0, turn - dt / 0.25)
+	-- Only in the last white chamber does an EMPTY hand become visible. It is
+	-- still the native Roblox limb attached to its R6/R15 Motor6Ds, not a prop.
+	local shading = alive and player:GetAttribute("VoidWalk") == true
+	voidShade = shading and math.min(1, voidShade + dt / 0.48)
+		or math.max(0, voidShade - dt / 0.30)
+	local leftVisible = alive and (leftItem or voidShade > 0.02)
 	resetPose()
 	if rightVisible and shoulder and original[shoulder] then
 		local step = math.sin(elapsed * 5.5) * 1.7
@@ -143,9 +149,19 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 	if leftVisible and leftShoulder and original[leftShoulder] then
-		pose(leftShoulder, itemPickup * 46, -itemPickup * 7)
-		if leftElbow then pose(leftElbow, -itemPickup * 31, 0) end
-		if leftWrist then pose(leftWrist, -itemPickup * 4, 0) end
+		if voidShade > 0.02 then
+			-- Shield the eyes with the REAL left forearm. A very small breathing
+			-- motion keeps it human; the torso and first-person camera still
+			-- belong to the ordinary physical avatar.
+			local breath = math.sin(elapsed * 2.1) * 1.6
+			pose(leftShoulder, voidShade * (94 + breath), voidShade * 27)
+			if leftElbow then pose(leftElbow, -voidShade * 85, voidShade * 7) end
+			if leftWrist then pose(leftWrist, -voidShade * 18, voidShade * 20) end
+		else
+			pose(leftShoulder, itemPickup * 46, -itemPickup * 7)
+			if leftElbow then pose(leftElbow, -itemPickup * 31, 0) end
+			if leftWrist then pose(leftWrist, -itemPickup * 4, 0) end
+		end
 	end
 	-- CameraModule normally fades the character in first person. Restore
 	-- ONLY the real jointed limbs currently holding something, and their
@@ -168,4 +184,4 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v13 / native first person] actual R6/R15 hands, key and selected item")
+print("[NOCTURNE v15 / native first person] real R6/R15 hands, including the white-void eye shield")

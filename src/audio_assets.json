@@ -1,0 +1,8 @@
+{
+  "source": "Nocturne-v14.rbxl / Workspace (user-supplied Sound objects)",
+  "sounds": [
+    {"name": "музыка_для_слепого когда в одной комнате", "asset_id": 129758955680794, "volume": 0.5},
+    {"name": "Scary sound", "asset_id": 92039668540061, "volume": 0.5},
+    {"name": "scarygrowl 1", "asset_id": 136894310375981, "volume": 0.5}
+  ]
+}

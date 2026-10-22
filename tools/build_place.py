@@ -2,12 +2,14 @@
 """Build the standalone Roblox Studio XML place from the editable Luau sources.
 
 Run from anywhere with `python3 tools/build_place.py`. The committed .rbxlx is a
-real, self-contained place: no Rojo install, plugin, or external asset download
-is necessary to open and play it. Python's standard library is sufficient.
+real place: no Rojo install or plugin is necessary. The three v14 audio
+references require Roblox asset access in Play. Python's standard library
+is sufficient to build the XML.
 """
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -17,6 +19,7 @@ SERVER = ROOT / "src/ServerScriptService/NocturneServer.server.luau"
 CLIENT = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau"
 PERSPECTIVE = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau"
 LAYOUT = ROOT / "src/ReplicatedStorage/NocturneLayout.luau"
+AUDIO = ROOT / "src/audio_assets.json"
 OUTPUT = ROOT / "Nocturne.rbxlx"
 
 NEXT_ID = 0
@@ -303,6 +306,19 @@ def build() -> Path:
     ux, uy, uz = ry * lz - rz * ly, rz * lx - rx * lz, rx * ly - ry * lx
     cframe_prop(camera, "CFrame", pos, (rx, ux, -lx, ry, uy, -ly, rz, uz, -lz))
     prop(camera, "float", "FieldOfView", 74)
+    # Preserve the three user-supplied Sound objects from v14 verbatim by
+    # name and asset URI. SoundId is NOT serialized by that file: the actual
+    # audio lives in AudioContent.Content.Uri. These templates never autoplay;
+    # each client clones them into SoundService for its own mix and fade.
+    for asset in json.loads(AUDIO.read_text(encoding="utf-8"))["sounds"]:
+        sound = item(workspace, "Sound", asset["name"])
+        content = prop(sound, "Content", "AudioContent", "")
+        ET.SubElement(content, "uri").text = f"rbxassetid://{asset['asset_id']}"
+        prop(sound, "int64", "SourceAssetId", asset["asset_id"])
+        prop(sound, "float", "Volume", asset["volume"])
+        prop(sound, "float", "PlaybackSpeed", 1)
+        bool_prop(sound, "Looped", False)
+        bool_prop(sound, "Playing", False)
     preview_room(workspace)
     preview_stair(workspace)
     # A conventional, collidable spawn pad level with the foyer floor. Placing

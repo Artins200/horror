@@ -6,6 +6,8 @@ import luaparse from "luaparse";
 import { readXml, readBinary } from "rbx-dom";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const userAudio = JSON.parse(fs.readFileSync(path.join(root, "src/audio_assets.json"), "utf8"));
+const uploadedV14 = readBinary(fs.readFileSync(path.join(root, "Nocturne-v14.rbxl")));
 const sourceFiles = [
   "src/ServerScriptService/NocturneServer.server.luau",
   "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau",
@@ -14,14 +16,38 @@ const sourceFiles = [
 ];
 for (const filename of [...sourceFiles, "tests/StudioSmokeTest.server.luau",
   "tests/StudioAvatarCheck.client.luau", "tests/StudioItemCheck.client.luau",
-  "tests/StudioEchoCheck.server.luau", "tests/StudioWardrobeCheck.client.luau"]) {
+  "tests/StudioEchoCheck.server.luau", "tests/StudioWardrobeCheck.client.luau",
+  "tests/StudioFinaleCheck.server.luau", "tests/StudioFinaleCheck.client.luau",
+  "tests/StudioBlindAudioCheck.client.luau"]) {
   const source = fs.readFileSync(path.join(root, filename), "utf8");
   luaparse.parse(source, { luaVersion: "5.3", locations: true });
   console.log(`Lua syntax OK: ${filename}`);
 }
 
+function verifyAudio(place, expectedFromV14 = false) {
+  const sounds = place.descendants(place.rootRef).filter((x) => x.className === "Sound");
+  if (sounds.length !== userAudio.sounds.length) {
+    throw new Error(`Expected only the three user-supplied v14 templates; got ${sounds.length}`);
+  }
+  for (const audio of userAudio.sounds) {
+    const [sound] = sounds.filter((x) => x.name === audio.name
+      && place.fullPath(x.referent) === `Workspace.${audio.name}`);
+    const expectedUri = `rbxassetid://${audio.asset_id}`;
+    if (!sound || place.getProperty(sound.referent, "AudioContent")?.Content?.Uri !== expectedUri
+      || place.getProperty(sound.referent, "Playing")?.Bool !== false
+      || place.getProperty(sound.referent, "Looped")?.Bool !== false
+      || place.getProperty(sound.referent, "SourceAssetId")?.Int64 !== String(audio.asset_id)
+      || Math.abs((place.getProperty(sound.referent, "Volume")?.Float32 ?? -1) - audio.volume) > 0.001
+      || place.getProperty(sound.referent, "SoundId") != null) {
+      throw new Error(`${expectedFromV14 ? "Original v14" : "Built place"} lost the uploaded Sound: ${audio.name}`);
+    }
+  }
+}
+verifyAudio(uploadedV14, true);
+
 function verify(place) {
   const instances = place.descendants(place.rootRef);
+  verifyAudio(place);
   const workspace = instances.find((x) => x.className === "Workspace");
   if (Math.abs((place.getProperty(workspace.referent, "Gravity")?.Float32 ?? 0) - 196.2) > 0.01
     || place.getProperty(workspace.referent, "StreamingEnabled")?.Bool !== false) {

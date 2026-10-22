@@ -11,7 +11,9 @@ const output = path.join(root, "Nocturne.rbxl");
 // Keep the uploaded filename as an alias so opening the old filename cannot
 // accidentally launch the abandoned, open-sided endless staircase again.
 const originalName = path.join(root, "13123.rbxl");
-const releaseName = path.join(root, "Nocturne-v13.rbxl"); // v12 remains available for comparison
+// The user-uploaded v14 is an input, never a build output. Keep both it and
+// the previously delivered v13 untouched when exporting the new release.
+const releaseName = path.join(root, "Nocturne-v15.rbxl");
 const dom = readXml(fs.readFileSync(xmlPath));
 
 function assertSources(place) {

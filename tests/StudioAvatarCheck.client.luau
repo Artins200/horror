@@ -10,7 +10,7 @@ local head = character:WaitForChild("Head")
 task.wait(0.3)
 local world = workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10",
-	"Open Nocturne-v13.rbxl in a NEW Studio tab")
+	"Open Nocturne-v15.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
@@ -101,5 +101,5 @@ else
 			"Equipped item in right hand was hidden by first-person fading")
 	end
 end
-print("NOCTURNE v13: first-person grounded real Roblox hands",
+print("NOCTURNE v15: first-person grounded real Roblox hands",
 	held or "no key", selected or "no selected item", right.LocalTransparencyModifier)
