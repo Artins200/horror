@@ -4,13 +4,15 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v8"
-	and world:GetAttribute("GenerationBuild") == "LootShopThreats-v8",
-	"Old place loaded: open Nocturne-v8.rbxl in a NEW Studio tab")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
+	and world:GetAttribute("GenerationBuild") == "ThresholdScareAndBlindPanic-v16",
+	"Old place loaded: open Nocturne-v16.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
 assert(not workspace.StreamingEnabled, "Floor geometry must not stream out from under the player")
+assert(game:GetService("SoundService").AmbientReverb == Enum.ReverbType.Hallway,
+	"Audio reverb was not enabled in Play")
 
 for index = 0, 1 do
 	local room
@@ -25,6 +27,11 @@ for index = 0, 1 do
 	assert(room:GetAttribute("ExitY") == Layout.ExitY(index))
 	assert(type(room:GetAttribute("Shape")) == "string" and type(room:GetAttribute("Dark")) == "boolean",
 		"Room shape/darkness were not generated")
+	local air = room:FindFirstChild("Low draught in the masonry", true)
+	assert(air and air:IsA("Sound") and air.Looped
+		and air:FindFirstChildOfClass("EchoSoundEffect")
+		and air:FindFirstChildOfClass("ReverbSoundEffect"),
+		"A generated room has no playable spatial ambience with reflections")
 	if index == 0 then
 		local shape = room:GetAttribute("Shape")
 		assert(shape ~= "FIXED", "First room is still the old, constant foyer")
@@ -35,7 +42,7 @@ for index = 0, 1 do
 			COFFERED = "Deep coffered cross-vault"}
 		assert(not required[shape] or room:FindFirstChild(required[shape]),
 			"A random architecture label did not build a visible structure")
-		print("NOCTURNE v8 seed", world:GetAttribute("Seed"), "first room",
+		print("NOCTURNE v16 seed", world:GetAttribute("Seed"), "first room",
 			room:GetAttribute("Variant"), shape, "— compare these after a NEW Play")
 	end
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
@@ -44,10 +51,19 @@ for index = 0, 1 do
 		local wardrobe = room:FindFirstChild(name)
 		assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
 			"Wardrobe has no moving leaves")
-		assert(wardrobe:FindFirstChild("HideInside", true), "Wardrobe has no interaction")
+		local hidePrompt = wardrobe:FindFirstChild("HideInside", true)
+		assert(hidePrompt and hidePrompt.HoldDuration == 0
+			and not wardrobe:FindFirstChild("CloseWardrobe", true),
+			"Wardrobe requires extra presses to open or close instead of one to enter")
 	end
 	if not Layout.IsStair(index) then
 		local floor = room:FindFirstChild("Continuous wooden subfloor")
+		local inlay = room:FindFirstChild("Inlaid floorboard joint")
+		local rosette = room:FindFirstChild("Pressed metal ceiling rosette")
+		local shade = room:FindFirstChild("Smoked glass lamp shade")
+		assert(inlay and rosette and shade and not inlay.CanCollide
+			and not rosette.CanCollide and not shade.CanCollide,
+			"material detail is missing or blocks the player")
 		assert(floor and floor.Anchored and floor.CanCollide
 			and math.abs(floor.Position.Y + floor.Size.Y / 2 - Layout.EntranceY(index)) < 0.01,
 			"The playable room has no solid floor")
@@ -104,8 +120,9 @@ if player then
 	local humanoid = character:WaitForChild("Humanoid")
 	task.wait(1) -- allow the avatar to settle on the floor after spawning
 	assert(not root.Anchored and humanoid.AutoRotate, "Avatar physics/rotation is disabled")
-	assert(player:GetAttribute("HasFlashlight") == false and player:GetAttribute("TorchOn") == false,
-		"Starting avatar received a free flashlight")
+	assert(player:GetAttribute("HasFlashlight") == false and player:GetAttribute("TorchOn") == false
+		and player:GetAttribute("EquippedItem") == nil and not character:FindFirstChild("HeldItem"),
+		"Starting avatar received a free flashlight or a floating item")
 	local cast = RaycastParams.new()
 	cast.FilterType = Enum.RaycastFilterType.Exclude
 	cast.FilterDescendantsInstances = {character}

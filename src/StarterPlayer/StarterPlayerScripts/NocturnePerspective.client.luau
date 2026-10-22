@@ -1,5 +1,5 @@
--- Native Roblox first person, with the ACTUAL right arm and welded drawer key.
--- No clone, fake wrist, free camera or replacement avatar can detach at a joint.
+-- Native first person: the ACTUAL R6/R15 hands hold the key and selected item.
+-- No cloned limb, fake wrist, free camera or replacement physics avatar.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -7,10 +7,11 @@ local player = Players.LocalPlayer
 
 local character, humanoid
 local shoulder, elbow, wrist
+local leftShoulder, leftElbow, leftWrist
 local original = {}
-local pieces = {}
-local elapsed, pickup, turn = 0, 1, 0
-local lastKey, turning, posed = nil, false, false
+local pieces, leftPieces = {}, {}
+local elapsed, pickup, itemPickup, turn, voidShade = 0, 1, 1, 0, 0
+local lastKey, lastItem, turning, posed = nil, nil, false, false
 
 local function lockCamera()
 	player.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -34,19 +35,35 @@ end
 
 local function bindArm()
 	resetPose()
-	original, pieces = {}, {}
+	original, pieces, leftPieces = {}, {}, {}
 	if not character then return end
 	local r15 = humanoid and humanoid.RigType == Enum.HumanoidRigType.R15
 	shoulder = character:FindFirstChild(r15 and "RightShoulder" or "Right Shoulder", true)
 	elbow = r15 and character:FindFirstChild("RightElbow", true) or nil
 	wrist = r15 and character:FindFirstChild("RightWrist", true) or nil
-	for _, joint in ipairs({shoulder, elbow, wrist}) do
+	leftShoulder = character:FindFirstChild(r15 and "LeftShoulder" or "Left Shoulder", true)
+	leftElbow = r15 and character:FindFirstChild("LeftElbow", true) or nil
+	leftWrist = r15 and character:FindFirstChild("LeftWrist", true) or nil
+	-- R6 has no elbows/wrists: ipairs stops at a nil hole, so remember
+	-- each joint independently rather than accidentally skipping LEFT shoulder.
+	local function remember(joint)
 		if joint and joint:IsA("Motor6D") then original[joint] = joint.C0 end
 	end
-	local names = r15 and {"RightUpperArm", "RightLowerArm", "RightHand"} or {"Right Arm"}
-	for _, name in ipairs(names) do
+	remember(shoulder)
+	remember(elbow)
+	remember(wrist)
+	remember(leftShoulder)
+	remember(leftElbow)
+	remember(leftWrist)
+	local right = r15 and {"RightUpperArm", "RightLowerArm", "RightHand"} or {"Right Arm"}
+	local left = r15 and {"LeftUpperArm", "LeftLowerArm", "LeftHand"} or {"Left Arm"}
+	for _, name in ipairs(right) do
 		local part = character:FindFirstChild(name)
 		if part and part:IsA("BasePart") then table.insert(pieces, part) end
+	end
+	for _, name in ipairs(left) do
+		local part = character:FindFirstChild(name)
+		if part and part:IsA("BasePart") then table.insert(leftPieces, part) end
 	end
 end
 
@@ -55,7 +72,7 @@ local function onCharacter(avatar)
 	if player.Character ~= avatar then return end
 	resetPose()
 	character, humanoid = avatar, human
-	lastKey, turning, pickup, turn = nil, false, 1, 0
+	lastKey, lastItem, turning, pickup, itemPickup, turn, voidShade = nil, nil, false, 1, 1, 0, 0
 	player:SetAttribute("NocturnePeek", false)
 	lockCamera()
 	bindArm()
@@ -88,10 +105,19 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 	end
 	if not shoulder or not shoulder.Parent then bindArm() end
 	local key = player:GetAttribute("HeldKey")
-	local visible = key ~= nil and not peek and humanoid.Health > 0
+	local item = character:FindFirstChild("HeldItem")
+	local itemId = item and item:GetAttribute("ItemKind") or nil
+	local gripHand = item and item:GetAttribute("GripHand") or nil
+	local alive = not peek and humanoid.Health > 0
+	local rightVisible = alive and (key ~= nil or itemId ~= nil and gripHand == "Right")
+	local leftItem = itemId ~= nil and gripHand == "Left"
 	if key ~= lastKey then
 		pickup = key and 0 or 1
 		lastKey = key
+	end
+	if itemId ~= lastItem then
+		itemPickup = itemId and 0 or 1
+		lastItem = itemId
 	end
 	local nowTurning = player:GetAttribute("KeyTurning") == true
 	if nowTurning and not turning then turn = 0 end
@@ -99,28 +125,63 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 	dt = math.min(dt, 0.08)
 	elapsed = elapsed + dt
 	pickup = math.min(1, pickup + dt / 0.42)
+	itemPickup = math.min(1, itemPickup + dt / 0.34)
 	turn = nowTurning and math.min(1, turn + dt / 0.35) or math.max(0, turn - dt / 0.25)
-	if visible and shoulder and original[shoulder] then
+	-- Only in the last white chamber does an EMPTY hand become visible. It is
+	-- still the native Roblox limb attached to its R6/R15 Motor6Ds, not a prop.
+	local shading = alive and player:GetAttribute("VoidWalk") == true
+	voidShade = shading and math.min(1, voidShade + dt / 0.48)
+		or math.max(0, voidShade - dt / 0.30)
+	local leftVisible = alive and (leftItem or voidShade > 0.02)
+	resetPose()
+	if rightVisible and shoulder and original[shoulder] then
 		local step = math.sin(elapsed * 5.5) * 1.7
-		-- The upper arm reaches forward, the native elbow bends the forearm,
-		-- and the same welded key follows the native hand into the keyhole.
-		pose(shoulder, pickup * (70 + turn * 23) + step, pickup * 10)
-		if elbow then pose(elbow, -pickup * (43 + turn * 13), 0) end
-		if wrist then pose(wrist, pickup * 5, -pickup * (10 + turn * 8)) end
-	else
-		resetPose()
+		if key ~= nil then
+			-- The original right-hand key pose still raises it INTO the lock.
+			pose(shoulder, pickup * (70 + turn * 23) + step, pickup * 10)
+			if elbow then pose(elbow, -pickup * (43 + turn * 13), 0) end
+			if wrist then pose(wrist, pickup * 5, -pickup * (10 + turn * 8)) end
+		else
+			-- Relaxed grip for a torch/medicine: ordinary-sized connected limbs.
+			pose(shoulder, itemPickup * 48 + step, itemPickup * 6)
+			if elbow then pose(elbow, -itemPickup * 33, 0) end
+			if wrist then pose(wrist, -itemPickup * 4, 0) end
+		end
 	end
-	-- Roblox's first-person controller normally fades the whole character.
-	-- Override ONLY the connected right limbs and the physical key, locally;
-	-- the full colliding avatar remains visible to the rest of the group.
+	if leftVisible and leftShoulder and original[leftShoulder] then
+		if voidShade > 0.02 then
+			-- Shield the eyes with the REAL left forearm. A very small breathing
+			-- motion keeps it human; the torso and first-person camera still
+			-- belong to the ordinary physical avatar.
+			local breath = math.sin(elapsed * 2.1) * 1.6
+			pose(leftShoulder, voidShade * (94 + breath), voidShade * 27)
+			if leftElbow then pose(leftElbow, -voidShade * 85, voidShade * 7) end
+			if leftWrist then pose(leftWrist, -voidShade * 18, voidShade * 20) end
+		else
+			pose(leftShoulder, itemPickup * 46, -itemPickup * 7)
+			if leftElbow then pose(leftElbow, -itemPickup * 31, 0) end
+			if leftWrist then pose(leftWrist, -itemPickup * 4, 0) end
+		end
+	end
+	-- CameraModule normally fades the character in first person. Restore
+	-- ONLY the real jointed limbs currently holding something, and their
+	-- welded server-owned models; all avatar collisions remain untouched.
 	for _, part in ipairs(pieces) do
-		if part.Parent then part.LocalTransparencyModifier = visible and 0 or 1 end
+		if part.Parent then part.LocalTransparencyModifier = rightVisible and 0 or 1 end
 	end
-	local held = character:FindFirstChild("HeldKey")
-	if held then
-		for _, part in ipairs(held:GetDescendants()) do
-			if part:IsA("BasePart") then part.LocalTransparencyModifier = visible and 0 or 1 end
+	for _, part in ipairs(leftPieces) do
+		if part.Parent then part.LocalTransparencyModifier = leftVisible and 0 or 1 end
+	end
+	local heldKey = character:FindFirstChild("HeldKey")
+	if heldKey then
+		for _, part in ipairs(heldKey:GetDescendants()) do
+			if part:IsA("BasePart") then part.LocalTransparencyModifier = alive and key ~= nil and 0 or 1 end
+		end
+	end
+	if item then
+		for _, part in ipairs(item:GetDescendants()) do
+			if part:IsA("BasePart") then part.LocalTransparencyModifier = alive and 0 or 1 end
 		end
 	end
 end)
-print("[NOCTURNE v8 / native first person] actual R6/R15 arm and welded key; no viewmodel clones")
+print("[NOCTURNE v16 / native first person] real R6/R15 hands; no fake viewmodel")

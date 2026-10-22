@@ -25,7 +25,12 @@ local vectorMeta = {
 }
 Vector3 = {new = function(x, y, z) return setmetatable({X=x or 0, Y=y or 0, Z=z or 0}, vectorMeta) end}
 Vector2 = {new = function(x, y) return {X=x, Y=y} end}
-local cfMeta = {__mul = function(a, b) return CFrame.new(a.Position + b.Position) end}
+local cfMeta = {
+    __mul = function(a, b) return CFrame.new(a.Position + b.Position) end,
+    __index = {Lerp = function(self, other, alpha)
+        return CFrame.new(self.Position + (other.Position - self.Position) * alpha)
+    end},
+}
 CFrame = {
     new = function(x, y, z)
         return setmetatable({Position = type(x) == "table" and x or Vector3.new(x, y, z),
@@ -91,6 +96,7 @@ function methods:Clone()
 end
 function methods:PivotTo(cf) self.WorldPivot = cf end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
+function methods:GetGuiObjectsAtPosition() return self.guiAtMouse or {} end
 function methods:SetAttribute(name, value)
     self._attributes[name] = value
     if self._attributeSignals[name] then self._attributeSignals[name]:Fire() end
@@ -100,7 +106,17 @@ function methods:GetAttributeChangedSignal(name)
     self._attributeSignals[name] = self._attributeSignals[name] or signal()
     return self._attributeSignals[name]
 end
-function methods:IsA(class) return self._class == class or (class == "BasePart" and self._class == "Part") end
+function methods:IsA(class) return self._class == class
+    or (class == "BasePart" and self._class == "Part")
+    or (class == "GuiButton" and (self._class == "TextButton" or self._class == "ImageButton")) end
+function methods:Play()
+    assert(self._class == "Sound" and (self.SoundId and self.SoundId:match("^rbxasset://sounds/")
+        or self.AudioContent and self.AudioContent:match("^rbxassetid://%d+$")),
+        "lost a built-in or the actual supplied AudioContent asset")
+    self.IsPlaying = true
+    self.Plays = (self.Plays or 0) + 1
+end
+function methods:Stop() self.IsPlaying = false end
 function methods:Destroy() self.Parent = nil end
 local instMeta = {
     __index = function(t, k)
@@ -143,12 +159,28 @@ camera.ViewportSize = {X=1920, Y=1080}
 local workspace = Instance.new("Workspace")
 workspace.CurrentCamera = camera
 camera.Parent = workspace
+for name, id in pairs({
+    ["музыка_для_слепого когда в одной комнате"] = "129758955680794",
+    ["Scary sound"] = "92039668540061",
+    ["scarygrowl 1"] = "136894310375981",
+}) do
+    local source = Instance.new("Sound")
+    source.Name = name
+    source.AudioContent = "rbxassetid://" .. id -- v14 has NO SoundId
+    source.Volume = 0.5
+    source.IsPlaying = false
+    source.Parent = workspace
+end
 local runService = Instance.new("RunService")
 function runService:BindToRenderStep(_, _, callback) self.render = callback end
 local uiService = Instance.new("UserInputService")
 uiService.TouchEnabled = false
 uiService.MouseEnabled = true
-function uiService:GetFocusedTextBox() return nil end
+if uiService.TouchEnabled then camera.ViewportSize = {X=380,Y=780} end
+function uiService:GetFocusedTextBox() return self.focusedTextBox end
+function uiService:GetMouseLocation() return Vector2.new(960, 540) end
+local guiService = Instance.new("GuiService")
+guiService.MenuIsOpen = false
 local tweenService = Instance.new("TweenService")
 function tweenService:Create(target, _, props)
     return {Play=function()
@@ -156,12 +188,14 @@ function tweenService:Create(target, _, props)
     end}
 end
 local lighting = Instance.new("Lighting")
+local soundService = Instance.new("SoundService")
 local starterGui = Instance.new("StarterGui")
 starterGui.disabled = {}
 function starterGui:SetCoreGuiEnabled(which, enabled) self.disabled[which] = not enabled end
 local services = {Players=Instance.new("Players"), ReplicatedStorage=replicated, Workspace=workspace,
-    RunService=runService, UserInputService=uiService, TweenService=tweenService,
-    Lighting=lighting, StarterGui=starterGui}
+    RunService=runService, UserInputService=uiService, GuiService=guiService,
+    TweenService=tweenService, Lighting=lighting, SoundService=soundService,
+    StarterGui=starterGui}
 services.Players.LocalPlayer = player
 game = {GetService=function(_, name) return services[name] end}
 local timers = {}
@@ -222,6 +256,25 @@ player.CharacterAdded:Fire(avatar)
 assert(player.CameraMode == Enum.CameraMode.LockFirstPerson
     and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
     "HUD's camera transition detached from the actual Humanoid")
+local arrival = soundService:FindFirstChild("Creature at the threshold")
+local impact = soundService:FindFirstChild("Corridor arrival impact")
+assert(arrival and impact and arrival:FindFirstChildOfClass("EchoSoundEffect")
+    and arrival:FindFirstChildOfClass("ReverbSoundEffect"),
+    "loud near-field monster cues or masonry echo are missing")
+local music = soundService:FindFirstChild("Blind Guest / local theme")
+local scary = soundService:FindFirstChild("Rare scary sound")
+local growl = soundService:FindFirstChild("Rare scary growl")
+assert(music and music.Looped and scary and growl
+    and music.AudioContent == "rbxassetid://129758955680794"
+    and scary.AudioContent == "rbxassetid://92039668540061"
+    and growl.AudioContent == "rbxassetid://136894310375981"
+    and not workspace:FindFirstChild("Scary sound").IsPlaying,
+    "v14's genuine supplied AudioContent was not cloned for private local playback")
+remote.OnClientEvent:Fire("MonsterSpawn", "BLIND", 0)
+assert(arrival.IsPlaying and impact.IsPlaying and arrival.Plays == 1,
+    "opening a resident monster room played no arrival sound")
+remote.OnClientEvent:Fire("MonsterSpawn", "MOTH", 80)
+assert(arrival.Plays == 1, "sound blasted a teammate eighty rooms away")
 local gui = playerGui:FindFirstChild("NocturneHUD")
 local reticle = gui:FindFirstChild("Reticle")
 local scare = gui:FindFirstChild("Creature close-up")
@@ -243,6 +296,8 @@ assert(bar and wallet and bar:FindFirstChild("Slot FLASHLIGHT")
     and starterGui.disabled[Enum.CoreGuiType.Backpack]
     and starterGui.disabled[Enum.CoreGuiType.Health],
     "default Roblox Backpack/Health was not replaced by the custom hotbar")
+assert(not bar.Visible and not wallet.Visible and not bar:FindFirstChild("Slot PILL").Visible,
+    "an empty hotbar or wallet covers the corridor at spawn")
 assert(lighting:FindFirstChild("Wardrobe eyestrain")
     and lighting:FindFirstChild("Wardrobe desaturation"),
     "long hiding has no client-only visual effects")
@@ -257,26 +312,98 @@ local beforeLight = #remote.actions
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(#remote.actions == beforeLight and not gui:FindFirstChild("Mobile torch").Visible,
     "F created a flashlight before the player found or bought one")
-remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=2,CRUCIFIX=1,BANDAGE=3,MEDKIT=1},
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=0,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=1,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(wallet.Visible and not bar.Visible
+    and (not uiService.TouchEnabled or (wallet.Position[1] == 16 and wallet.Position[2] == 55
+        and gui:FindFirstChild("Health track").Position[2] == 84
+        and gui:FindFirstChild("Stamina track").Position[2] == 99)),
+    "taking money exposed an empty inventory or phone status covered the controls")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=1,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=2,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(bar.Visible and bar.Size[1] == (uiService.TouchEnabled and 54 or 52)
+    and bar.Size[2] < 60 and bar.Size[1] < camera.ViewportSize.X
+    and bar:FindFirstChild("Slot PILL").Visible
+    and not bar:FindFirstChild("Slot FLASHLIGHT").Visible
+    and not bar:FindFirstChild("Slot MEDKIT").Visible
+    and gui:FindFirstChild("Use selected item").Visible == uiService.TouchEnabled,
+    "hotbar did not shrink to only the collected item or lost touch controls")
+local beforeEmpty = #remote.actions
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Five}, false)
+assert(#remote.actions == beforeEmpty, "number keys select invisible, unowned slots")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.DPadRight}, false)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
+    "gamepad cycling does not skip missing inventory types")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=0,PILL=0,CRUCIFIX=0,BANDAGE=0,MEDKIT=0},
+    selected=1,charge=0,health=100,coins=3,notes=0,gold=0})
+assert(not bar.Visible and wallet.Visible and not gui:FindFirstChild("Use selected item").Visible,
+    "inventory or unused touch action stayed onscreen after the last item vanished")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
     selected=1,charge=100,health=72,coins=12,notes=2,gold=1})
 player:SetAttribute("HasFlashlight", true)
 player:SetAttribute("TorchCharge", 100)
 player:SetAttribute("Health", 72)
 assert(wallet.Text:find("12") and wallet.Text:find("2") and wallet.Text:find("1")
-    and bar:FindFirstChild("Slot PILL"):FindFirstChild("Count").Text == "×2"
-    and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible,
-    "wallet, selected hotbar or battery display did not reflect server snapshot")
+    and bar.Visible and bar.Size[1] == (uiService.TouchEnabled and 246 or 236)
+    and bar.Size[2] < 60 and bar.Size[1] < camera.ViewportSize.X
+    and bar:FindFirstChild("Slot PILL").Visible
+    and not bar:FindFirstChild("Slot PILL"):FindFirstChild("Count")
+    and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible
+    and gui:FindFirstChild("Mobile torch").Visible == uiService.TouchEnabled,
+    "five unique items, money or the compact battery indicator did not render")
+-- In Play this is the server-replicated model, not a fake client viewmodel.
+local heldTorch = Instance.new("Model")
+heldTorch.Name = "HeldItem"
+heldTorch:SetAttribute("ItemKind", "FLASHLIGHT")
+heldTorch.Parent = avatar
+local lens = Instance.new("Part")
+lens.Name = "Torch lens"
+lens.Position = Vector3.new(0.5, 4.1, 10)
+lens.Parent = heldTorch
+local teammateBeam = Instance.new("SpotLight")
+teammateBeam.Name = "Selected torch beam"
+teammateBeam.Enabled = true
+teammateBeam.Parent = lens
+local teammateCore = Instance.new("SpotLight")
+teammateCore.Name = "Selected torch core"
+teammateCore.Enabled = true
+teammateCore.Parent = lens
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
-assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == true,
-    "found torch did not request server-owned light")
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+    "found torch did not request an atomic server-owned light toggle")
+if uiService.TouchEnabled then
+    gui:FindFirstChild("Mobile torch").MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][1] == "Use"
+        and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+        "the phone torch button did not activate the actual selected light")
+end
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
-local light = camera:FindFirstChild("Invisible torch light source"):FindFirstChild("Weak hand torch")
-assert(light.Enabled, "server-authorized flashlight did not illuminate")
+local mount = camera:FindFirstChild("Invisible torch light source")
+local light = mount:FindFirstChild("Hand torch flood")
+local reach = mount:FindFirstChild("Hand torch reach")
+local bounce = mount:FindFirstChild("Hand torch nearby light")
+assert(light and reach and bounce and light.Enabled and reach.Enabled and bounce.Enabled
+    and light.Brightness >= 3.2 and light.Angle >= 90 and light.Range >= 30
+    and reach.Brightness >= 4.4 and reach.Range >= 52
+    and reach.Angle < light.Angle / 2 and bounce.Brightness >= 0.8
+    and bounce.Range >= 12 and not teammateBeam.Enabled and not teammateCore.Enabled
+    and (mount.CFrame.Position - lens.Position).Magnitude < 0.1,
+    "torch lacks its brighter near/wide/far light from the actual held lens")
+player:SetAttribute("TorchCharge", 0)
+runService.render(0)
+assert(not light.Enabled and not reach.Enabled and not bounce.Enabled,
+    "the strong local beam stayed on after battery depletion")
+player:SetAttribute("TorchCharge", 100)
+runService.render(0)
+assert(light.Enabled and reach.Enabled and bounce.Enabled,
+    "a charged selected flashlight failed to light the corridor again")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Two}, false)
 assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
     "number keys did not select the custom pill slot")
 player:SetAttribute("TorchOn", false)
+assert(not light.Enabled and not reach.Enabled and not bounce.Enabled,
+    "the bright beam remained on after a light-off acknowledgement")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Q}, false)
 assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "PILL",
     "selected consumable was not sent for server-authoritative use")
@@ -284,6 +411,84 @@ uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.One}, false)
 player:SetAttribute("TorchCharge", 18)
 assert(bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").BackgroundColor3[1] == 196,
     "low charge did not turn the battery indicator red")
+-- Real controls: a world click activates the currently held item, not a GUI
+-- click; processed number/Q keys still work when Roblox Backpack consumes them.
+local mouse = {UserInputType=Enum.UserInputType.MouseButton1}
+local beforeMouse = #remote.actions
+uiService.InputBegan:Fire(mouse, false)
+assert(#remote.actions == beforeMouse + 1
+    and remote.actions[#remote.actions][1] == "Use"
+    and remote.actions[#remote.actions][2] == "FLASHLIGHT",
+    "clicking the 3-D scene did not activate the selected torch")
+playerGui.guiAtMouse = {bar:FindFirstChild("Slot PILL")}
+local beforeUI = #remote.actions
+uiService.InputBegan:Fire(mouse, false)
+uiService.InputBegan:Fire(mouse, true)
+assert(#remote.actions == beforeUI, "a click on the HUD also consumed a different item")
+playerGui.guiAtMouse = {}
+guiService.MenuIsOpen = true
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(#remote.actions == beforeUI, "pause menu triggered a hidden item")
+guiService.MenuIsOpen = false
+uiService.focusedTextBox = Instance.new("TextBox")
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(#remote.actions == beforeUI, "typing in chat used the held item")
+uiService.focusedTextBox = nil
+local keyboard = Enum.UserInputType.Keyboard
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Two}, true)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
+    "Roblox-processed number key did not select medicine")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
+    selected=1,charge=18,health=72,coins=12,notes=2,gold=1})
+assert(bar:FindFirstChild("Slot PILL").BackgroundColor3[1] == 64,
+    "an old inventory snapshot undid the clicked slot before its server ACK")
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "PILL",
+    "Roblox-processed Q did not activate the newly selected item")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=1,CRUCIFIX=1,BANDAGE=1,MEDKIT=1},
+    selected=2,charge=18,health=72,coins=12,notes=2,gold=1})
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Three}, true)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 3)
+uiService.InputBegan:Fire({UserInputType=keyboard,KeyCode=Enum.KeyCode.Q}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "raising the cross still does nothing")
+uiService.InputBegan:Fire({UserInputType=Enum.UserInputType.Gamepad1,
+    KeyCode=Enum.KeyCode.ButtonR2}, true)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "gamepad trigger could not raise the cross")
+local use = gui:FindFirstChild("Use selected item")
+assert(use.Visible == uiService.TouchEnabled and use.Text == "✝",
+    "phone lost its active cross button")
+if uiService.TouchEnabled then
+    use.MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][2] == "CRUCIFIX",
+        "phone cross button did not send its activation")
+end
+bar:FindFirstChild("Slot CRUCIFIX").MouseButton1Click:Fire()
+assert(remote.actions[#remote.actions][2] == "CRUCIFIX",
+    "second tap/click of the selected cross slot did nothing")
+remote.OnClientEvent:Fire("ItemDenied", "CRUCIFIX")
+assert(bar:FindFirstChild("Slot CRUCIFIX"):FindFirstChildOfClass("UIStroke").Color[1] == 196
+    and soundService:FindFirstChild("Item cannot be used yet").Plays == 1,
+    "failed activation still gives no visible/audible acknowledgement")
+drainTimers()
+for _, pair in ipairs({{4, "BANDAGE", "▣"}, {5, "MEDKIT", "✚"}}) do
+    local index, kind, symbol = pair[1], pair[2], pair[3]
+    bar:FindFirstChild("Slot " .. kind).MouseButton1Click:Fire()
+    assert(remote.actions[#remote.actions][1] == "Select"
+        and remote.actions[#remote.actions][2] == index,
+        "tapping a medical slot did not equip that item")
+    if uiService.TouchEnabled then
+        assert(use.Visible and use.Text == symbol,
+            "phone's action button does not match the selected medical item")
+        use.MouseButton1Click:Fire()
+    else
+        uiService.InputBegan:Fire(mouse, false)
+    end
+    assert(remote.actions[#remote.actions][1] == "Use"
+        and remote.actions[#remote.actions][2] == kind,
+        "medical item click/touch was not sent to the server")
+end
 local peek = CFrame.new(1, 5, 21)
 local hotel = Instance.new("Folder")
 hotel.Name = "NocturneWorld"
@@ -295,12 +500,41 @@ local body = Instance.new("Part")
 body.Position = Vector3.new(1, 5, 27)
 body.Parent = monster
 monster.PrimaryPart = body
+-- The server opens and physically moves the avatar after ONE prompt. During
+-- that motion the client keeps the native camera on the real Humanoid, not a
+-- detached fly camera, and cannot accidentally use an item or exit early.
+local beforeEntry = #remote.actions
+remote.OnClientEvent:Fire("WardrobeEnter", true)
+runService.render(0.07)
+assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid
+    and player.CameraMode == Enum.CameraMode.LockFirstPerson
+    and humanoid.CameraOffset.Y < 0 and not reticle.Visible
+    and not gui:FindFirstChild("Leave wardrobe").Visible
+    and not gui:FindFirstChild("Use selected item").Visible
+    and root.CFrame == originalCF,
+    "wardrobe entry replaced native first person or moved the real body on the CLIENT")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.E}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Q}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.ButtonB}, false)
+assert(#remote.actions == beforeEntry,
+    "an entry-in-progress let a second click, exit or item activation interrupt it")
+remote.OnClientEvent:Fire("WardrobeEnter", false) -- server cancelled a half-finished entry
+assert(humanoid.CameraOffset.Y == 0 and reticle.Visible and not root.Anchored
+    and camera.CameraType == Enum.CameraType.Custom,
+    "cancelled entry left a frozen or detached viewpoint")
+remote.OnClientEvent:Fire("WardrobeEnter", true)
+camera.CFrame = CFrame.new(peek.Position + Vector3.new(0, 0, 1.15)) -- real avatar at the back
+local nativeEye = camera.CFrame
 remote.OnClientEvent:Fire("Hide", true, peek)
 runService.render(0.016)
-local left = gui:FindFirstChild("Left wardrobe edge")
+local firstGlide = (camera.CFrame.Position - peek.Position).Magnitude
 assert(camera.CameraType == Enum.CameraType.Scriptable
-    and (camera.CFrame.Position - peek.Position).Magnitude < 0.1
-    and player:GetAttribute("NocturnePeek") and not reticle.Visible
+    and firstGlide > 0.3 and firstGlide < (nativeEye.Position - peek.Position).Magnitude
+    and player:GetAttribute("NocturnePeek") and not reticle.Visible,
+    "final in-closet eye movement snapped or detached from the real avatar")
+for _ = 1, 3 do runService.render(0.07) end
+local left = gui:FindFirstChild("Left wardrobe edge")
+assert((camera.CFrame.Position - peek.Position).Magnitude < 0.1
     and left.Size[1] < 0.2 and camera.FieldOfView < 70,
     "wardrobe hides the actual monster or has no nearby-threat pressure")
 assert(root.CFrame == originalCF, "wardrobe viewpoint moved the physical avatar")
@@ -331,6 +565,14 @@ assert(spiderView.Visible and spiderView.CurrentCamera
     "drawer spider did not jump toward the actual screen")
 drainTimers()
 assert(not spiderView.Visible, "jumping spider remained stuck over the scene")
+remote.OnClientEvent:Fire("Jumpscare", "ECHO", nil)
+local fallback = stage:FindFirstChild("Last glimpse of ECHO")
+local echoVeils = 0
+for _, piece in ipairs(fallback and fallback:GetChildren() or {}) do
+    if piece.Name == "Last trailing echo veil" then echoVeils = echoVeils + 1 end
+end
+assert(fallback and echoVeils == 2 and fallback.PrimaryPart.Size.X < 1.5,
+    "late Echo replication turned its scare back into the ordinary Rush")
 local monster = Instance.new("Model")
 monster.Name = "TheBlindGuest"
 local face = Instance.new("Part")
@@ -384,53 +626,180 @@ runService.render(0.016)
 assert(replacement.CameraType == Enum.CameraType.Custom
     and replacement.CameraSubject == nextHumanoid,
     "HUD camera replacement stopped following the living avatar")
-local torch=replacement:FindFirstChild("Invisible torch light source")
-    :FindFirstChild("Weak hand torch")
+remote.OnClientEvent:Fire("ItemUsed", "PILL")
+for _ = 1, 12 do runService.render(0.07) end
+assert(replacement.FieldOfView > 76,
+    "using speed medicine gave no visible short-lived first-person response")
+local replacementMount = replacement:FindFirstChild("Invisible torch light source")
+local torch = replacementMount:FindFirstChild("Hand torch flood")
+local replacementReach = replacementMount:FindFirstChild("Hand torch reach")
+local replacementBounce = replacementMount:FindFirstChild("Hand torch nearby light")
+local carried = Instance.new("Model")
+carried.Name = "HeldItem"
+carried:SetAttribute("ItemKind", "FLASHLIGHT")
+carried.Parent = nextAvatar
+local newLens = Instance.new("Part")
+newLens.Name = "Torch lens"
+newLens.Position = Vector3.new(0.4, 4, 10)
+newLens.Parent = carried
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 player:SetAttribute("TorchOn", true)
 runService.render(0.016)
-assert(torch.Enabled, "pre-finale found/bought torch did not work")
+assert(torch.Enabled and replacementReach.Enabled and replacementBounce.Enabled,
+    "pre-finale found/bought torch lost its extra near and far light")
+-- Music belongs only to the player's CURRENT room, follows the roaming Guest,
+-- attacks briefly with disordered colours/lines/shake, then fades after exit.
+local world = Instance.new("Folder")
+world.Name = "NocturneWorld"
+world.Parent = workspace
+local blind = Instance.new("Model")
+blind.Name = "TheBlindGuest"
+blind:SetAttribute("RoomIndex", 0)
+blind.Parent = world
+local blindBody = Instance.new("Part")
+blindBody.Position = Vector3.new(0, 4.7, 18)
+blindBody.Parent = blind
+blind.PrimaryPart = blindBody
+replacement.CFrame = CFrame.new(0, 6, 3) -- native eye before the first sight of the Guest
+runService.render(0.07)
+local panicBlur = lighting:FindFirstChild("Blind Guest double vision")
+local panicBloom = lighting:FindFirstChild("Blind Guest retinal overload")
+local panicVeil = gui:FindFirstChild("Blind chromatic bleed")
+local panicBar = gui:FindFirstChild("Blind signal fracture")
+local panicPulse = soundService:FindFirstChild("Blind panic heartbeat")
+assert(panicPulse.Plays == 1 and panicBlur.Size > 8 and panicBloom.Intensity > 1
+    and panicVeil.BackgroundTransparency < 0.85 and panicBar.BackgroundTransparency < 0.5
+    and music.IsPlaying and replacement.CameraType == Enum.CameraType.Custom
+    and replacement.CameraSubject == nextHumanoid,
+    "entering the Blind Guest's room did not immediately distort colour, sound and camera")
+for _ = 1, 29 do
+    replacement.CFrame = CFrame.new(0, 6, 3)
+    runService.render(0.07)
+end
+assert(panicBlur.Size > 1 and panicBloom.Intensity > 0
+    and panicBar.BackgroundTransparency < 1 and panicVeil.BackgroundTransparency < 1,
+    "visual pressure disappeared between panic spikes while still with the Blind Guest")
+for _ = 1, 100 do
+    replacement.CFrame = CFrame.new(0, 6, 3)
+    runService.render(0.07)
+end
+assert(music.IsPlaying and music.Plays == 1 and music.Volume > 0.4
+    and panicPulse.Plays >= 2
+    and replacement.CameraType == Enum.CameraType.Custom
+    and replacement.CameraSubject == nextHumanoid
+    and not workspace:FindFirstChild("музыка_для_слепого когда в одной комнате").IsPlaying,
+    "same-room music, recurrent panic or grounded native camera is missing")
+local beforeFade = music.Volume
+blind:SetAttribute("RoomIndex", 1) -- monster followed a sound through a door
+runService.render(0.07)
+assert(music.IsPlaying and music.Volume < beforeFade and music.Volume > 0
+    and panicBlur.Size == 0 and panicBloom.Intensity == 0
+    and panicVeil.BackgroundTransparency == 1 and panicBar.BackgroundTransparency == 1
+    and not panicPulse.IsPlaying,
+    "music cut suddenly or panic effects followed the Guest into another room")
+for _ = 1, 115 do runService.render(0.07) end
+assert(not music.IsPlaying and music.Volume < 0.01
+    and music.Plays == 1 and not scary.IsPlaying and not growl.IsPlaying,
+    "music never faded/stopped after leaving the Blind Guest")
+blind.Parent = nil
+-- Two supplied stingers are rare and can NEVER be layered together, even if
+-- the first file is longer than the next random cooldown.
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 1
+    and scary.IsPlaying ~= growl.IsPlaying,
+    "rare sounds did not play independently after a long quiet interval")
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 1,
+    "the other scary clip overlapped one already playing")
+if scary.IsPlaying then scary.IsPlaying = false else growl.IsPlaying = false end
+runService.render(0.07)
+for _ = 1, 2100 do runService.render(0.07) end
+assert((scary.Plays or 0) + (growl.Plays or 0) == 2
+    and not (scary.IsPlaying and growl.IsPlaying),
+    "second rare sound did not wait until first ended and its long cooldown passed")
+-- The server now fires AT THE ENTRANCE (depth 0.55), not after 43 studs.
+nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 0.65)
+nextRoot.CFrame = CFrame.new(nextRoot.Position)
+player:SetAttribute("VoidWalk", true)
+local beforeVoidInput = #remote.actions
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.LeftShift, UserInputType=Enum.UserInputType.Keyboard}, false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F, UserInputType=Enum.UserInputType.Keyboard}, false)
+assert(#remote.actions == beforeVoidInput and not torch.Enabled and not replacementReach.Enabled
+    and not replacementBounce.Enabled and not reticle.Visible and not bar.Visible,
+    "entry did not cancel sprint, flashlight and equipment")
 local witness=Instance.new("Model")
 witness.Name="TheLastWitness"
 local finalFace=Instance.new("Part")
 finalFace.Name="The face behind the dawn"
+finalFace.Transparency=1 -- invisible template must not spoil a teammate's view
 finalFace.Parent=witness
-witness.Parent=workspace
-remote.OnClientEvent:Fire("Finale", witness)
+witness.Parent=world
+remote.OnClientEvent:Fire("Finale", witness) -- NO adaptation frames or far-end delay
+local finalCopy = stage:FindFirstChild("TheLastWitness")
+local finalVeil = gui:FindFirstChild("Creature close-up"):FindFirstChild("Split second red flash")
 assert(scare.Visible and not modal.Visible and not reticle.Visible
-    and stage:FindFirstChild("TheLastWitness")
-    and stage:FindFirstChild("TheLastWitness"):FindFirstChild("The face behind the dawn"),
-    "door 100 did not show its REAL final creature BEFORE the victory screen")
+    and finalCopy and finalCopy:FindFirstChild("The face behind the dawn").Transparency == 0
+    and finalFace.Transparency == 1 and view.Size[1] == 1.29
+    and view.CurrentCamera.FieldOfView == 39 and finalVeil.BackgroundTransparency > 0.8
+    and soundService:FindFirstChild("Final bone impact").IsPlaying
+    and soundService:FindFirstChild("Final close shriek").IsPlaying
+    and (scary.IsPlaying ~= growl.IsPlaying)
+    and replacement.CameraType == Enum.CameraType.Custom and replacement.CameraSubject == nextHumanoid
+    and not nextRoot.Anchored,
+    "first frame at the white-room entrance hid the face, muted the shriek or lost the avatar")
+player:SetAttribute("Finished", true)
+remote.OnClientEvent:Fire("Finale", witness) -- duplicated event/attribute must be idempotent
+assert(soundService:FindFirstChild("Final bone impact").Plays == 1,
+    "attribute replication restarted the final scare")
 local finaleHold=false
-for _,timer in ipairs(timers) do if timer.at>=2.4 then finaleHold=true end end
-assert(finaleHold and not torch.Enabled, "finale has no held beat or leaves the torch on")
+for _,timer in ipairs(timers) do if timer.at>=3.25 then finaleHold=true end end
+assert(finaleHold and not torch.Enabled and not replacementReach.Enabled
+    and not replacementBounce.Enabled, "finale left a bright beam on the victory screen")
 drainTimers()
 assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
-    and not scare.Visible and replacement.CameraSubject==nextHumanoid,
-    "final scare did not lead to victory without detaching the real camera")
--- Even if the last model has not replicated, the giant ring-eyed face remains.
+    and not scare.Visible and replacement.CameraSubject==nextHumanoid
+    and soundService:FindFirstChild("Final bone impact").Plays == 2
+    and soundService:FindFirstChild("Final close shriek").Plays == 1
+    and soundService:FindFirstChild("Final deep distortion").Plays == 1,
+    "personal threshold scare did not hold then lead to the victory card")
+-- Even if the RemoteEvent and model do not replicate, the server Finished flag
+-- must still reveal a giant ring-eyed fallback face, not an empty white screen.
+witness.Parent = nil
+player:SetAttribute("Finished", false)
+player:SetAttribute("VoidWalk", false)
 player.CharacterAdded:Fire(nextAvatar)
-remote.OnClientEvent:Fire("Finale", nil)
+assert(not scare.Visible and not modal.Visible, "a previous life kept its jumpscare")
+player:SetAttribute("Finished", true) -- remote was deliberately lost
+drainTimers() -- runs the 0.12 s attribute recovery, schedules the new finale
 local blank=stage:FindFirstChild("Last glimpse of FINAL")
 local rings=0
-for _,piece in ipairs(blank:GetChildren()) do
-    if piece.Name=="Pale orbital rim" then rings=rings+1 end
+if blank then
+    for _,piece in ipairs(blank:GetChildren()) do
+        if piece.Name=="Pale orbital rim" then rings=rings+1 end
+    end
 end
 assert(scare.Visible and rings==28 and not modal.Visible,
-    "late final-model replication produced a blank jumpscare")
+    "missing final-model/remote replication produced a blank jumpscare")
 drainTimers()
-assert(modal.Visible and not scare.Visible, "fallback finale never completed")
+assert(modal.Visible and not scare.Visible, "attribute-only finale never completed")
 return true
 `;
-const state = lauxlib.luaL_newstate();
-lualib.luaL_openlibs(state);
-const status = lauxlib.luaL_dostring(state, to_luastring(mock));
-if (status !== lua.LUA_OK) {
-  const error = to_jsstring(lua.lua_tostring(state, -1));
-  const atLine = Number(error.match(/:(\d+):/)?.[1] ?? 0);
-  const lines = mock.split("\n");
-  const nearby = lines.slice(Math.max(0, atLine - 4), atLine + 2).map((s, i) =>
-    `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
-  throw new Error(`Client avatar/camera smoke test failed: ${error}\n${nearby}`);
+for (const device of ["desktop", "phone"]) {
+  const source = device === "phone" ? mock.replace(
+    "uiService.TouchEnabled = false\nuiService.MouseEnabled = true",
+    "uiService.TouchEnabled = true\nuiService.MouseEnabled = false",
+  ) : mock;
+  if (device === "phone" && source === mock) throw new Error("Phone mock was not enabled");
+  const state = lauxlib.luaL_newstate();
+  lualib.luaL_openlibs(state);
+  const status = lauxlib.luaL_dostring(state, to_luastring(source));
+  if (status !== lua.LUA_OK) {
+    const error = to_jsstring(lua.lua_tostring(state, -1));
+    const atLine = Number(error.match(/:(\d+):/)?.[1] ?? 0);
+    const lines = source.split("\n");
+    const nearby = lines.slice(Math.max(0, atLine - 4), atLine + 2).map((s, i) =>
+      `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
+    throw new Error(`${device} HUD/avatar smoke test failed: ${error}\n${nearby}`);
+  }
+  console.log(`${device} HUD OK: owned slots, v14 audio, instant Blind panic/music fade, rare cues and threshold/attribute finale`);
 }
-console.log("HUD smoke test OK: custom wallet/hotbar, earned torch, hiding effects/spider, physical camera and scares");

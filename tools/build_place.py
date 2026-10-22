@@ -2,12 +2,14 @@
 """Build the standalone Roblox Studio XML place from the editable Luau sources.
 
 Run from anywhere with `python3 tools/build_place.py`. The committed .rbxlx is a
-real, self-contained place: no Rojo install, plugin, or external asset download
-is necessary to open and play it. Python's standard library is sufficient.
+real place: no Rojo install or plugin is necessary. The three v14 audio
+references require Roblox asset access in Play. Python's standard library
+is sufficient to build the XML.
 """
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -17,6 +19,7 @@ SERVER = ROOT / "src/ServerScriptService/NocturneServer.server.luau"
 CLIENT = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturneClient.client.luau"
 PERSPECTIVE = ROOT / "src/StarterPlayer/StarterPlayerScripts/NocturnePerspective.client.luau"
 LAYOUT = ROOT / "src/ReplicatedStorage/NocturneLayout.luau"
+AUDIO = ROOT / "src/audio_assets.json"
 OUTPUT = ROOT / "Nocturne.rbxlx"
 
 NEXT_ID = 0
@@ -91,6 +94,11 @@ def part(
 
 def light(parent: ET.Element, position: tuple[float, float, float], brightness: float = 1.6) -> None:
     part(parent, "Tarnished brass lamp", (1.3, 0.25, 1.3), position, (90, 67, 44), "metal")
+    part(parent, "Hammered brass lamp crown", (1.26, 0.11, 1.26),
+         (position[0], position[1] + 0.17, position[2]), (155, 115, 65), "metal", collides=False)
+    part(parent, "Smoked glass lamp shade", (1.1, 0.82, 1.1),
+         (position[0], position[1] - 0.36, position[2]), (184, 139, 93),
+         "smooth", transparency=0.66, collides=False)
     bulb = part(parent, "Filament", (0.65, 0.55, 0.65),
                 (position[0], position[1] - 0.3, position[2]), (255, 189, 106), "neon", collides=False)
     point = item(bulb, "PointLight", "WarmPointLight")
@@ -106,10 +114,15 @@ def preview_room(workspace: ET.Element) -> None:
     W, L, H = 30, 44, 16
     plaster, wood, brass = (43, 52, 54), (44, 31, 29), (136, 100, 62)
     part(room, "Herringbone floor", (W, 1, L), (0, -0.5, L / 2), wood, "planks")
+    for x in (-12.8, -10.4, -8, 8, 10.4, 12.8):
+        part(room, "Inlaid floorboard joint", (0.035, 0.012, L - 1.6),
+             (x, 0.009, L / 2), (27, 22, 24), "wood", collides=False)
     part(room, "Crimson runner", (7.4, 0.06, L - 6), (0, 0.055, L / 2), (72, 27, 38), "fabric", collides=False)
     for x in (-3.5, 3.5):
         part(room, "Runner edge", (0.1, 0.07, L - 6), (x, 0.095, L / 2), brass, "fabric", collides=False)
     part(room, "Heavy ceiling", (W, 0.9, L), (0, H + 0.45, L / 2), (26, 22, 24), "wood")
+    part(room, "Pressed metal ceiling rosette", (2.7, 0.12, 2.7),
+         (0, H - 0.42, L / 2), brass, "metal", collides=False)
     part(room, "Entrance wall", (W, H, 0.72), (0, H / 2, 0.45), plaster, "concrete")
     for side in (-1, 1):
         part(room, "Panelled side wall", (0.75, H, L), (side * (W / 2 - 0.38), H / 2, L / 2), plaster, "concrete")
@@ -122,6 +135,9 @@ def preview_room(workspace: ET.Element) -> None:
         for dz in (5.5, 15, 29, 38.5):
             part(room, "Recessed wall panel", (0.08, 6.1, 7),
                  (side * (W / 2 - 0.81), 7.65, dz), (39, 48, 49), "concrete")
+            for end in (-3.25, 3.25):
+                part(room, "Engraved panel edge", (0.075, 5.7, 0.065),
+                     (side * (W / 2 - 1), 7.65, dz + end), brass, "metal", collides=False)
         for dz in (12, 32):
             light(room, (side * (W / 2 - 2.5), 11.5, dz))
         part(room, "Doorway wall", ((W - 7.4) / 2, H, 0.72),
@@ -290,6 +306,19 @@ def build() -> Path:
     ux, uy, uz = ry * lz - rz * ly, rz * lx - rx * lz, rx * ly - ry * lx
     cframe_prop(camera, "CFrame", pos, (rx, ux, -lx, ry, uy, -ly, rz, uz, -lz))
     prop(camera, "float", "FieldOfView", 74)
+    # Preserve the three user-supplied Sound objects from v14 verbatim by
+    # name and asset URI. SoundId is NOT serialized by that file: the actual
+    # audio lives in AudioContent.Content.Uri. These templates never autoplay;
+    # each client clones them into SoundService for its own mix and fade.
+    for asset in json.loads(AUDIO.read_text(encoding="utf-8"))["sounds"]:
+        sound = item(workspace, "Sound", asset["name"])
+        content = prop(sound, "Content", "AudioContent", "")
+        ET.SubElement(content, "uri").text = f"rbxassetid://{asset['asset_id']}"
+        prop(sound, "int64", "SourceAssetId", asset["asset_id"])
+        prop(sound, "float", "Volume", asset["volume"])
+        prop(sound, "float", "PlaybackSpeed", 1)
+        bool_prop(sound, "Looped", False)
+        bool_prop(sound, "Playing", False)
     preview_room(workspace)
     preview_stair(workspace)
     # A conventional, collidable spawn pad level with the foyer floor. Placing
@@ -303,27 +332,32 @@ def build() -> Path:
 
     lighting = item(root, "Lighting", "Lighting")
     prop(lighting, "float", "ClockTime", 0)
-    prop(lighting, "float", "Brightness", 0.9)
-    color_prop(lighting, "Ambient", (31, 37, 43))
-    color_prop(lighting, "OutdoorAmbient", (15, 21, 27))
-    color_prop(lighting, "FogColor", (19, 27, 33))
+    prop(lighting, "float", "Brightness", 1.12)
+    color_prop(lighting, "Ambient", (38, 42, 45))
+    color_prop(lighting, "OutdoorAmbient", (19, 25, 30))
+    color_prop(lighting, "FogColor", (20, 26, 32))
     prop(lighting, "float", "FogStart", 19)
-    prop(lighting, "float", "FogEnd", 112)
+    prop(lighting, "float", "FogEnd", 120)
     bool_prop(lighting, "GlobalShadows", True)
-    prop(lighting, "float", "ExposureCompensation", 0)
+    prop(lighting, "float", "ExposureCompensation", 0.06)
     atmosphere = item(lighting, "Atmosphere", "CorridorHaze")
-    prop(atmosphere, "float", "Density", 0.28)
-    prop(atmosphere, "float", "Haze", 1.8)
-    color_prop(atmosphere, "Color", (108, 128, 137))
-    color_prop(atmosphere, "Decay", (34, 24, 27))
+    prop(atmosphere, "float", "Density", 0.22)
+    prop(atmosphere, "float", "Haze", 1.3)
+    color_prop(atmosphere, "Color", (116, 131, 137))
+    color_prop(atmosphere, "Decay", (43, 33, 31))
     grading = item(lighting, "ColorCorrectionEffect", "ColdShadowsWarmLights")
-    color_prop(grading, "TintColor", (225, 233, 237))
-    prop(grading, "float", "Contrast", 0.12)
-    prop(grading, "float", "Saturation", -0.24)
+    color_prop(grading, "TintColor", (233, 235, 231))
+    prop(grading, "float", "Contrast", 0.17)
+    prop(grading, "float", "Saturation", -0.13)
     bloom = item(lighting, "BloomEffect", "WarmBloom")
-    prop(bloom, "float", "Intensity", 0.37)
-    prop(bloom, "float", "Size", 26)
-    prop(bloom, "float", "Threshold", 1.6)
+    prop(bloom, "float", "Intensity", 0.23)
+    prop(bloom, "float", "Size", 19)
+    prop(bloom, "float", "Threshold", 1.8)
+    dof = item(lighting, "DepthOfFieldEffect", "HotelDepth")
+    prop(dof, "float", "FarIntensity", 0.16)
+    prop(dof, "float", "NearIntensity", 0.03)
+    prop(dof, "float", "FocusDistance", 24)
+    prop(dof, "float", "InFocusRadius", 17)
 
     server_service = item(root, "ServerScriptService", "ServerScriptService")
     server_script = item(server_service, "Script", "NocturneServer")
