@@ -156,15 +156,18 @@ def preview_room(workspace: ET.Element) -> None:
         part(room, "Wardrobe roof", (3.05, 0.24, 3.9),
              (x, 8.52, dz), (25, 20, 22), "wood")
         for leaf_side in (-1, 1):
-            leaf_z = dz + leaf_side * 0.87
-            part(room, "Carved wardrobe leaf", (0.18, 8.05, 1.74),
-                 (x - side * 1.52, 4.14, leaf_z), (44, 31, 29), "wood")
-            for j in range(8):
-                part(room, "Inset wardrobe louvre", (0.12, 0.31, 1.48),
-                     (x - side * 1.66, 0.79 + (j + 1) * 0.78, leaf_z),
+            leaf_z = dz + leaf_side * 1.17
+            part(room, "Lower wardrobe panel", (0.18, 2.0, 1.32),
+                 (x - side * 1.52, 1.42, leaf_z), (44, 31, 29), "wood")
+            for offset in (-0.57, 0.57):
+                part(room, "Wardrobe vertical stile", (0.18, 8.05, 0.17),
+                     (x - side * 1.52, 4.14, leaf_z + offset), (44, 31, 29), "wood")
+            for j in range(1, 8):
+                part(room, "Spaced wardrobe louvre", (0.13, 0.22, 1.14),
+                     (x - side * 1.66, 2.35 + j * 0.68, leaf_z),
                      (72, 51, 40), "wood")
             for height in (0.63, 7.65):
-                part(room, "Carved leaf rail", (0.18, 0.26, 1.76),
+                part(room, "Carved leaf rail", (0.18, 0.26, 1.32),
                      (x - side * 1.68, height, leaf_z), (83, 66, 49), "wood")
             part(room, "Wardrobe handle", (0.2, 0.73, 0.27),
                  (x - side * 1.77, 4.2, dz + leaf_side * 0.23), brass, "metal")

@@ -15,6 +15,7 @@ math.clamp = function(v, low, high) return math.max(low, math.min(high, v)) end
 local vectorMeta = {
     __add=function(a,b) return Vector3.new(a.X+b.X,a.Y+b.Y,a.Z+b.Z) end,
     __sub=function(a,b) return Vector3.new(a.X-b.X,a.Y-b.Y,a.Z-b.Z) end,
+    __div=function(a,b) return Vector3.new(a.X/b,a.Y/b,a.Z/b) end,
     __mul=function(a,b)
         if type(a)=="number" then return Vector3.new(a*b.X,a*b.Y,a*b.Z) end
         return Vector3.new(b*a.X,b*a.Y,b*a.Z)
@@ -25,7 +26,9 @@ Vector3={new=function(x,y,z) return setmetatable({X=x or 0,Y=y or 0,Z=z or 0},ve
 local cfMeta={__mul=function(a,b) return CFrame.new(a.Position+b.Position) end}
 CFrame={new=function(x,y,z)
     return setmetatable({Position=type(x)=="table" and x or Vector3.new(x,y,z)}, cfMeta)
-end, Angles=function() return CFrame.new() end}
+end, Angles=function() return CFrame.new() end,
+lookAt=function(a) return CFrame.new(a) end}
+Color3={fromRGB=function(r,g,b) return {R=r/255,G=g/255,B=b/255} end}
 Enum=setmetatable({}, {__index=function(t,k)
     local values=setmetatable({}, {__index=function(v,key)
         local item={Name=key,Value=200}; rawset(v,key,item); return item end})
@@ -62,12 +65,28 @@ function methods:IsA(class)
         or (class=="JointInstance" and self._class=="Motor6D")
 end
 function methods:GetAttribute(name) return self._attributes[name] end
-function methods:SetAttribute(name,value) self._attributes[name]=value end
+function methods:GetAttributeChangedSignal(name)
+    self._attributeSignals[name]=self._attributeSignals[name] or signal()
+    return self._attributeSignals[name]
+end
+function methods:SetAttribute(name,value)
+    self._attributes[name]=value
+    if self._attributeSignals[name] then self._attributeSignals[name]:Fire() end
+end
 function methods:Destroy() self.Parent=nil end
+function methods:PivotTo(cf)
+    local previous=self.WorldPivot or CFrame.new()
+    local shift=cf.Position-previous.Position
+    for _,piece in ipairs(self:GetDescendants()) do
+        if piece:IsA("BasePart") then piece.CFrame=CFrame.new(piece.Position+shift) end
+    end
+    self.WorldPivot=cf
+end
 function methods:Clone()
     local result=Instance.new(self._class)
     for k,v in pairs(self) do
-        if k~="_class" and k~="_children" and k~="_attributes" and k~="_parent" then result[k]=v end
+        if k~="_class" and k~="_children" and k~="_attributes" and k~="_attributeSignals"
+            and k~="_parent" and k~="CharacterAdded" and k~="CharacterAppearanceLoaded" then result[k]=v end
     end
     for _,child in ipairs(self:GetChildren()) do child:Clone().Parent=result end
     return result
@@ -86,7 +105,7 @@ local meta={
     end,
 }
 Instance={new=function(class)
-    return setmetatable({_class=class,_children={},_attributes={},Name=class,
+    return setmetatable({_class=class,_children={},_attributes={},_attributeSignals={},Name=class,
         CharacterAdded=signal(),CharacterAppearanceLoaded=signal()},meta)
 end}
 local player=Instance.new("Player")
@@ -148,58 +167,96 @@ assert(camera.CameraType==Enum.CameraType.Custom and camera.CameraSubject==human
     "camera bootstrap not attached to the real Humanoid")
 local display=camera:FindFirstChild("AvatarArmsFirstPerson")
 assert(display and #display:GetChildren()==6 and not realArm.Archivable,
-    "copies of a real R15 avatar were not made or original flags were changed")
+    "copies of real R15 avatar limbs were not made")
 local original=root.CFrame
 runService.render(0.016)
 assert(root.CFrame==original and not root.Anchored and realArm.LocalTransparencyModifier==1,
     "bootstrap moved or faded the PHYSICAL character")
-local visible,inFrame=0,0
-local vertical=math.tan(math.rad(camera.FieldOfView/2))
 for _,part in ipairs(display:GetChildren()) do
-    assert(part.Anchored and not part.CanCollide and not part.CanTouch and not part.CanQuery
-        and part.LocalTransparencyModifier==0 and not part:FindFirstChildOfClass("Motor6D"),
-        "camera copies must stay visible and nonphysical, without cloned joints")
-    if part.Transparency==0 then visible=visible+1 end
-    local relative=part.Position-camera.CFrame.Position
-    if relative.Z< -0.2 and math.abs(relative.Y)< -relative.Z*vertical then inFrame=inFrame+1 end
+    assert(part.Transparency==1, "avatar hands appeared BEFORE taking a key")
 end
-assert(visible==6 and inFrame>=2,
-    "hands exist but were BELOW the first-person viewport")
-camera.ViewportSize={X=380,Y=780}
+assert(not display:FindFirstChild("Key in avatar hand"), "key appeared before pickup")
+player:SetAttribute("HeldKey",5) -- server confirmed taking the physical key from a drawer
+local realKey=Instance.new("Model")
+realKey.Name="HeldKey"
+realKey.Parent=character
+local realBow=Instance.new("Part")
+realBow.Name="Brass key bow"
+realBow.CFrame=CFrame.new(0,4,10)
+realBow.LocalTransparencyModifier=0
+realBow.Parent=realKey
 runService.render(0.016)
-local portraitHands=0
-local horizontal=vertical*(camera.ViewportSize.X/camera.ViewportSize.Y)
+local key=display:FindFirstChild("Key in avatar hand")
+assert(key and #key:GetDescendants()>=10 and realBow.LocalTransparencyModifier==1,
+    "hand-held key not rendered first person / real one clips into owner camera")
+local vertical=math.tan(math.rad(camera.FieldOfView/2))
+local visible,inFrame=0,0
 for _,part in ipairs(display:GetChildren()) do
-    local relative=part.Position-camera.CFrame.Position
-    if part.Name=="LeftHand" or part.Name=="RightHand" then
-        if math.abs(relative.X)< -relative.Z*horizontal then portraitHands=portraitHands+1 end
+    if part:IsA("BasePart") then
+        assert(part.Anchored and not part.CanCollide and not part.CanTouch and not part.CanQuery
+            and part.LocalTransparencyModifier==0 and not part:FindFirstChildOfClass("Motor6D"),
+            "copied Roblox limbs became physical or lost their mesh")
+        if part.Transparency==0 then visible=visible+1 end
+        local v=part.Position-camera.CFrame.Position
+        if v.Z< -0.2 and math.abs(v.Y)< -v.Z*vertical then inFrame=inFrame+1 end
     end
 end
-assert(portraitHands==2, "phone portrait viewport cropped both avatar hands")
+assert(visible==6 and inFrame>=2, "key-only hands are out of frame")
+local right=display:FindFirstChild("RightHand")
+local firstY=right.Position.Y
+runService.render(0.30)
+assert(right.Position.Y>firstY+0.15, "key pickup did not raise the same Roblox hand and key")
+player:SetAttribute("KeyTurning",true)
+local beforeTurn=right.Position.Y
+runService.render(0.3)
+assert(right.Position.Y>beforeTurn+0.15 and key.WorldPivot.Position.Y>camera.CFrame.Position.Y-0.6,
+    "key was not lifted in the hand when turning the door lock")
+player:SetAttribute("KeyTurning",false)
+camera.ViewportSize={X=380,Y=780}
+runService.render(0.016)
+local horizontal=vertical*(camera.ViewportSize.X/camera.ViewportSize.Y)
+local portrait=0
+for _,name in ipairs({"LeftHand","RightHand"}) do
+    local part=display:FindFirstChild(name)
+    local v=part.Position-camera.CFrame.Position
+    if v.Z<0 and math.abs(v.X)< -v.Z*horizontal then portrait=portrait+1 end
+end
+assert(portrait==2, "phone portrait cropped the SMALL key-only Roblox hands")
 camera.ViewportSize={X=1920,Y=1080}
 player.CameraMode=Enum.CameraMode.Classic
 camera.CameraType=Enum.CameraType.Fixed
 camera.CameraSubject=nil
 runService.render(0.016)
 assert(player.CameraMode==Enum.CameraMode.LockFirstPerson and camera.CameraType==Enum.CameraType.Custom
-    and camera.CameraSubject==human, "a changed camera did not return to real first person")
+    and camera.CameraSubject==human, "native camera no longer follows real Humanoid")
 player:SetAttribute("Hidden",true)
 camera.CameraType=Enum.CameraType.Scriptable
 runService.render(0.016)
-assert(camera.CameraType==Enum.CameraType.Scriptable and display:FindFirstChild("LeftHand").Transparency==1,
-    "first-person bootstrap overrode the wardrobe peek")
+assert(camera.CameraType==Enum.CameraType.Scriptable and right.Transparency==1
+    and key:FindFirstChild("Forged key shaft").Transparency==1,
+    "wardrobe camera did not hide the arms and key")
 player:SetAttribute("Hidden",false)
 runService.render(0.016)
-assert(camera.CameraType==Enum.CameraType.Custom and display:FindFirstChild("LeftHand").Transparency==0,
-    "native camera/hands did not recover after leaving the wardrobe")
+assert(camera.CameraType==Enum.CameraType.Custom and right.Transparency==0,
+    "native camera/hands did not recover after wardrobe")
+player:SetAttribute("HeldKey",nil)
+runService.render(0.016)
+assert(not display:FindFirstChild("Key in avatar hand") and right.Transparency==1,
+    "key or hands remain onscreen after using the key")
 local nextAvatar,nextHuman,nextRoot=avatar("R6")
 player.Character=nextAvatar
 player.CharacterAdded:Fire(nextAvatar)
 player.CharacterAppearanceLoaded:Fire(nextAvatar)
 runService.render(0.016)
 assert(camera.CameraSubject==nextHuman and #display:GetChildren()==2
-    and display:FindFirstChild("Left Arm") and not nextRoot.Anchored,
-    "R6 respawn left the player without visible Roblox arms")
+    and display:FindFirstChild("Left Arm") and not nextRoot.Anchored
+    and display:FindFirstChild("Right Arm").Transparency==1,
+    "R6 respawn has floating arms before the next key")
+player:SetAttribute("HeldKey",9)
+runService.render(0.016)
+assert(display:FindFirstChild("Key in avatar hand")
+    and display:FindFirstChild("Right Arm").Transparency==0,
+    "R6 cannot lift a found key using its real Roblox arm")
 local replacement=Instance.new("Camera")
 replacement.CFrame=CFrame.new(0,3,0)
 replacement.FieldOfView=73
@@ -209,7 +266,7 @@ workspace.CurrentCamera=replacement
 runService.render(0.016)
 assert(display.Parent==replacement and replacement.CameraSubject==nextHuman
     and replacement.CameraType==Enum.CameraType.Custom,
-    "camera replacement detached the camera-local hands")
+    "camera replacement detached key-only avatar arms")
 return true
 `;
 const state = lauxlib.luaL_newstate();
@@ -222,4 +279,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Independent first-person test failed: ${message}\n${nearby}`);
 }
-console.log("Perspective smoke test OK without HUD/remote: native Humanoid camera, R15/R6 limbs within FOV, wardrobe and respawn");
+console.log("Perspective smoke test OK: native R6/R15 arms hidden without key, compact carried key and raise/turn poses, wardrobe and respawn");
