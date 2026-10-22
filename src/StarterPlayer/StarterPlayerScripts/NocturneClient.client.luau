@@ -1,10 +1,12 @@
 -- NOCTURNE / HUD, hiding treatment, light and close-up scares.
--- The separate NocturnePerspective script owns native first-person and copies
--- real avatar limbs, even if this larger HUD script cannot start.
+-- The separate NocturnePerspective script owns native first-person and poses
+-- the actual Roblox arm, even if this larger HUD script cannot start.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -18,7 +20,21 @@ local GOLD = Color3.fromRGB(216, 174, 113)
 local PALE = Color3.fromRGB(218, 228, 221)
 local RED = Color3.fromRGB(196, 62, 55)
 local DARK = Color3.fromRGB(8, 11, 16)
+local SLOT_IDS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}
+local SLOT_NAMES = {"ФОНАРЬ", "ТАБЛЕТКИ", "КРЕСТ", "ПЛАСТЫРЬ", "АПТЕЧКА"}
+local SLOT_GLYPHS = {"✦", "◆", "✝", "▣", "✚"}
+local SLOT_COLORS = {GOLD, Color3.fromRGB(151, 191, 165), PALE,
+	Color3.fromRGB(221, 179, 154), Color3.fromRGB(184, 203, 213)}
+local counts = {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
+local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
+local function hideRobloxBackpack()
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+	end)
+end
+hideRobloxBackpack()
 
 -- No instructions, objectives, danger text or full-screen warning flashes.
 -- The only in-world UI is a small stamina line and an aim point; native
@@ -103,6 +119,71 @@ staminaTrack.ZIndex = 4
 local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1),
 	UDim2.fromScale(0, 0), PALE, 0)
 staminaFill.ZIndex = 5
+local healthTrack = frame(ui, "Health track", UDim2.fromOffset(108, 4),
+	UDim2.new(0, 18, 1, -43), RED, 0.76)
+healthTrack.ZIndex = 4
+local healthFill = frame(healthTrack, "Health", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), RED, 0)
+healthFill.ZIndex = 5
+
+-- Five handmade slots sit where Roblox's default Backpack would be. This is
+-- not the built-in inventory in disguise: server snapshots own every count.
+local equipment = frame(ui, "Equipment bar", UDim2.new(0.92, 0, 0, 90),
+	UDim2.new(0.5, 0, 1, -9), Color3.fromRGB(17, 20, 23), 0.16)
+equipment.AnchorPoint = Vector2.new(0.5, 1)
+equipment.ZIndex = 6
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 10)
+barCorner.Parent = equipment
+local barEdge = Instance.new("UIStroke")
+barEdge.Color = GOLD
+barEdge.Transparency = 0.48
+barEdge.Thickness = 1
+barEdge.Parent = equipment
+local inventorySlots = {}
+local selectSlot -- bound below, after the server-owned torch control
+for index, id in ipairs(SLOT_IDS) do
+	local tile = button(equipment, "Slot " .. id, "", UDim2.new(0.177, 0, 0, 74),
+		UDim2.new(0.013 + (index - 1) * 0.201, 0, 0, 8))
+	tile.ZIndex = 7
+	tile.BackgroundColor3 = Color3.fromRGB(28, 32, 35)
+	local numeral = label(tile, "Number", tostring(index), UDim2.new(0, 18, 0, 16),
+		UDim2.fromOffset(5, 2), Enum.Font.GothamMedium, 11, GOLD)
+	numeral.ZIndex = 8
+	local glyph = label(tile, "Item symbol", SLOT_GLYPHS[index], UDim2.new(1, 0, 0, 39),
+		UDim2.fromOffset(0, 7), Enum.Font.Garamond, 34, SLOT_COLORS[index], Enum.TextXAlignment.Center)
+	glyph.ZIndex = 8
+	local title = label(tile, "Item name", SLOT_NAMES[index], UDim2.new(1, -4, 0, 15),
+		UDim2.new(0, 2, 1, -18), Enum.Font.GothamMedium, 10, PALE, Enum.TextXAlignment.Center)
+	title.ZIndex = 8
+	local count = label(tile, "Count", "", UDim2.fromOffset(28, 16),
+		UDim2.new(1, -31, 0, 2), Enum.Font.GothamBold, 12, PALE, Enum.TextXAlignment.Right)
+	count.ZIndex = 8
+	local battery = frame(tile, "Charge", UDim2.new(1, -8, 0, 2),
+		UDim2.new(0, 4, 1, -2), GOLD, 0.1)
+	battery.ZIndex = 9
+	battery.Visible = false
+	inventorySlots[index] = {tile = tile, count = count, glyph = glyph, charge = battery}
+	tile.MouseButton1Click:Connect(function() if selectSlot then selectSlot(index, true) end end)
+end
+local wallet = label(ui, "Wallet", "◉ 0   ▤ 0   ▰ 0", UDim2.fromOffset(260, 23),
+	UDim2.new(0.5, 0, 1, -105), Enum.Font.GothamMedium, 15, GOLD, Enum.TextXAlignment.Center)
+wallet.AnchorPoint = Vector2.new(0.5, 1)
+wallet.ZIndex = 7
+local function redrawEquipment()
+	for index, id in ipairs(SLOT_IDS) do
+		local slot = inventorySlots[index]
+		local amount = counts[id] or 0
+		slot.count.Text = amount > 0 and ("×" .. amount) or ""
+		slot.glyph.TextTransparency = amount > 0 and 0 or 0.73
+		slot.tile.BackgroundColor3 = selected == index and Color3.fromRGB(64, 52, 43)
+			or Color3.fromRGB(28, 32, 35)
+		slot.charge.Visible = id == "FLASHLIGHT" and amount > 0
+		slot.charge.Size = UDim2.new(math.max(0, charge) / 100, -8, 0, 2)
+		slot.charge.BackgroundColor3 = charge < 20 and RED or GOLD
+	end
+end
+redrawEquipment()
 local reticle = frame(ui, "Reticle", UDim2.fromOffset(3, 3),
 	UDim2.fromScale(0.5, 0.5), PALE, 0.25)
 reticle.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -138,6 +219,61 @@ local scareVeil = frame(scare, "Split second red flash", UDim2.fromScale(1, 1),
 scareVeil.ZIndex = 20
 local scareToken = 0
 
+local spiderView = Instance.new("ViewportFrame")
+spiderView.Name = "Jumping spider"
+spiderView.Size = UDim2.fromScale(0.46, 0.48)
+spiderView.AnchorPoint = Vector2.new(0.5, 0.5)
+spiderView.Position = UDim2.fromScale(0.5, 0.58)
+spiderView.BackgroundTransparency = 1
+spiderView.Ambient = Color3.fromRGB(138, 125, 110)
+spiderView.LightColor = PALE
+spiderView.ZIndex = 17
+spiderView.Visible = false
+spiderView.Parent = ui
+local spiderWorld = Instance.new("WorldModel")
+spiderWorld.Parent = spiderView
+local spiderCamera = Instance.new("Camera")
+spiderCamera.FieldOfView = 55
+spiderCamera.Parent = spiderView
+spiderView.CurrentCamera = spiderCamera
+local spiderToken = 0
+local function showSpider(source)
+	spiderToken = spiderToken + 1
+	local token = spiderToken
+	for _, child in ipairs(spiderWorld:GetChildren()) do child:Destroy() end
+	local replica = source and source:IsA("Model") and source:Clone()
+	if not replica then
+		replica = Instance.new("Model")
+		replica.Name = "DrawerSpider"
+		local body = Instance.new("Part")
+		body.Name = "Hairy abdomen"
+		body.Size = Vector3.new(0.6, 0.35, 0.6)
+		body.Shape = Enum.PartType.Ball
+		body.Color = DARK
+		body.Anchored = true
+		body.CFrame = CFrame.new()
+		body.Parent = replica
+		replica.PrimaryPart = body
+	end
+	replica.Parent = spiderWorld
+	replica:PivotTo(CFrame.new())
+	spiderView.Visible = true
+	spiderView.Size = UDim2.fromScale(0.12, 0.13)
+	spiderCamera.CFrame = CFrame.lookAt(Vector3.new(0, 0.15, -5), Vector3.new())
+	TweenService:Create(spiderView, TweenInfo.new(0.29, Enum.EasingStyle.Quart,
+		Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.67, 0.70)}):Play()
+	TweenService:Create(spiderCamera, TweenInfo.new(0.29, Enum.EasingStyle.Quart,
+		Enum.EasingDirection.In), {
+		CFrame = CFrame.lookAt(Vector3.new(0, 0.15, -0.85), Vector3.new()),
+		FieldOfView = 62,
+	}):Play()
+	task.delay(0.67, function()
+		if spiderToken ~= token then return end
+		spiderView.Visible = false
+		replica:Destroy()
+	end)
+end
+
 -- These dark edges frame the actual open sightline through the slatted
 -- wardrobe doors. They do NOT cover the centre or draw advice over a monster.
 local leftPanel = frame(ui, "Left wardrobe edge", UDim2.fromScale(0, 1), UDim2.fromScale(0, 0),
@@ -154,6 +290,26 @@ for _, panel in ipairs({leftPanel, rightPanel}) do
 		strip.ZIndex = 13
 	end
 end
+
+-- After lingering in a wardrobe, a local blur and thin interference lines
+-- cloud the actual sightline, without covering it or writing a warning.
+local shelterBlur = Instance.new("BlurEffect")
+shelterBlur.Name = "Wardrobe eyestrain"
+shelterBlur.Size = 0
+shelterBlur.Parent = Lighting
+local shelterColor = Instance.new("ColorCorrectionEffect")
+shelterColor.Name = "Wardrobe desaturation"
+shelterColor.Saturation = 0
+shelterColor.Contrast = 0
+shelterColor.Parent = Lighting
+local interference = {}
+for i = 1, 8 do
+	local line = frame(ui, "Sight interference", UDim2.new(1, 0, 0, i % 3 + 1),
+		UDim2.fromScale(0, i / 9), Color3.fromRGB(201, 213, 207), 1)
+	line.ZIndex = 14
+	interference[i] = line
+end
+local closetPressure, visualPressure = 0, 0
 
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
@@ -182,7 +338,11 @@ crouchButton.Visible = isTouch
 local lightButton = button(ui, "Mobile torch", "☼", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -153))
 lightButton.ZIndex = 18
-lightButton.Visible = isTouch
+lightButton.Visible = false -- there is no starting flashlight
+local useButton = button(ui, "Use selected item", "◆", UDim2.fromOffset(77, 53),
+	UDim2.new(1, -99, 1, -339))
+useButton.ZIndex = 18
+useButton.Visible = isTouch
 local exitButton = button(ui, "Leave wardrobe", "↩", UDim2.fromOffset(105, 52),
 	UDim2.new(1, -124, 1, -222))
 exitButton.ZIndex = 18
@@ -194,9 +354,8 @@ exitButton.Visible = false
 -- Studio cannot reliably read local built-in sound files. Do not create or
 -- preload failing Sound instances; threats are intentionally signalled visually.
 
--- Keep the real character and its collisions untouched. Roblox's first-person
--- CameraModule fades the body locally; we display ONLY non-colliding copies of
--- its own textured limbs. Never fade the whole avatar or move its root here.
+-- Keep the real character and its collisions untouched. The separate native
+-- perspective controller locally reveals only its ordinary key-holding arm.
 local peekCF = nil
 local root = nil
 local humanoid = nil
@@ -205,7 +364,6 @@ local hidden = false
 local dead = false
 local finished = false
 local elapsed = 0
-local flashlightOn = true
 local sprinting = false
 local crouching = false
 
@@ -247,17 +405,40 @@ local function setCrouch(on)
 	remote:FireServer("Crouch", on)
 end
 local function toggleTorch()
+	if hidden or dead or finished or not hasFlashlight or charge <= 0 then return end
+	if selected ~= 1 then
+		selected = 1
+		remote:FireServer("Select", 1)
+		redrawEquipment()
+	end
+	remote:FireServer("Torch", not flashlightOn) -- server confirms via TorchOn attribute
+end
+selectSlot = function(index, tapped)
+	if hidden or dead or finished or not SLOT_IDS[index] then return end
+	if tapped and selected == index and (counts[SLOT_IDS[index]] or 0) > 0 then
+		if index == 1 then toggleTorch()
+		elseif index ~= 3 then remote:FireServer("Use", SLOT_IDS[index]) end
+		return
+	end
+	selected = index
+	remote:FireServer("Select", index)
+	redrawEquipment()
+end
+local function useSelected()
 	if hidden or dead or finished then return end
-	flashlightOn = not flashlightOn
-	torch.Enabled = flashlightOn
-	remote:FireServer("Torch", flashlightOn)
+	if selected == 1 then toggleTorch()
+	elseif selected ~= 3 and (counts[SLOT_IDS[selected]] or 0) > 0 then
+		remote:FireServer("Use", SLOT_IDS[selected])
+	end
 end
 local function fallbackScareFace(kind)
+	-- Streaming/order-of-replication fallback. Even without the source model,
+	-- the final room and death scene show the same huge hollow orbital rings.
 	local model = Instance.new("Model")
 	model.Name = "Last glimpse of " .. tostring(kind)
-	local color = kind == "MOTH" and Color3.fromRGB(149, 183, 167)
-		or kind == "BLIND" and Color3.fromRGB(195, 194, 177)
-		or Color3.fromRGB(114, 105, 97)
+	local color = kind == "MOTH" and Color3.fromRGB(177, 187, 175)
+		or kind == "BLIND" and Color3.fromRGB(196, 199, 182)
+		or Color3.fromRGB(207, 207, 189)
 	local function oval(name, size, cf, tint)
 		local part = Instance.new("Part")
 		part.Name = name
@@ -271,46 +452,116 @@ local function fallbackScareFace(kind)
 		part.Parent = model
 		return part
 	end
-	local face = oval("Last mask", Vector3.new(2.7, 3.5, 1.45), CFrame.new(0, 2.7, 0), color)
-	model.PrimaryPart = face
+	local body = oval("A body in the dark", Vector3.new(1.6, 4.3, 1),
+		CFrame.new(0, -0.3, 0.5), Color3.fromRGB(19, 23, 25))
+	model.PrimaryPart = body
+	oval("Last mask", Vector3.new(2.55, 3.22, 1.28), CFrame.new(0, 3.32, -0.47), color)
 	for _, side in ipairs({-1, 1}) do
-		oval("Hollow eye", Vector3.new(0.7, 0.78, 0.18),
-			CFrame.new(side * 0.67, 3.05, -0.7), DARK)
-		oval("Hairline shadow", Vector3.new(0.27, 1.2, 0.16),
-			CFrame.new(side * 0.7, 2.3, -0.58), RED)
+		oval("Continuous pale eye surround", Vector3.new(1.22, 1.35, 0.12),
+			CFrame.new(side * 0.63, 3.59, -1.12), color)
+		oval("Black orbital hollow", Vector3.new(0.98, 1.15, 0.15),
+			CFrame.new(side * 0.63, 3.59, -1.19), DARK)
+		for bead = 1, 14 do
+			local theta = bead * 2 * math.pi / 14
+			oval("Pale orbital rim", Vector3.new(0.15, 0.18, 0.13),
+				CFrame.new(side * 0.63 + math.cos(theta) * 0.45,
+					3.59 + math.sin(theta) * 0.52, -1.25), color)
+		end
+		oval("Black pupil", Vector3.new(0.58, 0.7, 0.12),
+			CFrame.new(side * 0.63, 3.57, -1.31), DARK)
 	end
-	oval("Open jaw", Vector3.new(0.8, 0.8, 0.2), CFrame.new(0, 1.82, -0.73), DARK)
+	oval("Still mouth", Vector3.new(0.83, 0.18, 0.13), CFrame.new(0, 2.53, -1.14), DARK)
 	return model
+end
+local function fallbackMothSwarm()
+	local swarm = Instance.new("Model")
+	swarm.Name = "Last glimpse of MOTH"
+	for i = 1, 14 do
+		local x = math.sin(i * 2.4) * 1.15
+		local y = math.cos(i * 1.8) * 0.85
+		local z = math.sin(i * 1.4) * 0.35
+		local body = Instance.new("Part")
+		body.Name = "Tiny moth thorax"
+		body.Shape = Enum.PartType.Ball
+		body.Size = Vector3.new(0.20, 0.18, 0.3)
+		body.Color = Color3.fromRGB(36, 43, 41)
+		body.Anchored = true
+		body.CanCollide = false
+		body.CFrame = CFrame.new(x, y, z)
+		body.Parent = swarm
+		if i == 1 then swarm.PrimaryPart = body end
+		for _, side in ipairs({-1, 1}) do
+			local wing = body:Clone()
+			wing.Name = "Veined wing"
+			wing.Size = Vector3.new(0.45, 0.04, 0.29)
+			wing.Color = Color3.fromRGB(185, 200, 181)
+			wing.Material = Enum.Material.Glass
+			wing.Transparency = 0.3
+			wing.CFrame = CFrame.new(x + side * 0.27, y + 0.08, z)
+			wing.Parent = swarm
+		end
+	end
+	return swarm
 end
 local function showScare(kind, source)
 	scareToken = scareToken + 1
 	local token = scareToken
 	reticle.Visible = false
 	scare.Visible = true
-	scareVeil.BackgroundTransparency = 0.1
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
 	local monster = source
 	if not monster or not monster:IsA("Model") then
 		local world = Workspace:FindFirstChild("NocturneWorld")
-		local names = {RUSH = "TheRush", BLIND = "TheBlindGuest", MOTH = "ThePaleMoth"}
+		local names = {RUSH = "TheRush", BLIND = "TheBlindGuest", ECHO = "TheEcho",
+			MOTH = "ThePaleMoth", FINAL = "TheLastWitness"}
 		monster = world and world:FindFirstChild(names[kind] or "", true)
 	end
 	local copy = monster and monster:Clone()
-	if not copy then copy = fallbackScareFace(kind) end
+	if not copy then copy = kind == "MOTH" and fallbackMothSwarm() or fallbackScareFace(kind) end
 	copy.Parent = scareWorld
 	copy:PivotTo(CFrame.new(0, -0.15, 0))
-	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(65, 101, 87)
-		or kind == "BLIND" and Color3.fromRGB(95, 109, 99)
-		or Color3.fromRGB(124, 53, 49)
-	scareCamera.FieldOfView = 52
-	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, 2.75, -9.5), Vector3.new(0, 2.45, 0))
-	TweenService:Create(scareCamera, TweenInfo.new(0.43, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-		{CFrame = CFrame.lookAt(Vector3.new(0, 2.65, -2.3), Vector3.new(0, 2.5, 0))}):Play()
-	TweenService:Create(scareVeil, TweenInfo.new(0.17), {BackgroundTransparency = 0.86}):Play()
-	task.delay(0.26, function()
+	local eyeY = kind == "FINAL" and 3.93 or kind == "BLIND" and 3.75
+		or kind == "MOTH" and 0 or 3.5
+	local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+	local aspect = viewport.X / math.max(1, viewport.Y)
+	-- Keep BOTH dark eyes in frame on a tall phone as well as a wide monitor.
+	-- A fixed -2.4 close-up cropped the entire mask to its nose on mobile.
+	local nearDistance = math.clamp(1.4 + 1.23 / (math.tan(math.rad(20))
+		* math.max(0.42, aspect)), 3.1, 11)
+	local farDistance = math.max(10.5, nearDistance + 5)
+	scareView.Ambient = kind == "MOTH" and Color3.fromRGB(124, 150, 140)
+		or kind == "RUSH" and Color3.fromRGB(137, 144, 146)
+		or Color3.fromRGB(157, 161, 151)
+	scareView.LightColor = Color3.fromRGB(243, 234, 211)
+	scareVeil.BackgroundColor3 = kind == "FINAL" and Color3.fromRGB(214, 225, 213)
+		or kind == "MOTH" and Color3.fromRGB(129, 171, 154)
+		or kind == "RUSH" and Color3.fromRGB(126, 141, 151)
+		or Color3.fromRGB(177, 190, 181)
+	scareVeil.BackgroundTransparency = 0.78
+	-- Hold the distant silhouette for a heartbeat, then snap to a face that
+	-- fills the screen. Two SHORT flashes and a clear hold replace a red wash
+	-- that used to cover the monster before the retry card appeared.
+	scareCamera.FieldOfView = 58
+	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
+		Vector3.new(0, eyeY, 0))
+	task.delay(0.28, function()
 		if token ~= scareToken then return end
-		scareVeil.BackgroundTransparency = 0.15
-		TweenService:Create(scareVeil, TweenInfo.new(0.3), {BackgroundTransparency = 0.93}):Play()
+		scareVeil.BackgroundTransparency = 0.12
+		TweenService:Create(scareCamera,
+			TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+			{CFrame = CFrame.lookAt(Vector3.new(0.12, eyeY + 0.16, -nearDistance - 0.4),
+				Vector3.new(0, eyeY, -0.2)), FieldOfView = 44}):Play()
+		TweenService:Create(scareVeil, TweenInfo.new(0.12),
+			{BackgroundTransparency = 0.93}):Play()
+	end)
+	task.delay(0.61, function()
+		if token ~= scareToken then return end
+		scareVeil.BackgroundTransparency = 0.38
+		TweenService:Create(scareVeil, TweenInfo.new(0.15),
+			{BackgroundTransparency = 0.96}):Play()
+		TweenService:Create(scareCamera, TweenInfo.new(0.12),
+			{CFrame = CFrame.lookAt(Vector3.new(-0.14, eyeY + 0.03, -nearDistance),
+				Vector3.new(0, eyeY, -0.3)), FieldOfView = 40}):Play()
 	end)
 end
 local function showEnd(win)
@@ -345,6 +596,7 @@ sprintButton.MouseButton1Up:Connect(function() setSprint(false) end)
 sprintButton.MouseLeave:Connect(function() if isTouch then setSprint(false) end end)
 crouchButton.MouseButton1Click:Connect(function() setCrouch(not crouching) end)
 lightButton.MouseButton1Click:Connect(toggleTorch)
+useButton.MouseButton1Click:Connect(useSelected)
 exitButton.MouseButton1Click:Connect(function() remote:FireServer("Exit") end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -363,6 +615,17 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		setCrouch(not crouching)
 	elseif input.KeyCode == Enum.KeyCode.F or input.KeyCode == Enum.KeyCode.ButtonY then
 		toggleTorch()
+	elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonR1 then
+		useSelected()
+	elseif input.KeyCode == Enum.KeyCode.DPadLeft then
+		selectSlot((selected - 2) % #SLOT_IDS + 1)
+	elseif input.KeyCode == Enum.KeyCode.DPadRight then
+		selectSlot(selected % #SLOT_IDS + 1)
+	else
+		for index, code in ipairs({Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three,
+			Enum.KeyCode.Four, Enum.KeyCode.Five}) do
+			if input.KeyCode == code then selectSlot(index); break end
+		end
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -378,6 +641,24 @@ player:GetAttributeChangedSignal("Stamina"):Connect(function()
 	staminaFill.Size = UDim2.fromScale(stamina / 100, 1)
 	staminaFill.BackgroundColor3 = stamina < 20 and RED or PALE
 end)
+player:GetAttributeChangedSignal("Health"):Connect(function()
+	healthFill.Size = UDim2.fromScale(math.clamp(player:GetAttribute("Health") or 100, 0, 100) / 100, 1)
+end)
+player:GetAttributeChangedSignal("TorchOn"):Connect(function()
+	flashlightOn = player:GetAttribute("TorchOn") == true
+	torch.Enabled = flashlightOn and not hidden and not dead and not finished
+end)
+player:GetAttributeChangedSignal("HasFlashlight"):Connect(function()
+	hasFlashlight = player:GetAttribute("HasFlashlight") == true
+	lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
+end)
+player:GetAttributeChangedSignal("TorchCharge"):Connect(function()
+	charge = player:GetAttribute("TorchCharge") or 0
+	redrawEquipment()
+end)
+player:GetAttributeChangedSignal("ClosetPressure"):Connect(function()
+	closetPressure = math.clamp((player:GetAttribute("ClosetPressure") or 0) / 100, 0, 1)
+end)
 
 local function restoreCamera()
 	camera = Workspace.CurrentCamera
@@ -389,8 +670,21 @@ local function restoreCamera()
 end
 
 remote.OnClientEvent:Connect(function(event, a, b, c)
-	if event == "State" then
+	if event == "Inventory" then
+		if type(a) ~= "table" then return end
+		counts = a.items or counts
+		selected = a.selected or selected
+		charge = a.charge or 0
+		hasFlashlight = (counts.FLASHLIGHT or 0) > 0
+		wallet.Text = string.format("◉ %d    ▤ %d    ▰ %d",
+			a.coins or 0, a.notes or 0, a.gold or 0)
+		healthFill.Size = UDim2.fromScale(math.clamp(a.health or 100, 0, 100) / 100, 1)
+		lightButton.Visible = isTouch and hasFlashlight and not hidden and not dead and not finished
+		redrawEquipment()
+	elseif event == "State" then
 		if not dead and not finished then modal.Visible = false end
+	elseif event == "Spider" then
+		if not dead and not finished then showSpider(a) end
 	elseif event == "Hide" then
 		hidden = a
 		player:SetAttribute("NocturnePeek", hidden)
@@ -418,7 +712,8 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		end
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
-		lightButton.Visible = not hidden and isTouch
+		useButton.Visible = not hidden and isTouch
+		lightButton.Visible = not hidden and isTouch and hasFlashlight
 	elseif event == "Jumpscare" then
 		showScare(a, b)
 	elseif event == "Death" then
@@ -426,7 +721,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			dead = true
 			setSprint(false)
 			local token = scareToken
-			task.delay(1.1, function()
+			task.delay(1.85, function()
 				if scareToken ~= token or not dead then return end
 				scare.Visible = false
 				showEnd(false)
@@ -434,7 +729,19 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 		else
 			showEnd(false)
 		end
+	elseif event == "Finale" then
+		finished = true
+		setSprint(false)
+		torch.Enabled = false
+		showScare("FINAL", a)
+		local token = scareToken
+		task.delay(2.4, function()
+			if scareToken ~= token or not finished then return end
+			scare.Visible = false
+			showEnd(true)
+		end)
 	elseif event == "Victory" then
+		-- Retain compatibility with older saves; this build uses the physical finale.
 		showEnd(true)
 	end
 end)
@@ -445,6 +752,7 @@ local function onCharacter(character)
 	local newHead = character:WaitForChild("Head", 8)
 	if player.Character ~= character then return end -- late appearance from a previous life
 	root, humanoid, head = newRoot, newHumanoid, newHead
+	hideRobloxBackpack()
 	hidden = false
 	peekCF = nil
 	dead = false
@@ -459,9 +767,13 @@ local function onCharacter(character)
 	modal.Visible = false
 	leftPanel.Size = UDim2.fromScale(0, 1)
 	rightPanel.Size = UDim2.fromScale(0, 1)
+	closetPressure, visualPressure = 0, 0
+	shelterBlur.Size = 0
+	shelterColor.Saturation = 0
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
-	lightButton.Visible = isTouch
+	useButton.Visible = isTouch
+	lightButton.Visible = isTouch and hasFlashlight
 	reticle.Visible = true
 	player:SetAttribute("NocturnePeek", false)
 	-- Native first person remains attached to the real Humanoid. The real
@@ -470,7 +782,10 @@ local function onCharacter(character)
 	player.CameraMaxZoomDistance = 0.5
 	restoreCamera()
 	torchMount.Parent = camera
-	remote:FireServer("Torch", flashlightOn)
+	flashlightOn = player:GetAttribute("TorchOn") == true
+	hasFlashlight = player:GetAttribute("HasFlashlight") == true
+	charge = player:GetAttribute("TorchCharge") or charge
+	remote:FireServer("Torch", false) -- no free light on respawn
 	setSprint(false)
 end
 player.CharacterAdded:Connect(onCharacter)
@@ -497,6 +812,19 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if not camera or not root or not humanoid or not root.Parent then return end
+	if hidden then
+		visualPressure = visualPressure + (closetPressure - visualPressure) * damp(6, dt)
+	else
+		visualPressure = math.max(0, visualPressure - dt * 0.72)
+	end
+	shelterBlur.Size = visualPressure * 13
+	shelterColor.Saturation = -visualPressure * 0.63
+	shelterColor.Contrast = visualPressure * 0.24
+	for index, line in ipairs(interference) do
+		line.BackgroundTransparency = 1 - visualPressure * (index % 2 == 0 and 0.13 or 0.21)
+		line.Position = UDim2.fromScale(math.sin(elapsed * (11 + index)) * visualPressure * 0.028,
+			(index + math.sin(elapsed * (4 + index)) * visualPressure * 0.8) / 9)
+	end
 	local pressure = 0
 	if hidden and peekCF then
 		-- The server still controls the threat. Measure its replicated model in
@@ -504,7 +832,7 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		-- the player breathes. The clear centre stays visible at all times.
 		local world = Workspace:FindFirstChild("NocturneWorld")
 		if world then
-			for _, name in ipairs({"TheRush", "TheBlindGuest", "ThePaleMoth"}) do
+			for _, name in ipairs({"TheRush", "TheEcho", "TheBlindGuest", "ThePaleMoth"}) do
 				local monster = world:FindFirstChild(name)
 				local body = monster and monster.PrimaryPart
 				if body then
@@ -534,5 +862,6 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
 	origin = origin + camera.CFrame.RightVector * 0.45
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
-	torch.Enabled = flashlightOn and not hidden and not dead and not finished
+	torch.Enabled = flashlightOn and hasFlashlight and charge > 0
+		and not hidden and not dead and not finished
 end)

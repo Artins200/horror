@@ -91,9 +91,15 @@ function methods:Clone()
 end
 function methods:PivotTo(cf) self.WorldPivot = cf end
 function methods:WaitForChild(name) return self:FindFirstChild(name) end
-function methods:SetAttribute(name, value) self._attributes[name] = value end
+function methods:SetAttribute(name, value)
+    self._attributes[name] = value
+    if self._attributeSignals[name] then self._attributeSignals[name]:Fire() end
+end
 function methods:GetAttribute(name) return self._attributes[name] end
-function methods:GetAttributeChangedSignal(_) return signal() end
+function methods:GetAttributeChangedSignal(name)
+    self._attributeSignals[name] = self._attributeSignals[name] or signal()
+    return self._attributeSignals[name]
+end
 function methods:IsA(class) return self._class == class or (class == "BasePart" and self._class == "Part") end
 function methods:Destroy() self.Parent = nil end
 local instMeta = {
@@ -109,7 +115,7 @@ local instMeta = {
     end,
 }
 Instance = {new = function(class)
-    return setmetatable({_class=class, _children={}, _attributes={}, Name=class,
+    return setmetatable({_class=class, _children={}, _attributes={}, _attributeSignals={}, Name=class,
         MouseButton1Click=signal(), MouseButton1Down=signal(), MouseButton1Up=signal(),
         MouseLeave=signal(), CharacterAdded=signal(), CharacterAppearanceLoaded=signal(),
         InputBegan=signal(), InputEnded=signal(),
@@ -133,6 +139,7 @@ local camera = Instance.new("Camera")
 camera.CFrame = CFrame.new(0, 6, 3)
 camera.CameraType = Enum.CameraType.Custom
 camera.FieldOfView = 70
+camera.ViewportSize = {X=1920, Y=1080}
 local workspace = Instance.new("Workspace")
 workspace.CurrentCamera = camera
 camera.Parent = workspace
@@ -148,8 +155,13 @@ function tweenService:Create(target, _, props)
         for key, value in pairs(props) do target[key] = value end
     end}
 end
+local lighting = Instance.new("Lighting")
+local starterGui = Instance.new("StarterGui")
+starterGui.disabled = {}
+function starterGui:SetCoreGuiEnabled(which, enabled) self.disabled[which] = not enabled end
 local services = {Players=Instance.new("Players"), ReplicatedStorage=replicated, Workspace=workspace,
-    RunService=runService, UserInputService=uiService, TweenService=tweenService}
+    RunService=runService, UserInputService=uiService, TweenService=tweenService,
+    Lighting=lighting, StarterGui=starterGui}
 services.Players.LocalPlayer = player
 game = {GetService=function(_, name) return services[name] end}
 local timers = {}
@@ -223,6 +235,17 @@ for _,name in ipairs({"Controls", "Interaction status", "Threat flash", "Threat 
     assert(not gui:FindFirstChild(name), "survival instruction/GUI flash is still on screen: " .. name)
 end
 assert(not modal:FindFirstChild("End detail"), "death menu still explains monsters")
+local bar = gui:FindFirstChild("Equipment bar")
+local wallet = gui:FindFirstChild("Wallet")
+assert(bar and wallet and bar:FindFirstChild("Slot FLASHLIGHT")
+    and bar:FindFirstChild("Slot PILL") and bar:FindFirstChild("Slot CRUCIFIX")
+    and bar:FindFirstChild("Slot BANDAGE") and bar:FindFirstChild("Slot MEDKIT")
+    and starterGui.disabled[Enum.CoreGuiType.Backpack]
+    and starterGui.disabled[Enum.CoreGuiType.Health],
+    "default Roblox Backpack/Health was not replaced by the custom hotbar")
+assert(lighting:FindFirstChild("Wardrobe eyestrain")
+    and lighting:FindFirstChild("Wardrobe desaturation"),
+    "long hiding has no client-only visual effects")
 local originalCF = root.CFrame
 runService.render(0.016)
 assert(root.CFrame == originalCF and not root.Anchored
@@ -230,9 +253,37 @@ assert(root.CFrame == originalCF and not root.Anchored
     "HUD interfered with physical avatar or its real limbs")
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.C}, false)
 assert(humanoid.CameraOffset.Y == -0.65, "crouch no longer lowers the native camera")
+local beforeLight = #remote.actions
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
-assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == false,
-    "turning off the light did not signal the Moth survival rule")
+assert(#remote.actions == beforeLight and not gui:FindFirstChild("Mobile torch").Visible,
+    "F created a flashlight before the player found or bought one")
+remote.OnClientEvent:Fire("Inventory", {items={FLASHLIGHT=1,PILL=2,CRUCIFIX=1,BANDAGE=3,MEDKIT=1},
+    selected=1,charge=100,health=72,coins=12,notes=2,gold=1})
+player:SetAttribute("HasFlashlight", true)
+player:SetAttribute("TorchCharge", 100)
+player:SetAttribute("Health", 72)
+assert(wallet.Text:find("12") and wallet.Text:find("2") and wallet.Text:find("1")
+    and bar:FindFirstChild("Slot PILL"):FindFirstChild("Count").Text == "×2"
+    and bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").Visible,
+    "wallet, selected hotbar or battery display did not reflect server snapshot")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
+assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == true,
+    "found torch did not request server-owned light")
+player:SetAttribute("TorchOn", true)
+runService.render(0.016)
+local light = camera:FindFirstChild("Invisible torch light source"):FindFirstChild("Weak hand torch")
+assert(light.Enabled, "server-authorized flashlight did not illuminate")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Two}, false)
+assert(remote.actions[#remote.actions][1] == "Select" and remote.actions[#remote.actions][2] == 2,
+    "number keys did not select the custom pill slot")
+player:SetAttribute("TorchOn", false)
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.Q}, false)
+assert(remote.actions[#remote.actions][1] == "Use" and remote.actions[#remote.actions][2] == "PILL",
+    "selected consumable was not sent for server-authoritative use")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.One}, false)
+player:SetAttribute("TorchCharge", 18)
+assert(bar:FindFirstChild("Slot FLASHLIGHT"):FindFirstChild("Charge").BackgroundColor3[1] == 196,
+    "low charge did not turn the battery indicator red")
 local peek = CFrame.new(1, 5, 21)
 local hotel = Instance.new("Folder")
 hotel.Name = "NocturneWorld"
@@ -253,6 +304,12 @@ assert(camera.CameraType == Enum.CameraType.Scriptable
     and left.Size[1] < 0.2 and camera.FieldOfView < 70,
     "wardrobe hides the actual monster or has no nearby-threat pressure")
 assert(root.CFrame == originalCF, "wardrobe viewpoint moved the physical avatar")
+player:SetAttribute("ClosetPressure", 75)
+runService.render(0.07)
+assert(lighting:FindFirstChild("Wardrobe eyestrain").Size > 0
+    and gui:FindFirstChild("Sight interference").BackgroundTransparency < 1,
+    "long hiding no longer clouds the visible, physical wardrobe sightline")
+player:SetAttribute("ClosetPressure", 0)
 monster:Destroy()
 hotel:Destroy()
 remote.OnClientEvent:Fire("Hide", false)
@@ -261,20 +318,38 @@ assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == h
     and player.CameraMode == Enum.CameraMode.LockFirstPerson
     and not player:GetAttribute("NocturnePeek") and reticle.Visible,
     "native first person did not return after the wardrobe")
+local spider = Instance.new("Model")
+spider.Name = "DrawerSpider"
+local abdomen = Instance.new("Part")
+abdomen.Name = "Hairy abdomen"
+abdomen.Parent = spider
+spider.PrimaryPart = abdomen
+remote.OnClientEvent:Fire("Spider", spider)
+local spiderView = gui:FindFirstChild("Jumping spider")
+assert(spiderView.Visible and spiderView.CurrentCamera
+    and spiderView:FindFirstChild("WorldModel"):FindFirstChild("DrawerSpider"),
+    "drawer spider did not jump toward the actual screen")
+drainTimers()
+assert(not spiderView.Visible, "jumping spider remained stuck over the scene")
 local monster = Instance.new("Model")
 monster.Name = "TheBlindGuest"
 local face = Instance.new("Part")
-face.Name = "Sculpted ivory eyeless face"
+face.Name = "Oval ashen face"
 face.Parent = monster
 monster.Parent = workspace
 remote.OnClientEvent:Fire("Jumpscare", "BLIND", monster)
 assert(scare.Visible and not modal.Visible and not reticle.Visible
     and stage:FindFirstChild("TheBlindGuest")
-    and stage:FindFirstChild("TheBlindGuest"):FindFirstChild("Sculpted ivory eyeless face"),
+    and stage:FindFirstChild("TheBlindGuest"):FindFirstChild("Oval ashen face"),
     "death close-up did not display the attacking monster")
 remote.OnClientEvent:Fire("Death")
 assert(not modal.Visible and scare.Visible,
     "retry menu erased the monster close-up instantly")
+local deathHold=false
+for _,timer in ipairs(timers) do
+    if timer.at>=1.8 then deathHold=true end
+end
+assert(deathHold, "creature close-up ends before the unsettling second beat")
 drainTimers()
 assert(modal.Visible and not scare.Visible, "full-screen scare did not finish before retry screen")
 -- Respawn cancels any old delayed modal and leaves a real R6 character.
@@ -287,23 +362,64 @@ assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == n
     and not scare.Visible and not modal.Visible and reticle.Visible
     and nextHead.LocalTransparencyModifier == 0 and nextArm.LocalTransparencyModifier == 0
     and not nextRoot.Anchored, "HUD respawn left a detached or hidden avatar")
+camera.ViewportSize={X=380,Y=780}
 remote.OnClientEvent:Fire("Jumpscare", "MOTH", nil)
-assert(scare.Visible and stage:FindFirstChild("Last glimpse of MOTH"),
-    "a monster not yet replicated to the client left the jumpscare blank")
+local moth = stage:FindFirstChild("Last glimpse of MOTH")
+assert(scare.Visible and moth and moth:FindFirstChild("Tiny moth thorax"),
+    "unreplicated moths fell back to a giant humanoid instead of a tiny swarm")
 remote.OnClientEvent:Fire("Death")
 drainTimers()
-assert(modal.Visible and not scare.Visible)
+assert(modal.Visible and not scare.Visible and view.CurrentCamera.CFrame.Position.Z < -6.5,
+    "portrait phone close-up cuts off both eyes instead of showing the whole mask")
+camera.ViewportSize={X=1920,Y=1080}
 player.CharacterAdded:Fire(nextAvatar)
 local replacement = Instance.new("Camera")
 replacement.CFrame = CFrame.new(0, 6, 3)
 replacement.CameraType = Enum.CameraType.Fixed
 replacement.FieldOfView = 70
+replacement.ViewportSize = {X=1920, Y=1080}
 replacement.Parent = workspace
 workspace.CurrentCamera = replacement
 runService.render(0.016)
 assert(replacement.CameraType == Enum.CameraType.Custom
     and replacement.CameraSubject == nextHumanoid,
     "HUD camera replacement stopped following the living avatar")
+local torch=replacement:FindFirstChild("Invisible torch light source")
+    :FindFirstChild("Weak hand torch")
+uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
+player:SetAttribute("TorchOn", true)
+runService.render(0.016)
+assert(torch.Enabled, "pre-finale found/bought torch did not work")
+local witness=Instance.new("Model")
+witness.Name="TheLastWitness"
+local finalFace=Instance.new("Part")
+finalFace.Name="The face behind the dawn"
+finalFace.Parent=witness
+witness.Parent=workspace
+remote.OnClientEvent:Fire("Finale", witness)
+assert(scare.Visible and not modal.Visible and not reticle.Visible
+    and stage:FindFirstChild("TheLastWitness")
+    and stage:FindFirstChild("TheLastWitness"):FindFirstChild("The face behind the dawn"),
+    "door 100 did not show its REAL final creature BEFORE the victory screen")
+local finaleHold=false
+for _,timer in ipairs(timers) do if timer.at>=2.4 then finaleHold=true end end
+assert(finaleHold and not torch.Enabled, "finale has no held beat or leaves the torch on")
+drainTimers()
+assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
+    and not scare.Visible and replacement.CameraSubject==nextHumanoid,
+    "final scare did not lead to victory without detaching the real camera")
+-- Even if the last model has not replicated, the giant ring-eyed face remains.
+player.CharacterAdded:Fire(nextAvatar)
+remote.OnClientEvent:Fire("Finale", nil)
+local blank=stage:FindFirstChild("Last glimpse of FINAL")
+local rings=0
+for _,piece in ipairs(blank:GetChildren()) do
+    if piece.Name=="Pale orbital rim" then rings=rings+1 end
+end
+assert(scare.Visible and rings==28 and not modal.Visible,
+    "late final-model replication produced a blank jumpscare")
+drainTimers()
+assert(modal.Visible and not scare.Visible, "fallback finale never completed")
 return true
 `;
 const state = lauxlib.luaL_newstate();
@@ -317,4 +433,4 @@ if (status !== lua.LUA_OK) {
     `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
   throw new Error(`Client avatar/camera smoke test failed: ${error}\n${nearby}`);
 }
-console.log("HUD smoke test OK: physical camera/crouch/torch and monster close-up precedes retry menu");
+console.log("HUD smoke test OK: custom wallet/hotbar, earned torch, hiding effects/spider, physical camera and scares");

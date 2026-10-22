@@ -24,10 +24,12 @@ local CONFIG = {
 	RushSpeed = 70,
 	RushWarningSeconds = 3.2,
 	RushMaximumSeconds = 18,
-	BlindLifetime = 24, -- enough time to track retreating players through stairs/doors
-	MothLifetime = 18,
-	MothSpeed = 17, -- sprinting can briefly outpace it; darkness stops it hunting
-	MothGraceSeconds = 4, -- visible and harmless before it can pursue any torch
+	MothLifetime = 20,
+	MothSpeed = 17,
+	MothGraceSeconds = 4,
+	TorchDrain = 2.8, -- a found/bought torch lasts ~36 seconds of actual use
+	ClosetWarning = 7,
+	ClosetLimit = 14,
 	KeyTurnSeconds = 0.7,
 	-- Set to an integer for a repeatable layout, or leave nil for a new run.
 	Seed = nil,
@@ -49,6 +51,14 @@ local C = {
 local L = Layout.RoomLength
 local W = Layout.RoomWidth
 local H = Layout.RoomHeight
+local SLOTS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}
+local PRICES = {FLASHLIGHT = 25, PILL = 12, CRUCIFIX = 60, BANDAGE = 10, MEDKIT = 32}
+local VALUE = {COIN = 1, NOTE = 10, GOLD = 60}
+local HEAL = {BANDAGE = 25, MEDKIT = 65}
+
+local function emptyItems()
+	return {FLASHLIGHT = 0, PILL = 0, CRUCIFIX = 0, BANDAGE = 0, MEDKIT = 0}
+end
 
 local previousRemote = ReplicatedStorage:FindFirstChild("NocturneRemote")
 if previousRemote then previousRemote:Destroy() end
@@ -73,9 +83,13 @@ local state = {
 	hidden = {},
 	keys = {}, -- door index carried by each player; the drawer key is not spent on pickup
 	players = {},
+	clock = 0,
+	noises = {},
+	noiseSerial = 0,
 	rush = nil,
 	blind = nil,
 	moth = nil,
+	echo = nil,
 	spawn = nil,
 	backSeal = nil,
 }
@@ -133,7 +147,7 @@ local function addLight(parent, position, room, brightness, color)
 	bulb.Shape = Enum.PartType.Ball
 	local light = Instance.new("PointLight")
 	light.Color = color or C.lamp
-	light.Brightness = brightness or 1.6
+	light.Brightness = (brightness or 1.6) * (room.lightPower or 1)
 	light.Range = 21
 	-- One shadow-casting sconce per room keeps mobile lighting affordable.
 	light.Shadows = #room.lamps == 0
@@ -158,6 +172,28 @@ local function setLamp(lamp, on, tint, intensity)
 	lamp.bulb.Material = on and Enum.Material.Neon or Enum.Material.Glass
 	lamp.bulb.Color = on and (tint or lamp.color) or Color3.fromRGB(37, 42, 44)
 	lamp.bulb.Transparency = on and 0 or 0.32
+end
+
+local function blackoutGuides(room)
+	-- Three very weak, permanently lit PHYSICAL fixtures mark the floor and
+	-- the middle furniture bay. All warm sconces stay broken in these rooms;
+	-- switching the torch off therefore never plunges the player into black.
+	local z = room.index * L
+	for _, dz in ipairs({7, 22, 37}) do
+		local glass = roomBlock(room, "Emergency glass", 0.65, 0.28, 0.65,
+			0, 10.4, z + dz, Color3.fromRGB(84, 102, 111), Enum.Material.Glass)
+		glass.Shape = Enum.PartType.Ball
+		glass.Transparency = 0.24
+		glass.CanCollide = false
+		glass.CastShadow = false
+		local light = Instance.new("PointLight")
+		light.Name = "Blackout floor glow"
+		light.Color = Color3.fromRGB(124, 148, 158)
+		light.Brightness = 0.38
+		light.Range = 20
+		light.Shadows = false
+		light.Parent = glass
+	end
 end
 
 local function inscription(parent, part, text, small)
@@ -275,6 +311,96 @@ local function playerRoot(player)
 	return root, humanoid
 end
 
+-- Only the server can award loot, spend money or enable a beam. Every teammate
+-- has their own wallet and one search per drawer; keys and room geometry stay shared.
+local function syncInventory(player)
+	local info = state.players[player]
+	if not info then return end
+	player:SetAttribute("HasFlashlight", info.items.FLASHLIGHT > 0)
+	player:SetAttribute("TorchOn", info.torchOn and info.items.FLASHLIGHT > 0)
+	player:SetAttribute("TorchCharge", math.ceil(info.charge))
+	player:SetAttribute("Health", math.ceil(info.health))
+	player:SetAttribute("SelectedItem", SLOTS[info.selected])
+	local items = {}
+	for _, id in ipairs(SLOTS) do items[id] = info.items[id] end
+	remote:FireClient(player, "Inventory", {
+		items = items, coins = info.coins, notes = info.notes, gold = info.gold,
+		charge = math.ceil(info.charge), health = math.ceil(info.health), selected = info.selected,
+	})
+end
+
+local function award(player, kind, amount)
+	local info = state.players[player]
+	if not info or not playerRoot(player) then return false end
+	if VALUE[kind] then
+		local field = ({COIN = "coins", NOTE = "notes", GOLD = "gold"})[kind]
+		info[field] = info[field] + amount
+	elseif info.items[kind] ~= nil then
+		if kind == "FLASHLIGHT" and info.items.FLASHLIGHT > 0 then return false end
+		info.items[kind] = info.items[kind] + amount
+		if kind == "FLASHLIGHT" then info.charge = 100 end
+	else
+		return false
+	end
+	syncInventory(player)
+	return true
+end
+
+local tryCrucifix -- attached to all contact hazards after creature creation
+local function damagePlayer(player, amount, kind, entity)
+	local info, _, hum = state.players[player], playerRoot(player)
+	if not info or not hum or player:GetAttribute("Finished") then return end
+	if entity and entity:GetAttribute("Banished") then return info.health end
+	if kind and entity and tryCrucifix and tryCrucifix(player, entity) then return info.health end
+	info.health = math.max(0, math.min(info.health, hum.Health) - amount)
+	if info.health <= 0 and kind then
+		if entity then entity:SetAttribute("RecentKill", true) end
+		remote:FireClient(player, "Jumpscare", kind, entity)
+	end
+	player:SetAttribute("Health", math.ceil(info.health))
+	hum.Health = info.health
+	return info.health
+end
+
+local function recordNoise(position, radius)
+	state.noiseSerial = state.noiseSerial + 1
+	state.noises[#state.noises + 1] = {
+		position = position, radius = radius, at = state.clock, serial = state.noiseSerial,
+	}
+	if #state.noises > 64 then table.remove(state.noises, 1) end
+end
+
+local function spiderJump(player, cf)
+	local spider = Instance.new("Model")
+	spider.Name = "DrawerSpider"
+	spider.Parent = state.world
+	local body = newPart(spider, "Hairy abdomen", Vector3.new(0.55, 0.34, 0.65),
+		cf, C.shadow, Enum.Material.Slate, 0, false)
+	body.Shape = Enum.PartType.Ball
+	spider.PrimaryPart = body
+	local head = newPart(spider, "Spider head", Vector3.new(0.38, 0.28, 0.37),
+		cf * CFrame.new(0, 0.02, -0.43), C.woodDark, Enum.Material.Slate, 0, false)
+	head.Shape = Enum.PartType.Ball
+	for _, side in ipairs({-1, 1}) do
+		for leg = 1, 4 do
+			local z = (leg - 2.5) * 0.22
+			railBetween(spider, "Crooked spider leg",
+				(cf * CFrame.new(side * 0.2, 0.08, z)).Position,
+				(cf * CFrame.new(side * (0.65 + leg * 0.05), -0.16, z - 0.19)).Position,
+				0.042, C.shadow)
+		end
+	end
+	local eye = newPart(spider, "Glint in the spider eyes", Vector3.new(0.11, 0.1, 0.08),
+		cf * CFrame.new(0, 0.09, -0.64), C.brass, Enum.Material.Neon, 0, false)
+	eye.Shape = Enum.PartType.Ball
+	spider.WorldPivot = cf
+	recordNoise(cf.Position, 40)
+	remote:FireClient(player, "Spider", spider)
+	tweenPivot(spider, cf, cf * CFrame.new(0, 2.1, -2.5), 0.37, function()
+		task.delay(1.3, function() if spider.Parent then spider:Destroy() end end)
+	end)
+end
+
 -- The two leaves are real hinged models. An open wardrobe is only a usable
 -- hiding place after its doors have finished swinging; no static fake slats.
 local function swingCloset(closet, opening)
@@ -337,26 +463,39 @@ local function leaveCloset(player, teleport)
 		hum.AutoRotate = true
 	end
 	player:SetAttribute("Hidden", false)
+	player:SetAttribute("ClosetPressure", 0)
+	if teleport then recordNoise(closet.exitCF.Position, 52) end
 	remote:FireClient(player, "Hide", false)
 end
 
 local function enterCloset(player, closet)
-	if closet.occupant or state.hidden[player] or closet.epoch ~= session or not state.players[player] then return end
+	local info = state.players[player]
+	if closet.occupant or state.hidden[player] or closet.epoch ~= session or not info
+		or (info.closetCooldown or 0) > state.clock then return end
 	local root, hum = playerRoot(player)
 	if not root or (root.Position - closet.front).Magnitude > 11 then return end
 	if player:GetAttribute("Finished") then return end
 	if not closet.open then
 		swingCloset(closet, true)
+		recordNoise(closet.front, 58)
+		if not closet.spiderChecked then
+			closet.spiderChecked = true
+			if closet.spiderRoll then spiderJump(player, closet.rootCF * CFrame.new(0, 1, -1.8)) end
+		end
 		return
 	end
 	closet.occupant = player
 	closet.inspected = false
 	closet.prompt.Enabled = false
 	closet.closePrompt.Enabled = false
-	state.hidden[player] = {closet = closet}
-	state.players[player].sprinting = false
-	state.players[player].crouching = false
+	state.hidden[player] = {closet = closet, seconds = 0}
+	info.sprinting = false
+	info.crouching = false
+	info.torchOn = false
 	player:SetAttribute("Crouching", false)
+	player:SetAttribute("ClosetPressure", 0)
+	syncInventory(player)
+	recordNoise(closet.front, 47)
 	root.CFrame = closet.rootCF
 	root.Anchored = true
 	hum.WalkSpeed = 0
@@ -444,6 +583,7 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
 		exitCF = cf * CFrame.new(0, 3, -3.45),
 		epoch = session,
+		spiderRoll = Random.new(state.seed + room.index * 197 + (serial == "A" and 13 or 71)):NextNumber() < 0.08,
 		occupant = nil, open = false,
 	}
 	prompt.Triggered:Connect(function(player) enterCloset(player, closet) end)
@@ -491,8 +631,11 @@ local function holdKey(player, key)
 	held.Parent = character
 	-- Welds, not anchored display parts or a replacement Humanoid: Roblox's
 	-- normal animation/physics keeps moving the owner's actual hand.
-	held:PivotTo(hand.CFrame * CFrame.new(0, -hand.Size.Y / 2 - 0.11, -0.23)
-		* CFrame.Angles(math.rad(70), 0, math.rad(-12)))
+	-- The bow rests IN the palm, not below a dangling hand. Its teeth point
+	-- forward and down until the player raises the actual arm at the lock.
+	local palmY = hand.Name == "Right Arm" and -hand.Size.Y * 0.45 or -hand.Size.Y * 0.13
+	held:PivotTo(hand.CFrame * CFrame.new(0, palmY, -0.17)
+		* CFrame.Angles(math.rad(125), 0, math.rad(-12)))
 	local parts = {}
 	for _, part in ipairs(held:GetDescendants()) do
 		if part:IsA("BasePart") then
@@ -517,6 +660,80 @@ local function holdKey(player, key)
 	grip.Parent = bow
 	for _, part in ipairs(parts) do part.Anchored = false end
 	return true
+end
+
+-- Drawer contents are seeded once on the server, but each teammate can take a
+-- given cache once. The props move WITH the real drawer and are never client gifts.
+local function rollLoot(rng)
+	local roll = rng:NextNumber()
+	if roll < 0.24 then return "COIN", rng:NextInteger(2, 6) end
+	if roll < 0.42 then return "NOTE", rng:NextInteger(1, 2) end
+	if roll < 0.45 then return "GOLD", 1 end
+	if roll < 0.48 then return "FLASHLIGHT", 1 end -- genuinely rare
+	if roll < 0.59 then return "PILL", 1 end
+	if roll < 0.64 then return "CRUCIFIX", 1 end
+	if roll < 0.76 then return "BANDAGE", 1 end
+	if roll < 0.80 then return "MEDKIT", 1 end
+	return nil, 0
+end
+
+local function makeLoot(drawer, cf, y, kind, amount)
+	local model = Instance.new("Model")
+	model.Name = "Loot_" .. kind
+	model.Parent = drawer
+	local base = cf * CFrame.new(0, y - 0.20, -0.62)
+	local function piece(name, size, offset, tint, material, shape)
+		local p = newPart(model, name, size, base * offset, tint, material, 0, false)
+		if shape then p.Shape = shape end
+		return p
+	end
+	local primary
+	if kind == "COIN" then
+		for n = 1, math.min(amount, 5) do
+			primary = piece("Stamped copper coin", Vector3.new(0.10, 0.37, 0.37),
+				CFrame.new((n - 3) * 0.26, 0, 0) * CFrame.Angles(0, 0, math.pi / 2),
+				C.brass, Enum.Material.Metal, Enum.PartType.Cylinder)
+		end
+	elseif kind == "NOTE" then
+		primary = piece("Folded paper money", Vector3.new(0.88, 0.04, 0.47),
+			CFrame.new(), Color3.fromRGB(129, 141, 111), Enum.Material.Fabric)
+		piece("Print on the banknote", Vector3.new(0.6, 0.015, 0.20),
+			CFrame.new(0, 0.026, 0), C.woodDark, Enum.Material.Fabric)
+	elseif kind == "GOLD" then
+		primary = piece("Rare gold ingot", Vector3.new(0.92, 0.28, 0.52),
+			CFrame.new(), Color3.fromRGB(229, 171, 53), Enum.Material.Metal)
+		piece("Ingot stamp", Vector3.new(0.50, 0.025, 0.22), CFrame.new(0, 0.15, 0),
+			C.brassDark, Enum.Material.Metal)
+	elseif kind == "FLASHLIGHT" then
+		primary = piece("Found hand torch", Vector3.new(0.78, 0.35, 0.35),
+			CFrame.new(), C.woodDark, Enum.Material.Metal, Enum.PartType.Cylinder)
+		piece("Glass torch lens", Vector3.new(0.15, 0.39, 0.39),
+			CFrame.new(-0.43, 0, 0), C.lamp, Enum.Material.Glass, Enum.PartType.Cylinder)
+	elseif kind == "PILL" then
+		primary = piece("Stoppered pill vial", Vector3.new(0.34, 0.58, 0.34),
+			CFrame.new(), Color3.fromRGB(176, 175, 152), Enum.Material.Glass)
+		piece("Pill bottle label", Vector3.new(0.35, 0.20, 0.02),
+			CFrame.new(0, -0.06, -0.18), Color3.fromRGB(130, 47, 50), Enum.Material.Fabric)
+	elseif kind == "CRUCIFIX" then
+		primary = piece("Cast iron crucifix", Vector3.new(0.14, 0.85, 0.19),
+			CFrame.new(), Color3.fromRGB(156, 149, 137), Enum.Material.Metal)
+		piece("Crucifix arms", Vector3.new(0.62, 0.13, 0.19),
+			CFrame.new(0, 0.19, 0), Color3.fromRGB(156, 149, 137), Enum.Material.Metal)
+	elseif kind == "BANDAGE" then
+		primary = piece("Rolled clean bandage", Vector3.new(0.42, 0.48, 0.48),
+			CFrame.new(), Color3.fromRGB(219, 211, 181), Enum.Material.Fabric, Enum.PartType.Cylinder)
+	else
+		primary = piece("Medical tin", Vector3.new(0.80, 0.30, 0.58),
+			CFrame.new(), Color3.fromRGB(133, 42, 47), Enum.Material.Metal)
+		piece("White medical cross", Vector3.new(0.42, 0.03, 0.10),
+			CFrame.new(0, 0.16, 0), Color3.fromRGB(232, 216, 194))
+		piece("White medical cross", Vector3.new(0.1, 0.03, 0.38),
+			CFrame.new(0, 0.17, 0), Color3.fromRGB(232, 216, 194))
+	end
+	model.PrimaryPart = primary
+	model:SetAttribute("LootKind", kind)
+	model:SetAttribute("LootAmount", amount)
+	return model
 end
 
 -- The key is in exactly one of three physical drawers in the SAME room as its
@@ -621,6 +838,31 @@ local function makeDresser(room, rng)
 				player:SetAttribute("HeldKey", room.index + 1)
 			end)
 		end
+		local lootKind, amount = slot == keySlot and nil, 0
+		if slot ~= keySlot then lootKind, amount = rollLoot(rng) end
+		local loot = lootKind and makeLoot(drawer, cf, drawerY, lootKind, amount)
+		local lootPrompt
+		local taken = {}
+		if loot then
+			lootPrompt = Instance.new("ProximityPrompt")
+			lootPrompt.Name = "TakeLoot"
+			iconPrompt(lootPrompt)
+			lootPrompt.HoldDuration = 0.15
+			lootPrompt.MaxActivationDistance = 7
+			lootPrompt.RequiresLineOfSight = false
+			lootPrompt.Enabled = false
+			lootPrompt.Parent = loot.PrimaryPart
+			lootPrompt.Triggered:Connect(function(player)
+				if room.epoch ~= session or not lootPrompt.Enabled or taken[player] then return end
+				local root = playerRoot(player)
+				if not root or state.hidden[player]
+					or (root.Position - loot.PrimaryPart.Position).Magnitude > 9 then return end
+				if not award(player, lootKind, amount) then return end
+				taken[player] = true
+				recordNoise(root.Position, 29)
+			end)
+		end
+		local spiderRoll = rng:NextNumber() < 0.075
 		local opened = false
 		openPrompt.Triggered:Connect(function(player)
 			if opened or room.epoch ~= session or not openPrompt.Enabled then return end
@@ -629,8 +871,12 @@ local function makeDresser(room, rng)
 				or (root.Position - handle.Position).Magnitude > 10 then return end
 			opened = true
 			openPrompt.Enabled = false
+			recordNoise(handle.Position, 65)
+			if spiderRoll then spiderJump(player, pivot * CFrame.new(0, 0.5, -1.4)) end
 			tweenPivot(drawer, pivot, pivot * CFrame.new(0, 0, -1.25), 0.5, function()
-				if key and key.Parent and room.epoch == session then
+				if room.epoch ~= session then return end
+				if lootPrompt and loot and loot.Parent then lootPrompt.Enabled = true end
+				if key and key.Parent then
 					for _, part in ipairs(key:GetDescendants()) do
 						if part:IsA("BasePart") then part.Transparency = 0 end
 					end
@@ -639,6 +885,77 @@ local function makeDresser(room, rng)
 			end)
 		end)
 	end
+end
+
+local function pay(info, price)
+	if info.coins + info.notes * VALUE.NOTE + info.gold * VALUE.GOLD < price then return false end
+	local due = price
+	local coins = math.min(info.coins, due)
+	info.coins = info.coins - coins
+	due = due - coins
+	local notes = math.min(info.notes, math.ceil(due / VALUE.NOTE))
+	info.notes = info.notes - notes
+	due = due - notes * VALUE.NOTE
+	if due > 0 then
+		local bars = math.ceil(due / VALUE.GOLD)
+		info.gold = info.gold - bars
+		due = due - bars * VALUE.GOLD
+	end
+	info.coins = info.coins - due -- return change, never destroy the excess value
+	return true
+end
+
+local function makeShop(room)
+	local model = Instance.new("Model")
+	model.Name = "After-fifty apothecary"
+	model.Parent = room.model
+	local z = room.index * L
+	local y = room.entryY
+	local lintel = block(model, "Shop gilt lintel", 5.1, 0.6, 29,
+		-10, y + 9.1, z + 22, C.brassDark, Enum.Material.Metal)
+	lintel.CanCollide = false
+	local sign = block(model, "Apothecary sign", 3.9, 1.0, 0.17,
+		-9.9, y + 8.5, z + 5.6, C.woodDark, Enum.Material.Wood)
+	inscription(model, sign, "ЛАВКА", true)
+	local goods = {
+		{"FLASHLIGHT", 9, "ФОНАРЬ"}, {"PILL", 15, "ТАБЛЕТКИ"},
+		{"CRUCIFIX", 22, "КРЕСТ"}, {"BANDAGE", 29, "ПЛАСТЫРЬ"},
+		{"MEDKIT", 36, "АПТЕЧКА"},
+	}
+	for _, offer in ipairs(goods) do
+		local id, dz, title = offer[1], offer[2], offer[3]
+		block(model, "Solid shop counter", 3.1, 3.5, 4.5,
+			-10, y + 1.75, z + dz, C.woodDark, Enum.Material.Wood)
+		local glass = block(model, "Locked display glass", 3.15, 0.18, 4.55,
+			-10, y + 3.6, z + dz, C.marble, Enum.Material.Glass)
+		glass.CanCollide = false
+		local specimen = makeLoot(model, CFrame.new(-10, y + 3.98, z + dz), 0.2, id, 1)
+		for _, part in ipairs(specimen:GetDescendants()) do
+			if part:IsA("BasePart") then part.CanCollide = false end
+		end
+		local plaque = newPart(model, "Shop price plate", Vector3.new(2.9, 1.1, 0.11),
+			CFrame.new(-8.44, y + 2.6, z + dz) * CFrame.Angles(0, -math.pi / 2, 0),
+			C.woodDark, Enum.Material.Metal, 0, false)
+		inscription(model, plaque, title .. "  " .. PRICES[id], true)
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "Buy_" .. id
+		iconPrompt(prompt)
+		prompt.HoldDuration = 0.3
+		prompt.MaxActivationDistance = 8
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = plaque
+		prompt.Triggered:Connect(function(player)
+			local root = playerRoot(player)
+			local info = state.players[player]
+			if room.epoch ~= session or not root or not info or state.hidden[player]
+				or state.opened < 51 or (root.Position - plaque.Position).Magnitude > 10
+				or (id == "FLASHLIGHT" and info.items.FLASHLIGHT > 0)
+				or info.items[id] >= 9 then return end
+			if not pay(info, PRICES[id]) then return end
+			award(player, id, 1)
+		end)
+	end
+	room.model:SetAttribute("Shop", true)
 end
 
 local function makePainting(room, side, z, accent)
@@ -821,8 +1138,10 @@ local function furnish(room, rng)
 			end
 		end
 	elseif kind == "MIRROR" then
+		local frames = (room.shape == "VESTIBULE" or room.shape == "NAVE")
+			and {9, 30, 36} or {9, 33, 39}
 		for _, side in ipairs({-1, 1}) do
-			for _, baseZ in ipairs({9, 33, 39}) do
+			for _, baseZ in ipairs(frames) do
 				local dz = baseZ + rng:NextNumber(-1, 1)
 				roomBlock(room, "Gilded standing mirror", 0.32, 8.7, 4.3,
 					side * 13.8, 7.2, z + dz, C.brass, Enum.Material.Metal)
@@ -866,28 +1185,30 @@ end
 
 local function configureLighting()
 	Lighting.ClockTime = 0
-	Lighting.Brightness = 0.7
-	Lighting.Ambient = Color3.fromRGB(12, 17, 22)
-	Lighting.OutdoorAmbient = Color3.fromRGB(6, 9, 14)
-	Lighting.FogColor = Color3.fromRGB(14, 21, 27)
-	Lighting.FogStart = 15
-	Lighting.FogEnd = 95
+	Lighting.Brightness = 0.9
+	-- A blacked-out room is gloomy, not unrenderable. Physical low-level guide
+	-- lamps below illuminate the floor even with the hand torch switched off.
+	Lighting.Ambient = Color3.fromRGB(31, 37, 43)
+	Lighting.OutdoorAmbient = Color3.fromRGB(15, 21, 27)
+	Lighting.FogColor = Color3.fromRGB(19, 27, 33)
+	Lighting.FogStart = 19
+	Lighting.FogEnd = 112
 	Lighting.GlobalShadows = true
-	Lighting.EnvironmentDiffuseScale = 0.3
+	Lighting.EnvironmentDiffuseScale = 0.4
 	Lighting.EnvironmentSpecularScale = 0.25
-	Lighting.ExposureCompensation = -0.2
+	Lighting.ExposureCompensation = 0
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Name = "CorridorHaze"
-	atmosphere.Density = 0.39
-	atmosphere.Haze = 2.3
+	atmosphere.Density = 0.28
+	atmosphere.Haze = 1.8
 	atmosphere.Color = Color3.fromRGB(108, 128, 137)
 	atmosphere.Decay = Color3.fromRGB(34, 24, 27)
 	atmosphere.Parent = Lighting
 	local grading = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
 	grading.Name = "ColdShadowsWarmLights"
-	grading.TintColor = Color3.fromRGB(214, 227, 238)
-	grading.Contrast = 0.22
-	grading.Saturation = -0.32
+	grading.TintColor = Color3.fromRGB(225, 233, 237)
+	grading.Contrast = 0.12
+	grading.Saturation = -0.24
 	grading.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
 	bloom.Intensity = 0.37
@@ -907,14 +1228,16 @@ local openDoor -- assigned after room construction
 local startRush -- assigned after room construction
 local startBlind -- assigned after room construction
 local startMoth -- assigned after room construction
+local startEcho -- assigned after room construction
 local buildRoom -- recursive reference for door callbacks
+local makeFinalWitness -- defined with the other procedural creature sculptures
 
 -- Every wall encloses the entire section, including the space UNDER an upper
 -- landing. Only the central 7.4-stud doorway is open. Doorways on both sides
 -- of a room always meet at the same height as their neighbour's doorway.
 local function endWall(room, atZ, doorwayY, bottomY, topY, solid)
 	local model = room.model
-	local wallColor = room.index % 4 == 2 and C.plasterAlt or C.plaster
+	local wallColor = room.wallColor
 	if solid then
 		block(model, "Solid lobby end wall", W, topY - bottomY, 0.8,
 			0, (topY + bottomY) / 2, atZ, wallColor, Enum.Material.Concrete)
@@ -955,7 +1278,7 @@ local function roomArchitecture(room)
 		-- Two full-height cross-walls make distinct entrance/exit chambers.
 		-- The 12.8-stud central passage stays wider than the numbered doors;
 		-- wardrobes at z21/24 and the dresser at z17 remain accessible.
-		for _, dz in ipairs({5, 39}) do
+		for _, dz in ipairs({2.8, 41.2}) do
 			for _, side in ipairs({-1, 1}) do
 				roomBlock(room, "Vestibule cross-wall", W / 2 - 6.4, H, 0.85,
 					side * (W / 2 + 6.4) / 2, H / 2, z + dz,
@@ -987,6 +1310,74 @@ local function roomArchitecture(room)
 		for _, side in ipairs({-1, 1}) do
 			roomBlock(room, "Long arcade cornice", 0.4, 1.05, L - 1.5,
 				side * 11.4, H - 0.55, z + L / 2, style.trim, Enum.Material.Metal)
+		end
+	elseif room.shape == "AISLE" then
+		-- Open side aisles physically change the room's width as you traverse
+		-- it. Each screen has a 3.2-stud side entrance; there are no sealed
+		-- pockets or stairs to nowhere. A 12-stud central route stays clear.
+		for _, side in ipairs({-1, 1}) do
+			for _, dz in ipairs({{5.5, 8.4}, {11.6, 14}, {30, 32.4}, {35.6, 38.5}}) do
+				local length = dz[2] - dz[1]
+				roomBlock(room, "Side aisle masonry screen", 0.42, H, length,
+					side * 6.2, H / 2, z + (dz[1] + dz[2]) / 2,
+					style.wall, Enum.Material.Concrete)
+			end
+			for _, dz in ipairs({10, 34}) do
+				roomBlock(room, "Aisle opening lintel", 0.6, H - 10.8, 3.2,
+					side * 6.2, (H + 10.8) / 2, z + dz,
+					C.woodDark, Enum.Material.Wood)
+			end
+		end
+	elseif room.shape == "ROTUNDA" then
+		for _, dz in ipairs({3.1, 41.6}) do
+			for _, side in ipairs({-1, 1}) do
+				local x = side * 9
+				local shaft = roomBlock(room, "Rotunda monolithic column", 12.4, 1.04, 1.04,
+					x, 6.2, z + dz, C.marble, Enum.Material.Marble)
+				shaft.Shape = Enum.PartType.Cylinder
+				shaft.CFrame = shaft.CFrame * CFrame.Angles(0, 0, math.pi / 2)
+				roomBlock(room, "Rotunda square capital", 1.6, 0.53, 1.6,
+					x, 12.65, z + dz, style.trim, Enum.Material.Metal)
+			end
+		end
+		for spoke = 1, 8 do
+			local theta = spoke * math.pi / 4
+			local x, dz = math.cos(theta) * 8.9, math.sin(theta) * 8.9
+			local spokeEnd = Vector3.new(x, room.entryY + H - 0.33, z + 22 + dz)
+			local spokeStart = Vector3.new(0, room.entryY + H - 0.33, z + 22)
+			local part = railBetween(room.model, "Rotunda ceiling spokes", spokeStart, spokeEnd,
+				0.19, C.woodDark)
+			part.Material = Enum.Material.Wood
+		end
+	elseif room.shape == "NAVE" then
+		for _, dz in ipairs({2.8, 41.2}) do
+			for _, side in ipairs({-1, 1}) do
+				roomBlock(room, "Nave transept masonry", W / 2 - 6.8, H, 0.85,
+					side * (W / 2 + 6.8) / 2, H / 2, z + dz,
+					style.wall, Enum.Material.Concrete)
+				roomBlock(room, "Nave upright", 0.36, 10.8, 1.2,
+					side * 6.8, 5.4, z + dz, style.trim, Enum.Material.Metal)
+			end
+			roomBlock(room, "Nave hanging arch", 13.6, H - 10.8, 1.1,
+				0, (H + 10.8) / 2, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+		for _, side in ipairs({-1, 1}) do
+			roomBlock(room, "Overhead nave gallery", 3.1, 0.7, 23,
+				side * 12, H - 3.2, z + 22, C.woodDark, Enum.Material.Wood)
+		end
+	elseif room.shape == "CRYPT" then
+		for _, side in ipairs({-1, 1}) do
+			local x = side * 10.5
+			roomBlock(room, "Crypt sealed plinth", 2.6, 2.8, 2.4,
+				x, 1.4, z + 2.3, C.marble, Enum.Material.Marble)
+			roomBlock(room, "Crypt faceless bust", 1.15, 2.2, 0.95,
+				x, 3.48, z + 2.3, Color3.fromRGB(103, 112, 108), Enum.Material.Slate)
+			for _, dz in ipairs({10, 22, 35}) do
+				roomBlock(room, "Crypt wall niche", 0.2, 5.9, 3.5,
+					side * 14.15, 9.7, z + dz, C.woodDark, Enum.Material.Slate)
+				roomBlock(room, "Crypt arched lintel", 1.2, 0.65, 4.0,
+					side * 13.4, 13.0, z + dz, style.trim, Enum.Material.Marble)
+			end
 		end
 	end
 end
@@ -1042,11 +1433,29 @@ local function flatRoom(room, rng)
 				CFrame.lookAt(mid, to), style.runner, Enum.Material.Fabric, 0, false)
 			carpet.CanQuery = false
 		end
+	elseif room.shape == "ROTUNDA" then
+		-- A circular room is immediately identifiable FROM the doorway, not
+		-- just by different wall paint or a random attribute on the Model.
+		local disc = roomBlock(room, "Rotunda circular floor mosaic", 0.07, 10.5, 10.5,
+			0, 0.08, z + 22, style.runner, Enum.Material.Marble)
+		disc.Shape = Enum.PartType.Cylinder
+		disc.CFrame = disc.CFrame * CFrame.Angles(0, 0, math.pi / 2)
+		disc.CanCollide = false
+		for _, dz in ipairs({8, 36}) do
+			roomBlock(room, "Rotunda approach carpet", 5.5, 0.06, 12,
+				0, 0.055, z + dz, style.runner, Enum.Material.Fabric).CanCollide = false
+		end
+	elseif room.shape == "CRYPT" then
+		for _, dz in ipairs({9, 22, 35}) do
+			roomBlock(room, "Separated burial runner", 6.4, 0.06, 8,
+				0, 0.055, z + dz, style.runner, Enum.Material.Fabric).CanCollide = false
+		end
 	else
-		local rug = roomBlock(room, "Worn crimson runner", 7.4, 0.06, L - 6,
+		local width = room.shape == "AISLE" and 5.3 or 7.4
+		local rug = roomBlock(room, "Worn crimson runner", width, 0.06, L - 6,
 			0, 0.055, z + L / 2, style.runner, Enum.Material.Fabric)
 		rug.CanCollide = false
-		for _, x in ipairs({-3.5, 3.5}) do
+		for _, x in ipairs({-width / 2 + 0.2, width / 2 - 0.2}) do
 			local edging = roomBlock(room, "Runner gold edging", 0.1, 0.07, L - 6,
 				x, 0.095, z + L / 2, style.trim, Enum.Material.Fabric)
 			edging.CanCollide = false
@@ -1074,6 +1483,7 @@ local function flatRoom(room, rng)
 	end
 	furnish(room, rng)
 	makeDresser(room, rng)
+	if room.kind == "MARKET" then makeShop(room) end
 	if room.kind == "TURN" then
 		-- Closets remain on the entrance and exit sides of BOTH dogleg arches.
 		makeCloset(room, -1, z + 7, "A", y, W / 2)
@@ -1084,6 +1494,7 @@ local function flatRoom(room, rng)
 	end
 	addLight(model, Vector3.new(0, y + H - 1.7, z + L / 2), room,
 		rng:NextNumber(0.65, 1.4))
+	if room.dark then blackoutGuides(room) end
 end
 
 local function stairRoom(room)
@@ -1108,7 +1519,7 @@ local function stairRoom(room)
 	for _, side in ipairs({-1, 1}) do
 		block(model, "Solid enclosed stair flank", flankWidth, fullHeight, L,
 			side * (W + width) / 4, y + fullHeight / 2, z + L / 2,
-			C.plaster, Enum.Material.Concrete)
+			room.wallColor, Enum.Material.Concrete)
 		for _, dz in ipairs({4, 12, 22, 32, 40}) do
 			local surface = Layout.WalkwayY(room.index, dz)
 			block(model, "Stair wall pilaster", 0.24, 9, 0.48,
@@ -1177,19 +1588,22 @@ local function stairRoom(room)
 	makeCloset(room, 1, z + 40.4, "B", upper, half)
 end
 
--- Each room is an independent seeded draw, NOT the same shuffled bag of 12
--- repeated every twelve doors. Only the two most recent interiors are excluded.
--- Shape, furniture seed, finish, darkness, locks and threats are drawn anew
--- for each run, then the next segment is physically built as doors open.
+-- The starting room ALSO varies. Each type and architectural plan is drawn
+-- independently (not a fixed twelve-room loop); the last two draws are only
+-- excluded to prevent immediately recognisable repetitions. The 30x44 outer
+-- shell and door centres always meet, whatever the interior shape.
 local function planRooms(seed)
 	local rng = Random.new(seed)
 	local kinds = {"HALL", "LIBRARY", "GALLERY", "SUITE", "STORAGE", "FLOODED",
 		"DINING", "CONSERVATORY", "OFFICE", "CHAPEL", "LAUNDRY", "MIRROR"}
-	local shapes = {"OPEN", "ARCADE", "COFFERED", "VESTIBULE"}
-	local threats = {"RUSH", "BLIND", "MOTH"}
-	local recent, threatBag, previousThreat = {"HALL"}, {}, nil
+	local shapes = {"OPEN", "ARCADE", "COFFERED", "VESTIBULE", "AISLE",
+		"ROTUNDA", "NAVE", "CRYPT"}
+	local threats = {"RUSH", "BLIND", "MOTH", "ECHO"}
+	local recent, recentShapes, threatBag, previousThreat = {}, {}, {}, nil
 	local plan = {}
-	local nextThreat, nextLock, nextDark = 19, 4, rng:NextInteger(3, 6)
+	local nextThreat, lastThreat, lastLock = rng:NextInteger(4, 8), -16, -5
+	local forceThreat = 15
+	local nextDark = rng:NextInteger(3, 6)
 	local function drawThreat()
 		if #threatBag == 0 then
 			for _, name in ipairs(threats) do table.insert(threatBag, name) end
@@ -1200,7 +1614,8 @@ local function planRooms(seed)
 	end
 	for index = 0, CONFIG.Doors - 1 do
 		local stair, turn = Layout.IsStair(index), Layout.IsTurn(index, seed)
-		local kind = stair and "STAIRWELL" or turn and "TURN" or index == 0 and "HALL"
+		local kind = stair and "STAIRWELL" or turn and "TURN"
+		local shape = "FIXED"
 		if not kind then
 			local choices = {}
 			for _, value in ipairs(kinds) do
@@ -1209,28 +1624,77 @@ local function planRooms(seed)
 			kind = choices[rng:NextInteger(1, #choices)]
 			table.insert(recent, kind)
 			if #recent > 2 then table.remove(recent, 1) end
+			local geometry = {}
+			for _, value in ipairs(shapes) do
+				-- Beds/pews/dining chairs would cover a side-aisle entrance.
+				-- Keep their full-size furniture AND the lateral passage usable.
+				local obstructed = value == "AISLE"
+					and (kind == "SUITE" or kind == "DINING" or kind == "CHAPEL")
+				if not obstructed and value ~= recentShapes[1] and value ~= recentShapes[2] then
+					table.insert(geometry, value)
+				end
+			end
+			shape = geometry[rng:NextInteger(1, #geometry)]
+			table.insert(recentShapes, shape)
+			if #recentShapes > 2 then table.remove(recentShapes, 1) end
 		end
 		local threat
-		if index == 5 then threat = "RUSH"
-		elseif index == 9 then threat = "BLIND"
-		elseif index == 15 then threat = "MOTH"
-		elseif index >= nextThreat and not stair and not turn then
+		-- After an encounter there are at least 4 and at most 14 full rooms
+		-- without a new monster. Eligible rooms still roll for its presence;
+		-- stairs and doglegs never host a scripted encounter.
+		if index >= nextThreat and not stair and not turn
+			and (rng:NextNumber() < 0.62 or index >= forceThreat) then
 			threat = drawThreat()
-			nextThreat = index + rng:NextInteger(3, 6)
+			lastThreat = index
+			local eligible = {}
+			for candidate = index + 5, math.min(CONFIG.Doors - 1, index + 15) do
+				if not Layout.IsStair(candidate) and not Layout.IsTurn(candidate, seed) then
+					table.insert(eligible, candidate)
+				end
+			end
+			if #eligible > 0 then
+				nextThreat = eligible[rng:NextInteger(1, #eligible)]
+				forceThreat = eligible[#eligible]
+			else
+				nextThreat = CONFIG.Doors
+			end
+			previousThreat = threat
 		end
-		if threat then previousThreat = threat end
-		local locked = index >= nextLock and not stair and not turn and not threat
-		if locked then nextLock = index + rng:NextInteger(5, 8) end
+		local locked = index >= 2 and index - lastLock >= 2 and not stair and not turn
+			and not threat and rng:NextNumber() < 0.19
+		if locked then lastLock = index end
 		local dark = index >= nextDark and not stair
 		if dark then nextDark = index + rng:NextInteger(3, 7) end
 		plan[index] = {
-			kind = kind, threat = threat, locked = locked, dark = dark,
-			shape = (not stair and not turn and index > 0)
-				and shapes[rng:NextInteger(1, #shapes)] or "FIXED",
+			kind = kind, shape = shape, threat = threat, locked = locked, dark = dark,
 			decorSeed = rng:NextInteger(1, 1000000000),
 			style = rng:NextInteger(1, 4),
+			lightPower = rng:NextNumber(0.78, 1.26),
 		}
 	end
+	-- Exactly one findable shop per run, in a randomly chosen safe room AFTER
+	-- door 50. Its counters replace that room's ordinary furniture, never a
+	-- stair, lock, threat or narrow aisle; the central passage stays clear.
+	local candidates = {}
+	for index = 51, 86 do
+		local room = plan[index]
+		if room and not room.locked and not room.threat
+			and (room.shape == "OPEN" or room.shape == "COFFERED") then
+			table.insert(candidates, index)
+		end
+	end
+	-- With 36 candidates spread over 12 interiors there is normally more
+	-- than one; keep a fallback if a future layout changes that distribution.
+	if #candidates == 0 then
+		for index = 51, 95 do
+			local room = plan[index]
+			if room and not room.locked and not room.threat and room.shape ~= "FIXED"
+				and room.shape ~= "AISLE" then table.insert(candidates, index) end
+		end
+	end
+	local shopIndex = candidates[rng:NextInteger(1, #candidates)]
+	plan[shopIndex].kind = "MARKET"
+	plan[shopIndex].shop = true
 	return plan
 end
 
@@ -1259,6 +1723,7 @@ buildRoom = function(index)
 	model.Parent = state.world
 	local room = {
 		index = index, model = model, kind = kind, style = plan.style,
+		wallColor = WALL_STYLES[plan.style].wall, lightPower = plan.lightPower,
 		shape = plan.shape, dark = plan.dark,
 		lamps = {}, closets = {}, entered = {},
 		entryY = Layout.EntranceY(index), exitY = Layout.ExitY(index),
@@ -1303,6 +1768,9 @@ buildRoom = function(index)
 		elseif room.threat == "MOTH" and not state.moth then
 			room.threat = nil
 			task.spawn(function() startMoth(room, mySession) end)
+		elseif room.threat == "ECHO" and not state.echo then
+			room.threat = nil
+			task.spawn(function() startEcho(room, mySession) end)
 		end
 	end)
 end
@@ -1320,6 +1788,8 @@ local function makeExit()
 	end
 	block(model, "Exit ceiling", W, 0.9, 34, 0, y + H + 0.45, z + 17,
 		Color3.fromRGB(191, 200, 186), Enum.Material.Marble)
+	block(model, "Solid wall behind the final light", W, H, 0.8,
+		0, y + H / 2, z + 33.55, Color3.fromRGB(65, 72, 69), Enum.Material.Marble)
 	local portal = block(model, "Morning", 19, 12, 0.45, 0, y + 6, z + 32,
 		Color3.fromRGB(255, 242, 200), Enum.Material.Neon)
 	portal.CanCollide = false
@@ -1328,6 +1798,11 @@ local function makeExit()
 	light.Range = 42
 	light.Brightness = 8
 	light.Parent = portal
+	-- This figure already stands in the light when door 100 opens. Reaching
+	-- it triggers a close-up of THIS replicated model, then the victory card.
+	local witness = makeFinalWitness(model)
+	witness:PivotTo(CFrame.lookAt(Vector3.new(0, y + 5, z + 29.5),
+		Vector3.new(0, y + 5, z + 20)))
 	local trigger = newPart(model, "End of the nightmare", Vector3.new(19, 10, 5),
 		CFrame.new(0, y + 5, z + 25), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, 1, false)
 	trigger.CanTouch = true
@@ -1338,10 +1813,12 @@ local function makeExit()
 		local character = hit:FindFirstAncestorOfClass("Model")
 		local player = character and Players:GetPlayerFromCharacter(character)
 		if not player or player:GetAttribute("Finished") then return end
-		local root = playerRoot(player)
+		local root, humanoid = playerRoot(player)
 		if root and root.Position.Z > z + 20 then
 			player:SetAttribute("Finished", true)
-			remote:FireClient(player, "Victory")
+			humanoid.WalkSpeed = 0
+			root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			remote:FireClient(player, "Finale", witness)
 		end
 	end)
 end
@@ -1367,7 +1844,8 @@ local function pruneRooms()
 			and index <= state.blind.index + 1
 		local attracted = state.moth and index >= state.moth.index - 3
 			and index <= state.moth.index + 1
-		if index < first and not chased and not patrolled and not attracted then
+		local swept = state.echo and index >= state.echo.origin and index <= state.echo.limit
+		if index < first and not chased and not patrolled and not attracted and not swept then
 			room.model:Destroy()
 			state.rooms[index] = nil
 		end
@@ -1394,6 +1872,7 @@ openDoor = function(player, index)
 	-- Previously visited doors really close and reopen. Neither a shut door nor
 	-- a newly opened next door is a safe boundary against the Rush.
 	if index < state.opened then
+		recordNoise(room.leaf.Position, 53)
 		swingDoor(room, not room.open)
 		return
 	end
@@ -1401,8 +1880,8 @@ openDoor = function(player, index)
 	if not room.unlocked then
 		if state.keys[player] == index then
 			-- The same key must be in the finder’s real hand until it enters its
-			-- OWN lock. The client's viewmodel raises that very key during this
-			-- turn; only after the animation may the door open for the group.
+			-- OWN lock. The player's native Motor6D right arm raises that same
+			-- welded key; only after the animation does the door open for the group.
 			room.busy = true
 			room.prompt.Enabled = false
 			player:SetAttribute("KeyTurning", true)
@@ -1423,7 +1902,8 @@ openDoor = function(player, index)
 				openDoor(player, index)
 			end)
 		else
-			-- A silent physical rattle instead of advice about drawers or a key.
+			-- A physical rattle instead of advice about drawers or a key.
+			recordNoise(room.leaf.Position, 62)
 			room.busy = true
 			room.prompt.Enabled = false
 			tweenPivot(room.door, room.hinge,
@@ -1439,6 +1919,7 @@ openDoor = function(player, index)
 		return
 	end
 	-- Construct the next enclosed segment before swinging the leaf open.
+	recordNoise(room.leaf.Position, 64)
 	if index == CONFIG.Doors - 1 then makeExit() end
 	state.opened = index + 1
 	state.world:SetAttribute("DoorsOpened", state.opened)
@@ -1450,9 +1931,9 @@ openDoor = function(player, index)
 	pruneRooms()
 end
 
--- Three entirely self-contained creature silhouettes. Their smooth parts and
--- surface details are display-only: damage is still decided by the server's
--- corridor-aware threat logic, not invisible collision on their appendages.
+-- Four hazards and a separate final apparition, all sculpted from smooth
+-- physical parts. Their limbs are display-only: damage is server-authoritative,
+-- never caused by invisible collision on a decorative appendage.
 local function creaturePart(parent, name, size, cf, color, material, alpha, shape)
 	local part = newPart(parent, name, size, cf, color, material, alpha or 0, false)
 	if shape then part.Shape = shape end
@@ -1472,8 +1953,33 @@ local function creatureHalo(entity, fill, outline)
 	halo.FillColor = fill
 	halo.FillTransparency = 0.94
 	halo.OutlineColor = outline
-	halo.OutlineTransparency = 0.37
+	halo.OutlineTransparency = 0.57
 	halo.Parent = entity
+end
+
+-- Thin irregular-looking pieces make a pale orbital rim WITHOUT a glowing
+-- cartoon pupil, flat image asset or a Roblox decal. The face faces local -Z.
+local function hollowEyes(parent, x, y, z, radiusX, radiusY, bone, void)
+	for _, side in ipairs({-1, 1}) do
+		local cx = side * x
+		-- A continuous, pale ellipse remains visible behind the deeper void.
+		-- The small uneven pieces roughen its contour, not replace the ring.
+		creaturePart(parent, "Pale orbital surround",
+			Vector3.new(radiusX * 2.55, radiusY * 2.43, 0.11),
+			CFrame.new(cx, y, z + 0.02), bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creaturePart(parent, "Sunken eye pit", Vector3.new(radiusX * 2.1, radiusY * 2.03, 0.16),
+			CFrame.new(cx, y, z - 0.04), void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		for bead = 1, 14 do
+			local theta = bead * math.pi * 2 / 14
+			local fragment = creaturePart(parent, "Chalk orbital ring",
+				Vector3.new(0.13, 0.18, 0.11),
+				CFrame.new(cx + math.cos(theta) * radiusX, y + math.sin(theta) * radiusY, z - 0.1),
+				bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+			fragment.CanCollide = false
+		end
+		creaturePart(parent, "Bottomless pupil", Vector3.new(radiusX * 1.45, radiusY * 1.54, 0.14),
+			CFrame.new(cx, y - 0.025, z - 0.16), void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	end
 end
 local function creatureMist(part, name, offset, tint, rate, scale)
 	local attachment = Instance.new("Attachment")
@@ -1501,17 +2007,18 @@ local function makeRush()
 	local entity = Instance.new("Model")
 	entity.Name = "TheRush"
 	entity.Parent = state.world
-	local soot = Color3.fromRGB(16, 19, 23)
-	local ash = Color3.fromRGB(41, 42, 45)
-	local bone = Color3.fromRGB(123, 113, 100)
-	local ember = Color3.fromRGB(222, 78, 48)
-	local torso = creaturePart(entity, "Hollow black chest", Vector3.new(3.1, 5.2, 1.85),
-		CFrame.new(0, 0.15, 0), soot, Enum.Material.Slate, 0.02, Enum.PartType.Ball)
+	local soot = Color3.fromRGB(11, 14, 18)
+	local ash = Color3.fromRGB(40, 43, 46)
+	local bone = Color3.fromRGB(176, 175, 161)
+	local ghostWhite = Color3.fromRGB(215, 216, 196)
+	local torso = creaturePart(entity, "Hollow black chest", Vector3.new(2.45, 5.05, 1.42),
+		CFrame.new(0, 0.15, 0) * CFrame.Angles(math.rad(-10), 0, 0),
+		soot, Enum.Material.Slate, 0.02, Enum.PartType.Ball)
 	entity.PrimaryPart = torso
-	creaturePart(entity, "Streaming coat tail", Vector3.new(3.9, 5.4, 1.55),
-		CFrame.new(0, -1.3, 0.75) * CFrame.Angles(math.rad(8), 0, 0),
-		ash, Enum.Material.Fabric, 0.16, Enum.PartType.Ball)
-	local claws = {}
+	creaturePart(entity, "Torn shadow behind the ribs", Vector3.new(2.8, 4.8, 1.16),
+		CFrame.new(0, -1.4, 0.7) * CFrame.Angles(math.rad(8), 0, 0),
+		ash, Enum.Material.Slate, 0.42, Enum.PartType.Ball)
+	local claws, legs = {}, {}
 	for _, side in ipairs({-1, 1}) do
 		local claw = Instance.new("Model")
 		claw.Name = side == -1 and "Left hooked arm" or "Right hooked arm"
@@ -1519,43 +2026,55 @@ local function makeRush()
 		local hinge = CFrame.new(side * 1.55, 1.65, 0)
 		claw.WorldPivot = hinge
 		table.insert(claws, {model = claw, hinge = hinge, side = side})
-		creaturePart(claw, "Raised crooked shoulder", Vector3.new(1.4, 1.6, 1.5),
+		creaturePart(claw, "Raised crooked shoulder", Vector3.new(0.96, 1.19, 0.97),
 			CFrame.new(side * 1.55, 1.65, 0), ash, Enum.Material.Slate, 0, Enum.PartType.Ball)
 		creatureLimb(claw, "Long upper arm", Vector3.new(side * 1.7, 1.4, -0.1),
-			Vector3.new(side * 2.75, -0.35, -0.62), 0.63, soot)
-		creaturePart(claw, "Knotted elbow", Vector3.new(0.7, 0.75, 0.7),
+			Vector3.new(side * 2.75, -0.35, -0.62), 0.34, soot)
+		creaturePart(claw, "Knotted elbow", Vector3.new(0.48, 0.54, 0.48),
 			CFrame.new(side * 2.75, -0.35, -0.62), ash, Enum.Material.Slate, 0, Enum.PartType.Ball)
 		creatureLimb(claw, "Sweeping forearm", Vector3.new(side * 2.75, -0.35, -0.62),
-			Vector3.new(side * 3.0, -2.35, -1.45), 0.47, soot)
+			Vector3.new(side * 3.0, -2.35, -1.45), 0.26, soot)
 		for finger = 1, 3 do
 			local spread = (finger - 2) * 0.33
 			creatureLimb(claw, "Three hooked talons", Vector3.new(side * 3.0 + spread, -2.33, -1.42),
 				Vector3.new(side * 3.3 + spread * 1.3, -3.22 - finger * 0.12, -2.04),
 				0.13, bone, Enum.Material.Slate)
 		end
-		creatureLimb(entity, "Uneven trailing leg", Vector3.new(side * 0.79, -1.75, 0.18),
-			Vector3.new(side * 1.14, -3.75, 0.65), 0.68, soot)
-		creaturePart(entity, "Bare dragging foot", Vector3.new(1.45, 0.45, 1.65),
-			CFrame.new(side * 1.15, -4.01, -0.13), soot,
+		local leg = Instance.new("Model")
+		leg.Name = side == -1 and "Left running leg" or "Right running leg"
+		leg.Parent = entity
+		local hip = CFrame.new(side * 0.79, -1.78, 0.18)
+		leg.WorldPivot = hip
+		local knee = Vector3.new(side * 1.12, -3.23, 0.31)
+		creaturePart(entity, "Joined hip socket", Vector3.new(0.84, 0.85, 0.74),
+			CFrame.new(side * 0.79, -1.78, 0.18), soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(leg, "Thigh fixed to hip", hip.Position, knee, 0.67, soot, Enum.Material.Slate)
+		creaturePart(leg, "Knee joint", Vector3.new(0.59, 0.60, 0.59),
+			CFrame.new(knee), ash, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local shin = Instance.new("Model")
+		shin.Name = "Bent running shin"
+		shin.Parent = leg
+		shin.WorldPivot = CFrame.new(knee)
+		creatureLimb(shin, "Long shin fixed to knee", knee,
+			Vector3.new(side * 1.14, -4.55, 0.4), 0.39, soot, Enum.Material.Slate)
+		creaturePart(shin, "Bare dragging foot", Vector3.new(0.8, 0.40, 1.24),
+			CFrame.new(side * 1.14, -4.78, -0.18), soot,
 			Enum.Material.Slate, 0, Enum.PartType.Ball)
+		table.insert(legs, {model = leg, hinge = hip, shin = shin,
+			kneeOffset = knee - hip.Position, side = side})
 		for rib = 1, 3 do
 			creatureLimb(entity, "Exposed broken rib", Vector3.new(side * 0.29, 0.88 - rib * 0.72, -0.95),
 				Vector3.new(side * 1.37, 1.12 - rib * 0.72, -0.56),
 				0.14, ash, Enum.Material.Slate)
 		end
 	end
-	local skull = creaturePart(entity, "Cracked funeral mask", Vector3.new(2.27, 2.55, 1.72),
-		CFrame.new(0, 3.22, -0.46) * CFrame.Angles(math.rad(-9), 0, 0),
+	local skull = creaturePart(entity, "Cracked funeral mask", Vector3.new(2.19, 2.8, 1.35),
+		CFrame.new(0, 3.23, -0.51) * CFrame.Angles(math.rad(-8), 0, 0),
 		bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	hollowEyes(entity, 0.53, 3.51, -1.21, 0.38, 0.43, ghostWhite, soot)
 	for _, side in ipairs({-1, 1}) do
-		creaturePart(entity, "Hollow eye socket", Vector3.new(0.68, 0.72, 0.19),
-			CFrame.new(side * 0.52, 3.47, -1.29), soot,
-			Enum.Material.Slate, 0, Enum.PartType.Ball)
-		creaturePart(entity, "Dim ember behind bone", Vector3.new(0.21, 0.3, 0.13),
-			CFrame.new(side * 0.53, 3.48, -1.4), ember,
-			Enum.Material.Neon, 0.05, Enum.PartType.Ball)
-		creatureLimb(entity, "Split antler of soot", Vector3.new(side * 0.7, 4.13, -0.2),
-			Vector3.new(side * 1.31, 5.05, 0.25), 0.23, soot, Enum.Material.Slate)
+		creatureLimb(entity, "Asymmetric crack in the mask", Vector3.new(side * 0.89, 4.32, -0.83),
+			Vector3.new(side * 0.69, 3.95, -1.15), 0.06, ash, Enum.Material.Slate)
 	end
 	local jaw = Instance.new("Model")
 	jaw.Name = "Hinged split mandible"
@@ -1564,31 +2083,96 @@ local function makeRush()
 	jaw.WorldPivot = jawHinge
 	creaturePart(jaw, "Open dark jaw", Vector3.new(1.24, 0.55, 0.27),
 		CFrame.new(0, 2.35, -1.29), soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
-	for tooth = -2, 2 do
-		creaturePart(jaw, "Uneven bone tooth", Vector3.new(0.14, 0.26, 0.1),
-			CFrame.new(tooth * 0.22, 2.50 - math.abs(tooth) * 0.04, -1.44),
-			bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	for tooth = -1, 1 do
+		creaturePart(jaw, "Small enamel shard", Vector3.new(0.085, 0.19, 0.075),
+			CFrame.new(tooth * 0.33, 2.47, -1.44), bone,
+			Enum.Material.Slate, 0, Enum.PartType.Ball)
 	end
 	for _, side in ipairs({-1, 1}) do
 		creatureLimb(jaw, "Mandible tendon", Vector3.new(side * 0.53, 2.39, -1.16),
 			Vector3.new(side * 0.81, 2.88, -0.83), 0.12, ash, Enum.Material.Slate)
-		creatureLimb(entity, "Mask fracture lit from within", Vector3.new(side * 0.15, 4.19, -1.21),
-			Vector3.new(side * 0.71, 3.96, -1.11), 0.064, ember, Enum.Material.Neon, 0.19)
 	end
 	local glow = Instance.new("PointLight")
-	glow.Name = "Embers through the mask"
-	glow.Color = ember
-	glow.Brightness = 1.4
-	glow.Range = 12
+	glow.Name = "Cold light on the mask"
+	glow.Color = Color3.fromRGB(174, 186, 185)
+	glow.Brightness = 0.75
+	glow.Range = 10
 	glow.Parent = skull
-	creatureHalo(entity, Color3.fromRGB(28, 13, 18), Color3.fromRGB(127, 44, 42))
+	creatureHalo(entity, Color3.fromRGB(28, 31, 34), Color3.fromRGB(140, 147, 145))
 	-- The body's narrow silhouette is followed by a wide, thin ash wake:
 	-- it suggests the room-wide danger without a flat opaque wall of parts.
 	for _, x in ipairs({-9, -4.5, 0, 4.5, 9}) do
 		creatureMist(torso, "Cold ash wake", Vector3.new(x, -1.8, 1.5),
 			Color3.fromRGB(33, 30, 36), x == 0 and 28 or 13, x == 0 and 3.0 or 2.1)
 	end
-	return entity, claws, glow, jaw, jawHinge
+	return entity, claws, glow, jaw, jawHinge, legs
+end
+
+makeFinalWitness = function(parent)
+	local figure = Instance.new("Model")
+	figure.Name = "TheLastWitness"
+	figure.Parent = parent
+	local void = Color3.fromRGB(6, 9, 12)
+	local flesh = Color3.fromRGB(27, 31, 32)
+	local bone = Color3.fromRGB(204, 206, 188)
+	local chalk = Color3.fromRGB(234, 232, 210)
+	local chest = creaturePart(figure, "Impossible narrow torso", Vector3.new(1.85, 4.4, 1.12),
+		CFrame.new(0, 0.08, 0.38) * CFrame.Angles(math.rad(-13), 0, 0),
+		void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	figure.PrimaryPart = chest
+	for _, side in ipairs({-1, 1}) do
+		creaturePart(figure, "Joined hip", Vector3.new(0.65, 0.63, 0.6),
+			CFrame.new(side * 0.47, -1.7, 0.29), flesh, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(figure, "Joined thin thigh", Vector3.new(side * 0.47, -1.7, 0.29),
+			Vector3.new(side * 0.72, -3.25, -0.12), 0.35, flesh, Enum.Material.Slate)
+		creaturePart(figure, "Knee", Vector3.new(0.37, 0.43, 0.36),
+			CFrame.new(side * 0.72, -3.23, -0.12), flesh, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(figure, "Thin shin", Vector3.new(side * 0.72, -3.2, -0.12),
+			Vector3.new(side * 0.8, -4.43, 0), 0.2, void, Enum.Material.Slate)
+		creaturePart(figure, "Foot without a shoe", Vector3.new(0.54, 0.27, 1.05),
+			CFrame.new(side * 0.8, -4.55, -0.45), flesh,
+			Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local elbow = Vector3.new(side * 1.79, -0.21, -0.66)
+		local wrist = Vector3.new(side * 1.69, -2.98, -1.08)
+		creaturePart(figure, "Joined shoulder", Vector3.new(0.79, 0.81, 0.74),
+			CFrame.new(side * 0.97, 1.86, 0), flesh, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(figure, "Too long upper arm", Vector3.new(side * 0.97, 1.86, 0),
+			elbow, 0.31, void, Enum.Material.Slate)
+		creaturePart(figure, "Bony joint", Vector3.new(0.45, 0.46, 0.44),
+			CFrame.new(elbow), flesh, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(figure, "Too long lower arm", elbow, wrist, 0.21, void, Enum.Material.Slate)
+		creaturePart(figure, "Joined wrist", Vector3.new(0.31, 0.36, 0.32),
+			CFrame.new(wrist), flesh, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		for finger = 1, 5 do
+			local offset = (finger - 3) * 0.13
+			creatureLimb(figure, "Dangling needle finger",
+				Vector3.new(wrist.X + offset, -3.04, -1.12),
+				Vector3.new(wrist.X + offset * 1.4, -4.05 - finger * 0.09, -1.37),
+				0.065, flesh, Enum.Material.Slate)
+		end
+		for rib = 1, 4 do
+			creatureLimb(figure, "Rib breaking the skin",
+				Vector3.new(side * 0.14, 1.06 - rib * 0.51, -0.59),
+				Vector3.new(side * 0.78, 1.12 - rib * 0.53, -0.41),
+				0.09, flesh, Enum.Material.Slate)
+		end
+	end
+	creatureLimb(figure, "Bent neck", Vector3.new(0, 1.78, -0.32),
+		Vector3.new(0, 2.83, -0.58), 0.32, void, Enum.Material.Slate)
+	local face = creaturePart(figure, "The face behind the dawn", Vector3.new(2.57, 3.22, 1.4),
+		CFrame.new(0, 3.68, -0.65) * CFrame.Angles(math.rad(-9), 0, 0),
+		bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	hollowEyes(figure, 0.63, 3.91, -1.37, 0.48, 0.55, chalk, void)
+	creaturePart(figure, "Closed black mouth", Vector3.new(0.84, 0.13, 0.1),
+		CFrame.new(0, 2.97, -1.31), void, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	local light = Instance.new("PointLight")
+	light.Name = "Light on the final eyes"
+	light.Color = Color3.fromRGB(211, 220, 210)
+	light.Brightness = 1.05
+	light.Range = 12
+	light.Parent = face
+	creatureHalo(figure, Color3.fromRGB(35, 39, 40), Color3.fromRGB(194, 199, 181))
+	return figure
 end
 
 local function pathPoint(z)
@@ -1597,16 +2181,38 @@ local function pathPoint(z)
 	return Vector3.new(Layout.PathX(index, localZ, state.seed), Layout.WalkwayY(index, localZ) + 5, z)
 end
 
+tryCrucifix = function(player, entity)
+	local info = state.players[player]
+	if not info or state.hidden[player] or info.selected ~= 3
+		or info.items.CRUCIFIX < 1 or not entity or not entity.Parent
+		or entity:GetAttribute("Banished") then return false end
+	info.items.CRUCIFIX = info.items.CRUCIFIX - 1
+	entity:SetAttribute("Banished", true)
+	for _, key in ipairs({"rush", "blind", "moth", "echo"}) do
+		if state[key] and state[key].entity == entity then state[key].banished = true end
+	end
+	syncInventory(player)
+	local pivot = entity:GetPivot()
+	tweenPivot(entity, pivot, pivot * CFrame.new(0, -11, 0), 0.75, function()
+		if entity.Parent then entity:Destroy() end
+	end)
+	return true
+end
+
 local function killPlayer(player, humanoid, kind, entity)
-	if humanoid.Health <= 0 then return end
+	if humanoid.Health <= 0 or player:GetAttribute("Finished")
+		or (entity and entity:GetAttribute("Banished")) then return end
+	if tryCrucifix(player, entity) then return end
 	-- The victim's own client gets the ACTUAL creature for a close-up. Keep its
 	-- model replicated until the scare ends, even if the patrol ends this frame.
 	if entity then entity:SetAttribute("RecentKill", true) end
 	remote:FireClient(player, "Jumpscare", kind, entity)
+	local info = state.players[player]
+	if info then info.health = 0; player:SetAttribute("Health", 0) end
 	humanoid.Health = 0
 end
 local function retireMonster(entity)
-	if not entity.Parent then return end
+	if not entity.Parent or entity:GetAttribute("Banished") then return end
 	if entity:GetAttribute("RecentKill") then
 		task.delay(1.6, function() if entity.Parent then entity:Destroy() end end)
 	else
@@ -1636,14 +2242,15 @@ startRush = function(room, epoch)
 		task.wait(0.2)
 	end
 	if epoch ~= session then return end
-	local entity, claws, glow, jaw, jawHinge = makeRush()
+	local entity, claws, glow, jaw, jawHinge, legs = makeRush()
+	rush.entity = entity
 	local z = rush.positionZ
 	entity:PivotTo(CFrame.lookAt(pathPoint(z), pathPoint(z) + Vector3.new(0, 0, 1)))
 	local maxZ = (limit + 1) * L - 4
 	local elapsed, stalled = 0, 0
-	while epoch == session and elapsed < CONFIG.RushMaximumSeconds do
+	while epoch == session and not rush.banished and elapsed < CONFIG.RushMaximumSeconds do
 		local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
-		if epoch ~= session then break end
+		if epoch ~= session or rush.banished then break end
 		elapsed = elapsed + dt
 		local allowed = math.min(maxZ, (state.opened + 1) * L - 4)
 		local previous = z
@@ -1661,7 +2268,14 @@ startRush = function(room, epoch)
 		end
 		jaw:PivotTo(facing * jawHinge
 			* CFrame.Angles(-0.26 - math.sin(elapsed * 10) * 0.19, 0, 0))
-		glow.Brightness = 1.15 + math.sin(elapsed * 15) * 0.25
+		for _, leg in ipairs(legs) do
+			local stride = math.sin(elapsed * 9 + (leg.side == -1 and 0 or math.pi))
+			local hipCF = facing * leg.hinge * CFrame.Angles(stride * 0.37, 0, 0)
+			leg.model:PivotTo(hipCF)
+			leg.shin:PivotTo(hipCF * CFrame.new(leg.kneeOffset)
+				* CFrame.Angles(math.max(0, stride) * 0.40, 0, 0))
+		end
+		glow.Brightness = 0.68 + math.sin(elapsed * 13) * 0.16
 		for _, player in ipairs(Players:GetPlayers()) do
 			local root, humanoid = playerRoot(player)
 			if root and not state.hidden[player] and root.Position.Z >= previous - 4.5
@@ -1723,6 +2337,32 @@ local function gateAhead(fromZ, toZ)
 	return nearest, direction
 end
 local function walkRoute(position, destination, speed, dt, height)
+	-- A room with side aisles has REAL inner screens. Roaming creatures use
+	-- their side openings at z10/34 instead of phasing through masonry to a
+	-- player in an alcove (including a player who retreated through a door).
+	local here = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(position.Z))
+	local target = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(destination.Z))
+	local room = state.rooms[here]
+	if room and room.shape == "AISLE" then
+		local localZ = position.Z - here * L
+		local targetZ = destination.Z - here * L
+		local function screened(dz)
+			return dz >= 5.5 and dz <= 14 or dz >= 30 and dz <= 38.5
+		end
+		local side = math.abs(position.X) > 6.6 and screened(localZ)
+		local wantsSide = here == target and math.abs(destination.X) > 6.6 and screened(targetZ)
+		local opposite = position.X * destination.X < 0
+		if side and (here ~= target or not wantsSide or opposite)
+			or wantsSide and math.abs(position.X) < 5.9 then
+			local gap = (wantsSide and targetZ or localZ) < 22 and 10 or 34
+			local gateZ = here * L + gap
+			if math.abs(position.Z - gateZ) > 0.8 then
+				destination = Vector3.new(position.X, destination.Y, gateZ)
+			else
+				destination = Vector3.new(wantsSide and destination.X or 0, destination.Y, gateZ)
+			end
+		end
+	end
 	local gate, direction = gateAhead(position.Z, destination.Z)
 	local x, z
 	if gate then
@@ -1772,11 +2412,11 @@ local function roamingTarget(position, nearZ, farZ, patrolZ, kind)
 	for _, player in ipairs(Players:GetPlayers()) do
 		local root = playerRoot(player)
 		local info = state.players[player]
-		if root and info and root.Position.Z >= nearZ and root.Position.Z <= farZ then
+		if root and info and not player:GetAttribute("Finished")
+			and root.Position.Z >= nearZ and root.Position.Z <= farZ then
 			local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
 			local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
-			local awake = kind == "BLIND" and (state.hidden[player] or not info.crouching)
-				or kind == "MOTH" and info.torchOn and not state.hidden[player]
+			local awake = kind == "MOTH" and info.torchOn and not state.hidden[player]
 			if math.abs(root.Position.Y - floorY - 3) < 5 and awake then
 				local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
 				if delta.Magnitude < nearest then
@@ -1789,171 +2429,176 @@ local function roamingTarget(position, nearZ, farZ, patrolZ, kind)
 	return destination or Vector3.new(0, position.Y, patrolZ), nearest
 end
 
+local function blindTarget(blind, position, nearZ, farZ, patrolZ)
+	-- Latest AUDIBLE position wins, even if the previous sound was across a
+	-- closed doorway. No position is read from a motionless player's avatar.
+	for i = #state.noises, 1, -1 do
+		local noise = state.noises[i]
+		if noise.serial <= (blind.lastSerial or 0) then break end
+		local planar = Vector3.new(noise.position.X - position.X, 0, noise.position.Z - position.Z)
+		if noise.position.Z >= nearZ and noise.position.Z <= farZ
+			and math.abs(noise.position.Y - position.Y) < 8
+			and planar.Magnitude <= noise.radius then
+			blind.lastSound = noise.position
+			blind.lastHeard = state.clock
+			blind.lastSerial = noise.serial
+			break
+		end
+	end
+	if blind.lastSound then
+		local point = blind.lastSound
+		local planar = Vector3.new(point.X - position.X, 0, point.Z - position.Z)
+		if planar.Magnitude < 2.3 and state.clock - blind.lastHeard > 0.8 then
+			blind.lastSound = nil
+		else
+			return point, planar.Magnitude
+		end
+	end
+	return Vector3.new(0, position.Y, patrolZ), math.huge
+end
+
 -- The Blind Guest comes FROM the room ahead. It cannot see a silent crouching
 -- player, but hears footsteps and occupied wardrobes even across open doors.
 local function makeBlind()
 	local entity = Instance.new("Model")
 	entity.Name = "TheBlindGuest"
 	entity.Parent = state.world
-	local wool = Color3.fromRGB(42, 50, 51)
-	local fold = Color3.fromRGB(61, 70, 69)
-	local dark = Color3.fromRGB(21, 29, 31)
-	local brass = Color3.fromRGB(123, 109, 78)
-	local skin = Color3.fromRGB(126, 132, 120)
-	local ivory = Color3.fromRGB(199, 195, 175)
-	local boneShade = Color3.fromRGB(147, 154, 139)
-	local chest = creaturePart(entity, "Tailored wool chest", Vector3.new(2.5, 3.5, 1.35),
-		CFrame.new(0, 0.82, 0.12), wool, Enum.Material.Fabric, 0, Enum.PartType.Ball)
+	-- Based on the supplied uncanny-humanoid reference: nearly black,
+	-- emaciated and stooped, with an oval bone face and enormous empty eyes.
+	-- No uniform, coat, neon pupils or block-built Roblox killer outfit.
+	local soot = Color3.fromRGB(15, 18, 20)
+	local charcoal = Color3.fromRGB(31, 35, 35)
+	local sinew = Color3.fromRGB(51, 57, 54)
+	local ivory = Color3.fromRGB(195, 197, 180)
+	local rim = Color3.fromRGB(222, 223, 204)
+	local void = Color3.fromRGB(3, 6, 8)
+	local chest = creaturePart(entity, "Hunched hollow thorax", Vector3.new(1.67, 3.9, 1.08),
+		CFrame.new(0, 0.48, 0.12) * CFrame.Angles(math.rad(-13), 0, 0),
+		soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
 	entity.PrimaryPart = chest
-	creaturePart(entity, "Narrow velvet waistcoat", Vector3.new(1.55, 3.02, 0.6),
-		CFrame.new(0, 0.57, -0.52), dark, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	creaturePart(entity, "Rounded collar around the throat", Vector3.new(2.16, 0.83, 1.4),
-		CFrame.new(0, 2.12, 0.12), dark, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	for foldIndex = -2, 2 do
-		local offset = foldIndex * 0.47
-		creaturePart(entity, "Overlapping hanging coat fold", Vector3.new(0.92, 3.5 + math.abs(offset) * 0.18, 1.24),
-			CFrame.new(offset, -1.78 + math.abs(offset) * 0.14, 0.11 + math.abs(offset) * 0.13)
-				* CFrame.Angles(0, 0, offset * 0.085),
-			math.abs(foldIndex) % 2 == 0 and wool or fold, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	end
-	for _, side in ipairs({-1, 1}) do
-		creatureLimb(entity, "Slanted ivory lapel", Vector3.new(side * 0.31, 2.07, -0.57),
-			Vector3.new(side * 0.88, -0.36, -0.81), 0.28, boneShade, Enum.Material.Fabric)
-		creaturePart(entity, "Fabric lapel fold", Vector3.new(0.46, 1.55, 0.21),
-			CFrame.new(side * 0.61, 0.95, -0.74) * CFrame.Angles(0, 0, side * 0.2),
-			fold, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creaturePart(entity, "Stitched waist pocket", Vector3.new(0.53, 0.13, 0.19),
-			CFrame.new(side * 0.87, -0.56, -0.52), brass, Enum.Material.Metal, 0, Enum.PartType.Ball)
-		creaturePart(entity, "Rounded uniform epaulette", Vector3.new(1.16, 0.32, 1.02),
-			CFrame.new(side * 1.18, 1.86, -0.01), fold, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	end
-	for button = 0, 4 do
-		local stud = creaturePart(entity, "Five tarnished uniform buttons", Vector3.new(0.15, 0.15, 0.13),
-			CFrame.new(0, 1.49 - button * 0.56, -0.86), brass, Enum.Material.Metal, 0, Enum.PartType.Ball)
-		stud.Reflectance = 0.08
+	creaturePart(entity, "Sunken abdomen", Vector3.new(1.14, 1.75, 0.84),
+		CFrame.new(0, -1.57, 0.32), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	creatureLimb(entity, "Rigid sternum", Vector3.new(0, 1.53, -0.73),
+		Vector3.new(0, -1.03, -0.54), 0.13, sinew, Enum.Material.Slate)
+	for rib = 1, 5 do
+		for _, side in ipairs({-1, 1}) do
+			creatureLimb(entity, "Ribs under stretched skin",
+				Vector3.new(side * 0.08, 1.12 - rib * 0.49, -0.7),
+				Vector3.new(side * (0.73 - rib * 0.05), 1.32 - rib * 0.51, -0.49),
+				0.085, sinew, Enum.Material.Slate)
+		end
 	end
 	local limbs = {}
 	for _, side in ipairs({-1, 1}) do
+		creaturePart(entity, "Uneven shoulder blade", Vector3.new(0.78, 0.52, 0.8),
+			CFrame.new(side * 0.92, 1.84, -0.06), charcoal,
+			Enum.Material.Slate, 0, Enum.PartType.Ball)
 		local arm = Instance.new("Model")
-		arm.Name = side == -1 and "Left articulated sleeve" or "Right articulated sleeve"
+		arm.Name = side == -1 and "Left searching arm" or "Right searching arm"
 		arm.Parent = entity
-		local armHinge = CFrame.new(side * 1.17, 1.69, 0)
+		local armHinge = CFrame.new(side * 0.95, 1.78, -0.15)
 		arm.WorldPivot = armHinge
-		table.insert(limbs, {model = arm, hinge = armHinge, side = side, sway = 0.12})
-		creaturePart(arm, "Soft round shoulder", Vector3.new(1.1, 1.18, 1.12),
-			CFrame.new(side * 1.18, 1.59, 0.04), wool, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creaturePart(arm, "Tapered wool upper sleeve", Vector3.new(0.88, 2.55, 0.94),
-			CFrame.new(side * 1.45, 0.37, -0.16) * CFrame.Angles(0, 0, side * -0.12),
-			wool, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creaturePart(arm, "Faded sleeve cuff", Vector3.new(0.66, 0.38, 0.68),
-			CFrame.new(side * 1.61, -0.87, -0.43), fold, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creaturePart(arm, "Pale articulated forearm", Vector3.new(0.44, 1.35, 0.48),
-			CFrame.new(side * 1.77, -1.49, -0.79) * CFrame.Angles(math.rad(-16), 0, 0),
-			skin, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
-		creaturePart(arm, "Knuckled gloved palm", Vector3.new(0.63, 0.4, 0.54),
-			CFrame.new(side * 1.87, -2.12, -1.05), skin, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
-		for finger = 1, 4 do
-			local offset = (finger - 2.5) * 0.15
-			creatureLimb(arm, "Four delicate searching fingers",
-				Vector3.new(side * 1.87 + offset, -2.25, -1.04),
-				Vector3.new(side * 1.94 + offset * 1.17, -2.87 - math.abs(offset), -1.4),
-				0.1, skin)
+		table.insert(limbs, {model = arm, hinge = armHinge, side = side, sway = 0.16})
+		local elbow = Vector3.new(side * 1.65, -0.45, -0.5)
+		local wrist = Vector3.new(side * 1.87, -2.5, -0.9)
+		creatureLimb(arm, "Stretch of upper arm", Vector3.new(side * 0.95, 1.79, -0.15),
+			elbow, 0.35, soot, Enum.Material.Slate)
+		creaturePart(arm, "Bony protruding elbow", Vector3.new(0.44, 0.43, 0.44),
+			CFrame.new(elbow), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(arm, "Too long lower arm", elbow, wrist, 0.23, soot, Enum.Material.Slate)
+		creaturePart(arm, "Palm with no fingerprints", Vector3.new(0.42, 0.51, 0.24),
+			CFrame.new(wrist + Vector3.new(0, -0.25, -0.08)),
+			charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		for finger = 1, 5 do
+			local offset = (finger - 3) * 0.11
+			creatureLimb(arm, "Threadlike feeling finger",
+				Vector3.new(wrist.X + offset, -2.81, -0.94),
+				Vector3.new(wrist.X + offset * 1.6 + side * 0.08,
+					-3.6 - (finger % 2) * 0.12, -1.24), 0.065, sinew)
 		end
 		local leg = Instance.new("Model")
 		leg.Name = side == -1 and "Left walking leg" or "Right walking leg"
 		leg.Parent = entity
-		local legHinge = CFrame.new(side * 0.55, -1.72, 0.1)
+		local legHinge = CFrame.new(side * 0.46, -1.78, 0.25)
 		leg.WorldPivot = legHinge
-		table.insert(limbs, {model = leg, hinge = legHinge, side = -side, sway = 0.17})
-		creaturePart(leg, "Pressed dark trouser", Vector3.new(0.84, 2.31, 0.89),
-			CFrame.new(side * 0.54, -2.64, 0.15), dark, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creaturePart(leg, "Well-worn leather shoe", Vector3.new(0.95, 0.53, 1.5),
-			CFrame.new(side * 0.54, -4.15, -0.42), dark, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
-		local hem = Instance.new("Model")
-		hem.Name = side == -1 and "Left swaying coat hem" or "Right swaying coat hem"
-		hem.Parent = entity
-		local hemHinge = CFrame.new(side * 0.68, -0.56, 0.28)
-		hem.WorldPivot = hemHinge
-		table.insert(limbs, {model = hem, hinge = hemHinge, side = side, sway = 0.09})
-		creaturePart(hem, "Uneven trailing wool coat tail", Vector3.new(1.26, 3.85, 1.18),
-			CFrame.new(side * 0.85, -2.28, 0.49) * CFrame.Angles(0, 0, side * 0.08),
-			wool, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-		creatureLimb(hem, "Hand-stitched coat-edge piping",
-			Vector3.new(side * 0.28, -3.94, -0.23),
-			Vector3.new(side * 1.36, -3.91, -0.04), 0.08, brass, Enum.Material.Metal, 0.24)
+		creaturePart(entity, "Connected hip joint", Vector3.new(0.71, 0.72, 0.69),
+			legHinge, soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local knee = Vector3.new(side * 0.62, -3.08, -0.12)
+		creatureLimb(leg, "Knot of dark thigh", Vector3.new(side * 0.44, -1.75, 0.24),
+			knee, 0.38, soot, Enum.Material.Slate)
+		creaturePart(leg, "Knobbed kneecap", Vector3.new(0.42, 0.43, 0.40),
+			CFrame.new(knee), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		local shin = Instance.new("Model")
+		shin.Name = "Flexing lower leg"
+		shin.Parent = leg
+		shin.WorldPivot = CFrame.new(knee)
+		creatureLimb(shin, "Knifelike shin", knee,
+			Vector3.new(side * 0.75, -4.28, 0.05), 0.24, soot, Enum.Material.Slate)
+		creaturePart(shin, "Bare narrow foot", Vector3.new(0.55, 0.26, 1.11),
+			CFrame.new(side * 0.76, -4.53, -0.46),
+			charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		table.insert(limbs, {model = leg, hinge = legHinge, side = -side,
+			sway = 0.35, shin = shin, kneeOffset = knee - legHinge.Position})
 	end
 	local head = Instance.new("Model")
 	head.Name = "Searching mask and neck"
 	head.Parent = entity
-	local hinge = CFrame.new(0, 2.37, -0.03)
+	local hinge = CFrame.new(0, 2.33, -0.32)
 	head.WorldPivot = hinge
-	creaturePart(head, "Sinewed narrow neck", Vector3.new(0.69, 1.0, 0.73),
-		CFrame.new(0, 2.46, -0.1), skin, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
-	creaturePart(head, "Dark fabric hood", Vector3.new(2.0, 2.62, 1.66),
-		CFrame.new(0, 3.57, 0.13), dark, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	local mask = creaturePart(head, "Sculpted ivory eyeless face", Vector3.new(1.64, 2.18, 1.06),
-		CFrame.new(0, 3.51, -0.44) * CFrame.Angles(math.rad(-7), 0, 0),
+	creatureLimb(head, "Craning thin neck", Vector3.new(0, 1.91, -0.41),
+		Vector3.new(0, 2.94, -0.55), 0.34, soot, Enum.Material.Slate)
+	creaturePart(head, "Back of bald skull", Vector3.new(2.12, 2.95, 1.16),
+		CFrame.new(0, 3.55, -0.12), charcoal, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	local mask = creaturePart(head, "Oval ashen face", Vector3.new(2.12, 2.87, 1.1),
+		CFrame.new(0, 3.54, -0.58) * CFrame.Angles(math.rad(-7), 0, 0),
 		ivory, Enum.Material.Slate, 0, Enum.PartType.Ball)
-	creaturePart(head, "High smooth forehead", Vector3.new(1.43, 0.82, 0.86),
-		CFrame.new(0, 4.12, -0.56), ivory, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	hollowEyes(head, 0.55, 3.73, -1.22, 0.39, 0.47, rim, void)
 	for _, side in ipairs({-1, 1}) do
-		creaturePart(head, "Hollow under the sealed eyelid", Vector3.new(0.53, 0.35, 0.13),
-			CFrame.new(side * 0.39, 3.69, -0.963) * CFrame.Angles(0, 0, side * 0.13),
-			dark, Enum.Material.Slate, 0, Enum.PartType.Ball)
-		creaturePart(head, "Sculpted cheekbone", Vector3.new(0.46, 0.46, 0.24),
-			CFrame.new(side * 0.46, 3.23, -0.91), ivory, Enum.Material.Slate, 0, Enum.PartType.Ball)
-		creatureLimb(head, "Long arched eyebrow", Vector3.new(side * 0.13, 3.89, -0.94),
-			Vector3.new(side * 0.69, 3.83, -0.87), 0.12, boneShade, Enum.Material.Slate)
-		creatureLimb(head, "Tight eyelid seam", Vector3.new(side * 0.15, 3.7, -1.045),
-			Vector3.new(side * 0.67, 3.66, -0.998), 0.07, skin, Enum.Material.Fabric)
-		for stitch = 1, 4 do
-			local x = side * (0.16 + stitch * 0.105)
-			creatureLimb(head, "Hand-sewn eyelid stitch", Vector3.new(x, 3.78, -1.057),
-				Vector3.new(x + side * 0.035, 3.6, -1.049), 0.039, dark)
-		end
-		creatureLimb(head, "Porcelain hairline fissure", Vector3.new(side * 0.64, 4.12, -0.8),
-			Vector3.new(side * 0.5, 3.99, -0.95), 0.045, boneShade, Enum.Material.Slate)
+		creaturePart(head, "Hollow cheek", Vector3.new(0.4, 0.48, 0.18),
+			CFrame.new(side * 0.64, 2.97, -1.04),
+			Color3.fromRGB(130, 137, 127), Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creatureLimb(head, "Hairline fracture", Vector3.new(side * 0.84, 4.47, -0.66),
+			Vector3.new(side * 0.92, 3.89, -1.08), 0.052, charcoal, Enum.Material.Slate)
 	end
-	creaturePart(head, "Gracefully tapered nose", Vector3.new(0.27, 0.84, 0.27),
-		CFrame.new(0, 3.42, -1.04), boneShade, Enum.Material.Slate, 0, Enum.PartType.Ball)
-	creaturePart(head, "Mouth hidden under frayed cloth", Vector3.new(0.9, 0.33, 0.24),
-		CFrame.new(0, 2.95, -0.94), fold, Enum.Material.Fabric, 0, Enum.PartType.Ball)
-	for stripe = 1, 3 do
-		creatureLimb(head, "Frayed cloth wrapping", Vector3.new(-0.41, 2.9 + stripe * 0.065, -1.03),
-			Vector3.new(0.42, 2.96 + stripe * 0.055, -1.03), 0.055, skin, Enum.Material.Fabric)
-	end
+	creaturePart(head, "Mouth without a voice", Vector3.new(0.72, 0.15, 0.12),
+		CFrame.new(0, 2.76, -1.15), void, Enum.Material.Slate, 0, Enum.PartType.Ball)
 	local light = Instance.new("PointLight")
-	light.Name = "Pallid rim around the sculpted face"
-	light.Color = Color3.fromRGB(177, 202, 181)
+	light.Name = "Face caught in the dark"
+	light.Color = Color3.fromRGB(176, 189, 179)
 	light.Brightness = 0.7
-	light.Range = 9
+	light.Range = 10
 	light.Parent = mask
-	creatureHalo(entity, Color3.fromRGB(52, 66, 61), Color3.fromRGB(170, 195, 171))
-	creatureMist(chest, "Faint dust on the coat", Vector3.new(0, 0.3, 0.4),
-		Color3.fromRGB(117, 130, 119), 5, 0.65)
+	creatureHalo(entity, Color3.fromRGB(29, 32, 32), Color3.fromRGB(146, 151, 141))
+	creatureMist(chest, "Breathless dust", Vector3.new(0, 0.5, 0.5),
+		Color3.fromRGB(90, 100, 100), 4, 0.75)
 	return entity, head, hinge, limbs
 end
 
 startBlind = function(room, epoch)
 	if epoch ~= session or state.blind then return end
-	state.blind = {index = room.index}
+	local blind = {index = room.index, lastSerial = state.noiseSerial}
+	state.blind = blind
 	for _, lamp in ipairs(room.lamps) do
 		if lamp.normallyOn then setLamp(lamp, true, nil, 0.45) end
 	end
 	task.wait(0.8)
 	if epoch ~= session then return end
 	local entity, mask, maskHinge, limbs = makeBlind()
+	blind.entity = entity
 	local startZ = room.index * L
 	local position = Vector3.new(0, room.entryY + 4.7, startZ + 35)
 	entity:PivotTo(CFrame.lookAt(position, position + Vector3.new(0, 0, -1)))
 	local patrolZ = startZ + 7 -- walk from the FAR end to the entry and back
 	local elapsed = 0
-	while epoch == session and elapsed < CONFIG.BlindLifetime do
+	-- Remain in this room across exits and re-entries. Only retiring the
+	-- inaccessible rear segment or a crucifix ends this encounter.
+	while epoch == session and room.model.Parent and not blind.banished
+		and state.opened <= room.index + CONFIG.KeepBehind do
 		local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
-		if epoch ~= session then break end
+		if epoch ~= session or blind.banished then break end
 		elapsed = elapsed + dt
 		local nearZ, farZ = roamBounds(room)
-		local destination, nearest = roamingTarget(position, nearZ, farZ, patrolZ, "BLIND")
+		local destination, nearest = blindTarget(blind, position, nearZ, farZ, patrolZ)
 		if nearest == math.huge and math.abs(position.Z - patrolZ) < 1.1 then
 			patrolZ = patrolZ == startZ + 7 and startZ + 37 or startZ + 7
 			destination = Vector3.new(0, position.Y, patrolZ)
@@ -1968,8 +2613,13 @@ startBlind = function(room, epoch)
 			mask:PivotTo(facing * maskHinge
 				* CFrame.Angles(0, math.sin(elapsed * 1.7) * 0.17, math.sin(elapsed * 2.3) * 0.04))
 			for _, limb in ipairs(limbs) do
-				limb.model:PivotTo(facing * limb.hinge * CFrame.Angles(
-					math.sin(elapsed * 6.6 + (limb.side == -1 and 0 or math.pi)) * limb.sway, 0, 0))
+				local step = math.sin(elapsed * 6.6 + (limb.side == -1 and 0 or math.pi))
+				local rootCF = facing * limb.hinge * CFrame.Angles(step * limb.sway, 0, 0)
+				limb.model:PivotTo(rootCF)
+				if limb.shin then
+				limb.shin:PivotTo(rootCF * CFrame.new(limb.kneeOffset)
+						* CFrame.Angles(math.max(0, step) * 0.42, 0, 0))
+				end
 			end
 		end
 		for _, player in ipairs(Players:GetPlayers()) do
@@ -2003,140 +2653,103 @@ end
 -- flashlight OFF is the survival rule; crouching alone does nothing. It can
 -- pass through an unlit player without damage and never causes a light blink.
 local function makeMoth()
+	-- Not one giant human-faced insect: eighteen individually visible moths,
+	-- each with a tiny body, head and two fluttering, translucent wings.
 	local entity = Instance.new("Model")
 	entity.Name = "ThePaleMoth"
 	entity.Parent = state.world
-	local ivory = Color3.fromRGB(176, 189, 176)
-	local wingIvory = Color3.fromRGB(119, 150, 140)
-	local vein = Color3.fromRGB(67, 91, 86)
-	local eyeColor = Color3.fromRGB(30, 51, 52)
-	local glowColor = Color3.fromRGB(154, 223, 191)
-	local core = creaturePart(entity, "Ribbed pale thorax", Vector3.new(2.1, 4.7, 1.52),
-		CFrame.new(0, 0.1, 0), ivory, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
+	local pale = Color3.fromRGB(181, 199, 178)
+	local dark = Color3.fromRGB(26, 38, 36)
+	local core = creaturePart(entity, "Swarm heart", Vector3.new(0.12, 0.12, 0.12),
+		CFrame.new(), pale, Enum.Material.Glass, 1, Enum.PartType.Ball)
 	entity.PrimaryPart = core
-	creaturePart(entity, "Fine fur at the neck", Vector3.new(2.95, 1.53, 1.58),
-		CFrame.new(0, 1.7, 0.1), ivory, Enum.Material.Fabric, 0.04, Enum.PartType.Ball)
-	local mask = creaturePart(entity, "Still insect face", Vector3.new(1.72, 1.88, 1.3),
-		CFrame.new(0, 2.89, -0.2), Color3.fromRGB(189, 201, 180),
-		Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
-	for _, side in ipairs({-1, 1}) do
-		creaturePart(entity, "Black compound eye", Vector3.new(0.62, 0.84, 0.21),
-			CFrame.new(side * 0.51, 3.05, -0.82) * CFrame.Angles(0, 0, side * 0.17),
-			eyeColor, Enum.Material.Glass, 0.11, Enum.PartType.Ball)
-		creaturePart(entity, "Light caught in the eye", Vector3.new(0.1, 0.21, 0.07),
-			CFrame.new(side * 0.6, 3.26, -0.99), glowColor,
-			Enum.Material.Neon, 0.22, Enum.PartType.Ball)
-		creatureLimb(entity, "Feathered feeler", Vector3.new(side * 0.32, 3.62, -0.06),
-			Vector3.new(side * 1.17, 4.63, -0.37), 0.17, vein, Enum.Material.Fabric)
-		for n = 1, 3 do
-			local x = side * (0.55 + n * 0.18)
-			creatureLimb(entity, "Feeler bristle", Vector3.new(x, 3.9 + n * 0.21, -0.21),
-				Vector3.new(x + side * 0.28, 4.28 + n * 0.24, -0.29),
-				0.065, ivory, Enum.Material.Fabric)
+	local insects = {}
+	for i = 1, 18 do
+		local offset = Vector3.new(math.sin(i * 2.4) * (0.45 + i % 3 * 0.29),
+			math.cos(i * 1.3) * 0.82, math.sin(i * 1.81) * 0.84)
+		local moth = Instance.new("Model")
+		moth.Name = string.format("Individual tiny moth %02d", i)
+		moth.Parent = entity
+		moth.WorldPivot = CFrame.new(offset)
+		creaturePart(moth, "Tiny moth thorax", Vector3.new(0.17, 0.16, 0.32),
+			CFrame.new(offset), dark, Enum.Material.Slate, 0, Enum.PartType.Ball)
+		creaturePart(moth, "Pale moth head", Vector3.new(0.19, 0.17, 0.18),
+			CFrame.new(offset + Vector3.new(0, 0, -0.19)), pale,
+			Enum.Material.Slate, 0, Enum.PartType.Ball)
+		for _, side in ipairs({-1, 1}) do
+			creaturePart(moth, "Pinpoint black eye", Vector3.new(0.058, 0.058, 0.045),
+				CFrame.new(offset + Vector3.new(side * 0.07, 0.04, -0.28)), dark,
+				Enum.Material.Slate, 0, Enum.PartType.Ball)
 		end
-		creatureLimb(entity, "Folded praying forearm", Vector3.new(side * 0.92, 1.14, -0.29),
-			Vector3.new(side * 1.12, -0.83, -1.12), 0.26, ivory)
-		creatureLimb(entity, "Delicate lower limb", Vector3.new(side * 0.58, -1.67, -0.1),
-			Vector3.new(side * 0.86, -4.34, -0.35), 0.22, vein)
-		for tuft = 1, 4 do
-			creaturePart(entity, "Soft neck fur tuft", Vector3.new(0.38, 1.1, 0.43),
-				CFrame.new(side * (0.45 + tuft * 0.15), 1.52 - tuft * 0.18, -0.62)
-					* CFrame.Angles(0, 0, side * -0.27),
-				ivory, Enum.Material.Fabric, 0.05, Enum.PartType.Ball)
+		local wings = {}
+		for _, side in ipairs({-1, 1}) do
+			local wing = Instance.new("Model")
+			wing.Name = side == -1 and "Left moth wing" or "Right moth wing"
+			wing.Parent = moth
+			wing.WorldPivot = CFrame.new(offset + Vector3.new(side * 0.10, 0.06, 0.03))
+			local membrane = creaturePart(wing, "Fine veined moth wing",
+				Vector3.new(0.44, 0.035, 0.29),
+				CFrame.new(offset + Vector3.new(side * 0.32, 0.07, 0.02))
+					* CFrame.Angles(0, side * -0.22, side * 0.25),
+				pale, Enum.Material.Glass, 0.36, Enum.PartType.Ball)
+			membrane.CastShadow = false
+			table.insert(wings, {model = wing, side = side})
 		end
-		for claw = 1, 3 do
-			creatureLimb(entity, "Fine hanging claw", Vector3.new(side * 1.12 + (claw - 2) * 0.14, -0.78, -1.13),
-				Vector3.new(side * 1.15 + (claw - 2) * 0.17, -1.45, -1.61),
-				0.095, vein)
-		end
-	end
-	for stripe = 1, 5 do
-		creaturePart(entity, "Abdomen seam", Vector3.new(1.5 - stripe * 0.06, 0.09, 0.32),
-			CFrame.new(0, 0.4 - stripe * 0.55, -0.72), vein,
-			Enum.Material.SmoothPlastic, 0.12, Enum.PartType.Ball)
-	end
-	-- Four overlapping, veined translucent wings instead of flat rectangles.
-	-- Each side pivots at its thorax and flaps independently during the hunt.
-	local wings = {}
-	for _, side in ipairs({-1, 1}) do
-		local wing = Instance.new("Model")
-		wing.Name = side == -1 and "Veiled left wing" or "Veiled right wing"
-		wing.Parent = entity
-		local hinge = CFrame.new(side * 0.94, 0.75, 0.42)
-		wing.WorldPivot = hinge
-		for _, lobe in ipairs({{2.99, 1.72, 4.6, 3.3}, {2.74, -1.27, 4.17, 2.92}}) do
-			local wingCF = CFrame.new(side * lobe[1], lobe[2], 0.59)
-				* CFrame.Angles(0, side * 0.12, side * 0.18)
-			local plate = creaturePart(wing, "Soft layered wing", Vector3.new(lobe[3], lobe[4], 0.23),
-				wingCF, wingIvory, Enum.Material.Glass, 0.22, Enum.PartType.Ball)
-			plate.CastShadow = false
-			creaturePart(wing, "Dark eye on the wing", Vector3.new(0.86, 0.88, 0.11),
-				CFrame.new(side * (lobe[1] + 0.57), lobe[2] + 0.13, 0.39), eyeColor,
-				Enum.Material.Slate, 0.1, Enum.PartType.Ball)
-			creaturePart(wing, "Pale ring round the wing eye", Vector3.new(1.08, 1.1, 0.08),
-				CFrame.new(side * (lobe[1] + 0.57), lobe[2] + 0.13, 0.44), glowColor,
-				Enum.Material.Neon, 0.39, Enum.PartType.Ball)
-			creatureLimb(wing, "Wing main vein", Vector3.new(side * 1.0, 0.75, 0.4),
-				Vector3.new(side * (lobe[1] + 1.35), lobe[2] + 0.58, 0.43),
-				0.12, vein, Enum.Material.SmoothPlastic, 0.22)
-			for scallop = 1, 4 do
-				creaturePart(wing, "Translucent scalloped wing fringe", Vector3.new(0.74, 0.58, 0.14),
-					CFrame.new(side * (lobe[1] + lobe[3] / 2 - 0.4 + scallop * 0.16),
-						lobe[2] + (scallop - 2.5) * lobe[4] / 4, 0.56),
-					wingIvory, Enum.Material.Glass, 0.37, Enum.PartType.Ball)
-			end
-		end
-		for n = 1, 3 do
-			creatureLimb(wing, "Radiating wing vein", Vector3.new(side * 1.45, 0.55, 0.36),
-				Vector3.new(side * (3.1 + n * 0.46), 2.14 - n * 0.85, 0.41),
-				0.075, vein, Enum.Material.SmoothPlastic, 0.22)
-		end
-		table.insert(wings, {model = wing, hinge = hinge, side = side})
+		table.insert(insects, {model = moth, offset = offset, wings = wings, phase = i * 1.93})
 	end
 	local light = Instance.new("PointLight")
-	light.Name = "Moth phosphor glow"
-	light.Color = glowColor
-	light.Brightness = 1.15
-	light.Range = 14
-	light.Parent = mask
-	creatureHalo(entity, Color3.fromRGB(50, 81, 73), Color3.fromRGB(140, 194, 171))
-	creatureMist(core, "Quiet moth dust", Vector3.new(0, -0.25, 0.5),
-		glowColor, 11, 0.85)
-	return entity, wings
+	light.Name = "Weak light on the swarm"
+	light.Color = Color3.fromRGB(123, 184, 158)
+	light.Brightness = 0.45
+	light.Range = 9
+	light.Parent = core
+	creatureHalo(entity, Color3.fromRGB(37, 53, 48), pale)
+	creatureMist(core, "Fine airborne scales", Vector3.new(), pale, 5, 0.3)
+	return entity, insects
+end
+
+local function flutterMoths(insects, facing, elapsed)
+	for _, insect in ipairs(insects) do
+		local flutter = insect.offset + Vector3.new(
+			math.sin(elapsed * 3.1 + insect.phase) * 0.16,
+			math.sin(elapsed * 4.4 + insect.phase) * 0.14,
+			math.cos(elapsed * 3.5 + insect.phase) * 0.12)
+		insect.model:PivotTo(facing * CFrame.new(flutter))
+		for _, wing in ipairs(insect.wings) do
+			wing.model:PivotTo(facing * CFrame.new(flutter)
+				* CFrame.new(wing.side * 0.1, 0.06, 0.03)
+				* CFrame.Angles(0, 0, wing.side * (0.28 + math.sin(elapsed * 19 + insect.phase) * 0.52)))
+		end
+	end
 end
 
 startMoth = function(room, epoch)
 	if epoch ~= session or state.moth then return end
-	state.moth = {index = room.index}
-	local entity, wings = makeMoth()
+	local hunt = {index = room.index, bites = {}}
+	state.moth = hunt
+	local entity, insects = makeMoth()
+	hunt.entity = entity
 	local startZ = room.index * L
-	local position = Vector3.new(0, room.entryY + 6.5, startZ + 36)
+	local position = Vector3.new(0, room.entryY + 6.1, startZ + 36)
 	local facing = CFrame.lookAt(position, position + Vector3.new(0, 0, -1))
 	entity:PivotTo(facing)
-	-- First sight is not an instant death: four full seconds of a visible,
-	-- harmless moth at the far end. Its dust, face glow and a real sconce's
-	-- slow change to pale green communicate the threat without ANY text or GUI.
+	-- Four seconds of physical green lamp colour and visible tiny fluttering
+	-- bodies, not text, a GUI flash or instant damage.
 	local cold = Color3.fromRGB(120, 197, 167)
 	for i = 1, 8 do
-		if epoch ~= session then return end
+		if epoch ~= session or hunt.banished then break end
 		for _, lamp in ipairs(room.lamps) do
 			if lamp.normallyOn or lamp == room.lamps[#room.lamps] then
 				setLamp(lamp, true, cold, 0.25 + i * 0.026)
 			end
 		end
-		for _, wing in ipairs(wings) do
-			wing.model:PivotTo(facing * wing.hinge
-				* CFrame.Angles(0, wing.side * math.sin(i * 0.8) * 0.1,
-					wing.side * math.sin(i * 1.2) * 0.21))
-		end
+		flutterMoths(insects, facing, i * CONFIG.MothGraceSeconds / 8)
 		task.wait(CONFIG.MothGraceSeconds / 8)
 	end
-	if epoch ~= session then return end
-	local patrolZ = startZ + 9
-	local elapsed = 0
-	while epoch == session and elapsed < CONFIG.MothLifetime do
+	local patrolZ, elapsed = startZ + 9, 0
+	while epoch == session and not hunt.banished and elapsed < CONFIG.MothLifetime do
 		local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
-		if epoch ~= session then break end
+		if epoch ~= session or hunt.banished then break end
 		elapsed = elapsed + dt
 		local nearZ, farZ = roamBounds(room)
 		local destination, nearest = roamingTarget(position, nearZ, farZ, patrolZ, "MOTH")
@@ -2145,28 +2758,25 @@ startMoth = function(room, epoch)
 			destination = Vector3.new(0, position.Y, patrolZ)
 		end
 		local old = position
-		local onRoute = walkRoute(position, destination, nearest < math.huge and CONFIG.MothSpeed or 8, dt, 6.5)
-		position = Vector3.new(onRoute.X, onRoute.Y + math.sin(elapsed * 4.1) * 0.28, onRoute.Z)
+		local onRoute = walkRoute(position, destination,
+			nearest < math.huge and CONFIG.MothSpeed or 7, dt, 6.1)
+		position = Vector3.new(onRoute.X, onRoute.Y + math.sin(elapsed * 4) * 0.24, onRoute.Z)
 		local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
-		if heading.Magnitude > 0.01 then
-			local facing = CFrame.lookAt(position, position + heading)
-			entity:PivotTo(facing)
-			for _, wing in ipairs(wings) do
-				wing.model:PivotTo(facing * wing.hinge * CFrame.Angles(
-					0, wing.side * math.sin(elapsed * 5.2) * 0.17,
-					wing.side * (0.09 + math.sin(elapsed * 6.3) * 0.25)))
-			end
-		end
+		if heading.Magnitude > 0.01 then facing = CFrame.lookAt(position, position + heading) end
+		entity:PivotTo(facing)
+		flutterMoths(insects, facing, elapsed + CONFIG.MothGraceSeconds)
 		for _, player in ipairs(Players:GetPlayers()) do
-			local root, humanoid = playerRoot(player)
+			local root = playerRoot(player)
 			local info = state.players[player]
 			if root and info and info.torchOn and not state.hidden[player]
 				and root.Position.Z >= nearZ and root.Position.Z <= farZ then
 				local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(root.Position.Z))
 				local floorY = Layout.WalkwayY(index, root.Position.Z - index * L)
-				if math.abs(root.Position.Y - floorY - 3) < 5 then
-					local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
-					if delta.Magnitude < 5.3 then killPlayer(player, humanoid, "MOTH", entity) end
+				local delta = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
+				if math.abs(root.Position.Y - floorY - 3) < 5 and delta.Magnitude < 5.5
+					and state.clock >= (hunt.bites[player] or 0) then
+					hunt.bites[player] = state.clock + 1.1
+					damagePlayer(player, 7, "MOTH", entity) -- gradual; light OFF = no bites
 				end
 			end
 		end
@@ -2175,6 +2785,104 @@ startMoth = function(room, epoch)
 	if epoch ~= session then return end
 	for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
 	state.moth = nil
+	pruneRooms()
+end
+
+-- The Echo crosses the SAME open route five alternating times: forward,
+-- back, forward, back, then a final escape. The gaps invite leaving a closet;
+-- remaining inside throughout is punished by the server's closet limit.
+startEcho = function(room, epoch)
+	if epoch ~= session or state.echo then return end
+	local origin = math.max(0, room.index - 2)
+	local nearZ = origin * L + 5
+	local farZ = (room.index + 1) * L - 5
+	local echo = {origin = origin, limit = room.index}
+	state.echo = echo
+	local rng = Random.new(state.seed + room.index * 151 + 17)
+	for i = 1, 14 do
+		if epoch ~= session or echo.banished then return end
+		for index = origin, room.index do
+			local lit = state.rooms[index]
+			if lit then
+				for _, lamp in ipairs(lit.lamps) do
+					setLamp(lamp, rng:NextNumber() > 0.43)
+				end
+			end
+		end
+		task.wait(0.18)
+	end
+	if epoch ~= session then return end
+	local entity, claws, glow, jaw, jawHinge, legs = makeRush()
+	entity.Name = "TheEcho"
+	echo.entity = entity
+	local face = entity:FindFirstChild("Cracked funeral mask")
+	if face then face.Color = Color3.fromRGB(183, 183, 205) end
+	glow.Color = Color3.fromRGB(167, 157, 211)
+	local z, elapsed = nearZ, 0
+	local path = {farZ, nearZ, farZ, nearZ, farZ}
+	for pass, target in ipairs(path) do
+		if echo.banished or epoch ~= session then break end
+		local direction = target > z and 1 or -1
+		local frames = 0
+		while not echo.banished and epoch == session and math.abs(target - z) > 0.1 and frames < 85 do
+			local dt = math.min(RunService.Heartbeat:Wait(), 0.15)
+			if epoch ~= session or echo.banished then break end
+			frames = frames + 1
+			elapsed = elapsed + dt
+			local previous = z
+			z = z + direction * math.min(math.abs(target - z), 76 * dt)
+			local point = pathPoint(z)
+			local facing = CFrame.lookAt(point, point + Vector3.new(0, 0, direction))
+			entity:PivotTo(facing)
+			for _, claw in ipairs(claws) do
+				claw.model:PivotTo(facing * claw.hinge
+					* CFrame.Angles(math.sin(elapsed * 9 + claw.side) * 0.31, 0, 0))
+			end
+			for _, leg in ipairs(legs) do
+				local stride = math.sin(elapsed * 9 + (leg.side == -1 and 0 or math.pi))
+				local hip = facing * leg.hinge * CFrame.Angles(stride * 0.34, 0, 0)
+				leg.model:PivotTo(hip)
+				leg.shin:PivotTo(hip * CFrame.new(leg.kneeOffset)
+					* CFrame.Angles(math.max(0, stride) * 0.42, 0, 0))
+			end
+			jaw:PivotTo(facing * jawHinge * CFrame.Angles(-0.25 + math.sin(elapsed * 12) * 0.15, 0, 0))
+			glow.Brightness = 0.7 + math.sin(elapsed * 14) * 0.17
+			for _, player in ipairs(Players:GetPlayers()) do
+				local root, humanoid = playerRoot(player)
+				if root and not state.hidden[player]
+					and root.Position.Z >= math.min(previous, z) - 4.5
+					and root.Position.Z <= math.max(previous, z) + 4.5 then
+					local crossing = pathPoint(math.clamp(root.Position.Z, nearZ, farZ))
+					if math.abs(root.Position.X) < W / 2 - 0.7
+						and math.abs(root.Position.Y - (crossing.Y - 2)) < 5.5 then
+						killPlayer(player, humanoid, "ECHO", entity)
+					end
+				end
+			end
+		end
+		-- Two and a half seconds to come out for air, then hide again.
+		if pass < #path and not echo.banished then
+			for i = 1, 13 do
+				if epoch ~= session or echo.banished then break end
+				for index = origin, room.index do
+					local lit = state.rooms[index]
+					if lit then
+						for _, lamp in ipairs(lit.lamps) do
+							setLamp(lamp, i % 4 ~= 1 and lamp.normallyOn)
+						end
+					end
+				end
+				task.wait(0.2)
+			end
+		end
+	end
+	retireMonster(entity)
+	if epoch ~= session then return end
+	for index = origin, room.index do
+		local lit = state.rooms[index]
+		if lit then for _, lamp in ipairs(lit.lamps) do setLamp(lamp, lamp.normallyOn) end end
+	end
+	state.echo = nil
 	pruneRooms()
 end
 
@@ -2191,11 +2899,22 @@ local function resetWorld()
 	state.rooms = {}
 	state.hidden = {}
 	state.keys = {}
+	state.clock = 0
+	state.noises = {}
+	state.noiseSerial = 0
 	state.opened = 0
 	state.rush = nil
 	state.blind = nil
 	state.moth = nil
+	state.echo = nil
 	state.backSeal = nil
+	for player, info in pairs(state.players) do
+		info.items = emptyItems()
+		info.coins, info.notes, info.gold = 0, 0, 0
+		info.charge, info.health, info.selected = 0, 100, 1
+		info.torchOn, info.pillUntil, info.closetCooldown = false, 0, 0
+		syncInventory(player)
+	end
 	local previousSeed = state.seed
 	state.seed = CONFIG.Seed or Random.new():NextInteger(1, 1000000000)
 	if not CONFIG.Seed and state.seed == previousSeed then
@@ -2203,7 +2922,14 @@ local function resetWorld()
 	end
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
-	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v6")
+	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v8")
+	state.world:SetAttribute("GenerationBuild", "LootShopThreats-v8")
+	local firstDoors = {}
+	for index = 0, 7 do
+		local room = state.plan[index]
+		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
+	end
+	print("[NOCTURNE v8] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -2241,8 +2967,13 @@ Players.CharacterAutoLoads = false
 resetWorld()
 
 local function registerPlayer(player)
-	state.players[player] = {stamina = 100, sprinting = false, crouching = false, torchOn = true}
+	state.players[player] = {
+		stamina = 100, sprinting = false, crouching = false, torchOn = false,
+		items = emptyItems(), coins = 0, notes = 0, gold = 0,
+		charge = 0, health = 100, selected = 1, pillUntil = 0, closetCooldown = 0,
+	}
 	player:SetAttribute("Stamina", 100)
+	syncInventory(player)
 	player:SetAttribute("Hidden", false)
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("Finished", false)
@@ -2252,11 +2983,16 @@ local function registerPlayer(player)
 		local humanoid = character:WaitForChild("Humanoid", 12)
 		local root = character:WaitForChild("HumanoidRootPart", 12)
 		if not humanoid or not root then return end
-		state.players[player].stamina = 100
-		state.players[player].sprinting = false
-		state.players[player].crouching = false
-		state.players[player].torchOn = true
+		local info = state.players[player]
+		if not info then return end
+		info.stamina = 100
+		info.sprinting = false
+		info.crouching = false
+		info.torchOn = false
+		info.health = 100 -- a new life, but the run's wallet and items survive
+		info.pillUntil = 0
 		player:SetAttribute("Stamina", 100)
+		syncInventory(player)
 		player:SetAttribute("Hidden", false)
 		player:SetAttribute("Crouching", false)
 		humanoid.WalkSpeed = CONFIG.WalkSpeed
@@ -2280,6 +3016,9 @@ local function registerPlayer(player)
 		humanoid.Died:Connect(function()
 			putBackKey(player)
 			leaveCloset(player, false)
+			info.health = 0
+			info.torchOn = false
+			syncInventory(player)
 			remote:FireClient(player, "Death")
 		end)
 	end)
@@ -2300,6 +3039,32 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 	if not info then return end
 	if action == "Ready" then
 		remote:FireClient(player, "State", state.opened, state.seed, L)
+		syncInventory(player)
+		return
+	end
+	if action == "Select" then
+		if typeof(argument) == "number" and argument == math.floor(argument)
+			and argument >= 1 and argument <= #SLOTS then
+			info.selected = argument
+			if argument ~= 1 then info.torchOn = false end
+			syncInventory(player)
+		end
+		return
+	elseif action == "Use" then
+		local id = SLOTS[info.selected]
+		local _, humanoid = playerRoot(player)
+		if typeof(argument) ~= "string" or argument ~= id or not humanoid
+			or state.hidden[player] or info.items[id] < 1 or player:GetAttribute("Finished") then return end
+		if id == "PILL" then
+			info.pillUntil = state.clock + 8
+		elseif HEAL[id] and info.health < 100 then
+			info.health = math.min(100, math.min(info.health, humanoid.Health) + HEAL[id])
+			humanoid.Health = info.health
+		else
+			return -- cross is spent only on contact; torch has its own toggle
+		end
+		info.items[id] = info.items[id] - 1
+		syncInventory(player)
 		return
 	end
 	if action == "Exit" then
@@ -2314,7 +3079,12 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 			player:SetAttribute("Crouching", argument)
 		end
 	elseif action == "Torch" then
-		if typeof(argument) == "boolean" then info.torchOn = argument end
+		if typeof(argument) == "boolean" then
+			info.torchOn = argument and info.selected == 1 and info.items.FLASHLIGHT > 0
+				and info.charge > 0 and not state.hidden[player]
+				and playerRoot(player) ~= nil and not player:GetAttribute("Finished") or false
+			syncInventory(player)
+		end
 	elseif action == "Retry" then
 		local oldHum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		local finished = player:GetAttribute("Finished") == true
@@ -2368,26 +3138,105 @@ RunService.Heartbeat:Connect(function(dt)
 	if accumulator < 0.12 then return end
 	local step = math.min(accumulator, 0.4)
 	accumulator = 0
+	state.clock = state.clock + step
+	local leader, leaderZ = nil, -math.huge
+	local first = math.max(0, state.opened - CONFIG.KeepBehind)
+	local farthest = state.opened == CONFIG.Doors and CONFIG.Doors * L + 34
+		or math.min(CONFIG.Doors, state.opened + CONFIG.Ahead) * L
+	for player in pairs(state.players) do
+		local root = playerRoot(player)
+		if root and not player:GetAttribute("Finished") then
+			local index = Layout.RoomIndexAt(root.Position.Z)
+			local floorY = index >= CONFIG.Doors and Layout.EntranceY(CONFIG.Doors)
+				or Layout.WalkwayY(index, math.clamp(root.Position.Z - index * L, 0, L))
+			if root.Position.Z >= first * L - 1 and root.Position.Z <= farthest + 2
+				and math.abs(root.Position.X) <= W / 2 + 1
+				and math.abs(root.Position.Y - floorY - 3) < 7
+				and root.Position.Z > leaderZ then
+				leader, leaderZ = root, root.Position.Z
+			end
+		end
+	end
 	for player, info in pairs(state.players) do
 		local root, humanoid = playerRoot(player)
-		if humanoid and not state.hidden[player] and not player:GetAttribute("Finished") then
-			keepInsideHotel(player, root)
-			-- MoveDirection is client-only on Roblox; replicated root velocity is
-			-- the reliable server-side test for whether sprint drains stamina.
-			local velocity = root.AssemblyLinearVelocity
-			local moving = Vector3.new(velocity.X, 0, velocity.Z).Magnitude > 1
-			local running = info.sprinting and not info.crouching and info.stamina > 0.5 and moving
-			if running then
-				info.stamina = math.max(0, info.stamina - CONFIG.SprintDrain * step)
-			else
-				info.stamina = math.min(100, info.stamina + CONFIG.StaminaRegen * step)
+		if humanoid then
+			-- Roblox's default character Health script may try to regenerate;
+			-- only bandages, kits or a fresh life may raise this server-owned cap.
+			if humanoid.Health > info.health then humanoid.Health = info.health end
+			if humanoid.Health < info.health then
+				info.health = humanoid.Health
+				player:SetAttribute("Health", math.ceil(info.health))
 			end
-			local speed = info.crouching and CONFIG.CrouchSpeed or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed)
-			if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
-			local rounded = math.floor(info.stamina + 0.5)
-			if player:GetAttribute("Stamina") ~= rounded then player:SetAttribute("Stamina", rounded) end
+		end
+		local hiding = state.hidden[player]
+		if hiding and humanoid then
+			hiding.seconds = hiding.seconds + step
+			local pressure = math.clamp((hiding.seconds - CONFIG.ClosetWarning)
+				/ (CONFIG.ClosetLimit - CONFIG.ClosetWarning), 0, 1)
+			local percent = math.floor(pressure * 100 + 0.5)
+			if player:GetAttribute("ClosetPressure") ~= percent then
+				player:SetAttribute("ClosetPressure", percent)
+			end
+			if hiding.seconds >= CONFIG.ClosetLimit then
+				info.closetCooldown = state.clock + 6
+				leaveCloset(player, true)
+				damagePlayer(player, 19)
+			end
+		elseif humanoid and not player:GetAttribute("Finished") then
+			keepInsideHotel(player, root)
+			local gap = leader and (leaderZ - root.Position.Z) / L or 0
+			local catchup = gap >= 5 and 7 or gap >= 2.5 and 3 or 0
+			if gap >= 7 and leader ~= root
+				and state.clock >= (info.catchupCooldown or 0) then
+				local index = math.min(CONFIG.Doors - 1, Layout.RoomIndexAt(leaderZ))
+				local z = math.clamp(leaderZ - 7, index * L + 9, index * L + L - 11)
+				local localZ = z - index * L
+				root.CFrame = CFrame.new(Layout.PathX(index, localZ, state.seed),
+					Layout.WalkwayY(index, localZ) + 3, z) * CFrame.Angles(0, math.pi, 0)
+				root.AssemblyLinearVelocity = Vector3.new()
+				root.AssemblyAngularVelocity = Vector3.new()
+				info.catchupCooldown = state.clock + 10
+				info.lastFootstep = state.clock
+				damagePlayer(player, 36)
+				catchup = 0
+			end
+			if humanoid.Health > 0 then
+				-- Server velocity, not spoofable client MoveDirection, drives noise.
+				local velocity = root.AssemblyLinearVelocity
+				local horizontal = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+				local moving = horizontal > 1.8
+				local running = info.sprinting and not info.crouching
+					and info.stamina > 0.5 and moving
+				if moving and not info.crouching
+					and state.clock - (info.lastFootstep or -1) >= 0.62 then
+					local reach = horizontal > 15 and 90 or horizontal > 7 and 65 or 44
+					recordNoise(root.Position, reach)
+					info.lastFootstep = state.clock
+				end
+				if running then
+					info.stamina = math.max(0, info.stamina - CONFIG.SprintDrain * step)
+				else
+					info.stamina = math.min(100, info.stamina + CONFIG.StaminaRegen * step)
+				end
+				local fast = state.clock < info.pillUntil and 9 or 0
+				local speed = info.crouching and CONFIG.CrouchSpeed
+					or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed) + fast + catchup
+				if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
+				local rounded = math.floor(info.stamina + 0.5)
+				if player:GetAttribute("Stamina") ~= rounded then player:SetAttribute("Stamina", rounded) end
+				if info.torchOn and info.items.FLASHLIGHT > 0 then
+					info.charge = math.max(0, info.charge - CONFIG.TorchDrain * step)
+					if info.charge <= 0 then
+						info.items.FLASHLIGHT = 0
+						info.torchOn = false
+						syncInventory(player)
+					elseif player:GetAttribute("TorchCharge") ~= math.ceil(info.charge) then
+						player:SetAttribute("TorchCharge", math.ceil(info.charge))
+					end
+				end
+			end
 		end
 	end
 end)
 
-print("[NOCTURNE v6 / physical keys and room lights] 100 doors, independently regenerated rooms; three threats ready.")
+print("[NOCTURNE v8] 100 enclosed doors, loot, apothecary, native hand and four physical threats.")

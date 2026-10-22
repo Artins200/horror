@@ -54,6 +54,15 @@ class PlaceTests(unittest.TestCase):
         self.assertEqual(float(starter.findtext("Properties/float[@name='CameraMaxZoomDistance']")), 0.5)
         self.assertEqual(starter.findtext("Properties/bool[@name='EnableMouseLockOption']"), "false")
 
+    def test_editor_and_play_share_legible_lighting(self):
+        lighting = self.named("Lighting", "Lighting")
+        ambient = lighting.find("Properties/Color3[@name='Ambient']")
+        self.assertGreater(float(ambient.findtext("R")), 0.11)
+        self.assertGreater(float(ambient.findtext("B")), 0.15)
+        self.assertGreaterEqual(float(lighting.findtext(
+            "Properties/float[@name='ExposureCompensation']")), 0)
+        self.assertGreater(float(lighting.findtext("Properties/float[@name='FogEnd']")), 100)
+
     def test_editor_preview_has_door_wardrobes_and_lights(self):
         preview = self.named("Model", "StudioPreview")
         parts = preview.findall(".//Item[@class='Part']")
@@ -138,6 +147,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("function() startRush(room, mySession)", self.server)
         self.assertIn("function() startBlind(room, mySession)", self.server)
         self.assertIn("function() startMoth(room, mySession)", self.server)
+        self.assertIn("function() startEcho(room, mySession)", self.server)
         self.assertIn("RunService:BindToRenderStep", self.client)
         self.assertIn("Enum.CameraType.Custom", self.client)
         self.assertIn("Enum.CameraType.Scriptable", self.client)  # only while hiding
@@ -148,12 +158,14 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v6")', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v8")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "LootShopThreats-v8")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
         self.assertNotIn('Enum.CameraMode.Classic', self.client)
-        self.assertIn('AvatarArmsFirstPerson', self.perspective)
+        self.assertNotIn('viewModel = Instance.new("Model")', self.perspective)
+        self.assertNotIn('AvatarArmsFirstPerson"', self.perspective)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.perspective)
         self.assertIn('camera.CameraSubject = humanoid', self.perspective)
         self.assertNotIn('Opening title card', self.client)
@@ -165,37 +177,48 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('if hidden and peekCF then', render)
         self.assertIn('camera.CameraType = Enum.CameraType.Scriptable', render)
 
-    def test_keys_crouching_monsters_and_first_person_avatar_are_embedded(self):
-        self.assertIn("local function makeDresser", self.server)
-        self.assertIn('takePrompt.Name = "TakeKey"', self.server)
-        self.assertIn('openPrompt.Name = "OpenDrawer"', self.server)
-        self.assertIn('room.model:SetAttribute("KeyFound", true)', self.server)
-        self.assertIn('closePrompt.Name = "CloseWardrobe"', self.server)
-        self.assertIn('local function swingDoor(room, opening)', self.server)
-        self.assertIn('local function swingCloset(closet, opening)', self.server)
-        self.assertIn('info.crouching and CONFIG.CrouchSpeed', self.server)
-        self.assertIn('state.hidden[player] or not info.crouching', self.server)
-        self.assertIn('local function copyArm', self.perspective)
-        self.assertIn('copyArm(prefix .. "Hand"', self.perspective)
-        self.assertIn('copyArm("Left Arm"', self.perspective)
-        self.assertIn('part.CanCollide = false', self.perspective)
+    def test_loot_inventory_shop_and_four_threats_are_embedded(self):
+        for fragment in ('local function makeDresser', 'takePrompt.Name = "TakeKey"',
+                         'lootPrompt.Name = "TakeLoot"', 'local function makeLoot(',
+                         'local function makeShop(', 'prompt.Name = "Buy_" .. id',
+                         'local function pay(', 'state.opened < 51',
+                         'local function blindTarget(', 'lastSound = noise.position',
+                         'and state.opened <= room.index + CONFIG.KeepBehind',
+                         'startMoth = function(room, epoch)', 'local function flutterMoths(',
+                         'for i = 1, 18 do', 'startEcho = function(room, epoch)',
+                         'local path = {farZ, nearZ, farZ, nearZ, farZ}',
+                         'local function spiderJump(', 'ClosetLimit = 14',
+                         'tryCrucifix = function(player, entity)',
+                         'damagePlayer(player, 36)', 'info.health < 100',
+                         'CONFIG.TorchDrain * step'):
+            self.assertIn(fragment, self.server)
+        self.assertIn('local SLOTS = {"FLASHLIGHT", "PILL", "CRUCIFIX", "BANDAGE", "MEDKIT"}',
+                      self.server)
+        self.assertIn('nextThreat = eligible[rng:NextInteger(1, #eligible)]', self.server)
+        self.assertIn('rng:NextNumber() < 0.19', self.server)
+        self.assertNotIn('if index == 5 then threat', self.server)
+        self.assertNotIn('BlindLifetime', self.server)
+        self.assertIn('local function redrawEquipment()', self.client)
+        self.assertIn('StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)', self.client)
+        self.assertIn('if event == "Inventory" then', self.client)
+        self.assertIn('elseif event == "Spider"', self.client)
+        self.assertIn('shelterBlur.Size = visualPressure * 13', self.client)
+        self.assertIn('remote:FireServer("Use", SLOT_IDS[selected])', self.client)
         self.assertIn('humanoid.CameraOffset = Vector3.new', self.client)
         self.assertIn('remote:FireServer("Crouch", on)', self.client)
-        self.assertIn('remote:FireServer("Torch", flashlightOn)', self.client)
-        self.assertIn('startMoth = function(room, epoch)', self.server)
-        self.assertIn('info.torchOn and not state.hidden[player]', self.server)
-        self.assertNotIn('viewPart("Left hand"', self.client)
+        self.assertNotIn('remote:FireServer("Torch", flashlightOn)', self.client)
+        self.assertIn('remote:FireServer("Torch", not flashlightOn)', self.client)
         self.assertNotIn('"Whisper"', self.server + self.client)
-        self.assertNotIn('play(heartbeat', self.client)
-        self.assertNotIn('play(knock', self.client)
         self.assertNotIn('elseif event == "Warning"', self.client)
         self.assertNotIn('remote:FireAllClients("Warning"', self.server)
-        self.assertNotIn('remote:FireAllClients("Safe"', self.server)
         self.assertIn('function Layout.IsTurn(index, seed)', self.layout)
         self.assertIn('function Layout.PathX(index, localZ, seed)', self.layout)
         self.assertIn('local function planRooms(seed)', self.server)
         self.assertIn('local function walkRoute(position, destination, speed, dt, height)', self.server)
         self.assertIn('local function showScare(kind, source)', self.client)
+        self.assertIn('makeFinalWitness = function(parent)', self.server)
+        self.assertIn('remote:FireClient(player, "Finale", witness)', self.server)
+        self.assertIn('Solid wall behind the final light', self.server)
 
     def test_no_hint_overlays_and_physical_lighting(self):
         self.assertNotIn('showNotice(', self.client)
@@ -210,19 +233,26 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('setLamp(lamp, lamp.normallyOn)', self.server)
         self.assertIn('model:SetAttribute("Dark", plan.dark)', self.server)
         self.assertIn('bulb.Material = Enum.Material.Glass', self.server)
+        self.assertIn('light.Name = "Blackout floor glow"', self.server)
+        self.assertIn('Lighting.Ambient = Color3.fromRGB(31, 37, 43)', self.server)
         self.assertIn('MothGraceSeconds = 4', self.server)
         self.assertIn('task.wait(CONFIG.MothGraceSeconds / 8)', self.server)
         self.assertNotIn('remote:FireAllClients("Warning"', self.server)
 
-    def test_keys_live_in_roblox_hands_only_until_used(self):
+    def test_key_uses_joined_native_arm_not_a_detached_viewmodel(self):
         self.assertIn('hand = character and (character:FindFirstChild("RightHand")', self.server)
         self.assertIn('grip.Part0 = hand', self.server)
         self.assertIn('player:SetAttribute("HeldKey", room.index + 1)', self.server)
         self.assertIn('if state.keys[player] == index then', self.server)
         self.assertIn('putBackKey(player)', self.server)
-        self.assertIn('local visible = keyNumber ~= nil and not peek', self.perspective)
-        self.assertIn('local keyModel', self.perspective)
-        self.assertIn('local function makeViewKey()', self.perspective)
+        self.assertIn('local visible = key ~= nil and not peek', self.perspective)
+        self.assertIn('shoulder = character:FindFirstChild(r15 and "RightShoulder"', self.perspective)
+        self.assertIn('elbow = r15 and character:FindFirstChild("RightElbow"', self.perspective)
+        self.assertIn('wrist = r15 and character:FindFirstChild("RightWrist"', self.perspective)
+        self.assertIn('motor.C0 = CFrame.new(base.Position)', self.perspective)
+        self.assertIn('part.LocalTransparencyModifier = visible and 0 or 1', self.perspective)
+        self.assertNotIn('source:Clone()', self.perspective)
+        self.assertNotIn('viewModel', self.perspective)
         self.assertIn('player:GetAttribute("KeyTurning")', self.perspective)
         self.assertIn('cameraCF = cf * CFrame.new(0, 5.0, -1.02)', self.server)
         self.assertIn('"Spaced wooden louvre"', self.server)
@@ -232,7 +262,8 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v6.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v8.rbxl").read_bytes())
+        self.assertNotEqual(binary, (ROOT / "Nocturne-v7.rbxl").read_bytes())
 
 
 if __name__ == "__main__":
