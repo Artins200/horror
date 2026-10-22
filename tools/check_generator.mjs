@@ -23,7 +23,8 @@ local function drainTasks()
     end
 end
 local observed = {events = {}, monsterPositions = {}, monsterLooks = {},
-    wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0}
+    wingFrames = 0, maskFrames = 0, limbFrames = 0, clawFrames = 0,
+    jawFrames = 0, graceElapsed = 0, sconceChanges = 0}
 local function signal()
     local s = {callbacks = {}}
     function s:Connect(f)
@@ -135,7 +136,38 @@ function methods:Destroy()
     for _, child in ipairs(self:GetChildren()) do child:Destroy() end
     self.Parent = nil
 end
+function methods:Clone()
+    local copies = {}
+    local function duplicate(source)
+        local copy = Instance.new(source._class)
+        copies[source] = copy
+        for property, value in pairs(source) do
+            if property ~= "_class" and property ~= "_parent" and property ~= "_children"
+                and property ~= "_attributes" and property ~= "Touched" and property ~= "Changed"
+                and property ~= "Triggered" and property ~= "Died" and property ~= "Completed"
+                and property ~= "CharacterAdded" and property ~= "OnServerEvent" then
+                copy[property] = value
+            end
+        end
+        if source._cf then copy.CFrame = source.CFrame end
+        for property, value in pairs(source._attributes) do copy:SetAttribute(property, value) end
+        for _, child in ipairs(source:GetChildren()) do duplicate(child).Parent = copy end
+        return copy
+    end
+    local copy = duplicate(self)
+    for source, replica in pairs(copies) do
+        if source.PrimaryPart then replica.PrimaryPart = copies[source.PrimaryPart] end
+    end
+    return copy
+end
 function methods:PivotTo(cf)
+    if self.Name == "HeldKey" then
+        local previous = self.PrimaryPart.CFrame
+        local shift = cf.Position - previous.Position
+        for _, descendant in ipairs(self:GetDescendants()) do
+            if descendant:IsA("BasePart") then descendant.CFrame = CFrame.new(descendant.Position + shift) end
+        end
+    end
     self.WorldPivot = cf
     if self.Name == "TheRush" or self.Name == "TheBlindGuest" or self.Name == "ThePaleMoth" then
         table.insert(observed.monsterPositions, {name=self.Name, x=cf.Position.X, z=cf.Position.Z})
@@ -167,8 +199,11 @@ function methods:PivotTo(cf)
         observed.maskFrames = observed.maskFrames + 1
     elseif self.Name == "Left hooked arm" or self.Name == "Right hooked arm" then
         observed.clawFrames = observed.clawFrames + 1
+    elseif self.Name == "Hinged split mandible" then
+        observed.jawFrames = observed.jawFrames + 1
     elseif self.Name == "Left walking leg" or self.Name == "Right walking leg"
-        or self.Name == "Left articulated sleeve" or self.Name == "Right articulated sleeve" then
+        or self.Name == "Left articulated sleeve" or self.Name == "Right articulated sleeve"
+        or self.Name == "Left swaying coat hem" or self.Name == "Right swaying coat hem" then
         observed.limbFrames = observed.limbFrames + 1
     end
 end
@@ -176,6 +211,7 @@ local instMeta = {
     __index = function(t, k)
         if k == "Parent" then return rawget(t, "_parent") end
         if k == "CFrame" then return rawget(t, "_cf") end
+        if k == "Enabled" and t._class == "PointLight" then return rawget(t, "_enabled") end
         if k == "Position" then return (rawget(t, "_cf") or CFrame.new()).Position end
         return methods[k]
     end,
@@ -185,6 +221,9 @@ local instMeta = {
             if v then table.insert(v._children, t) end
         elseif k == "CFrame" then
             rawset(t, "_cf", v)
+        elseif k == "Enabled" and t._class == "PointLight" then
+            rawset(t, "_enabled", v)
+            observed.sconceChanges = observed.sconceChanges + 1
         else rawset(t, k, v) end
     end,
 }
@@ -192,7 +231,7 @@ Instance = {new = function(class)
     local obj = setmetatable({_class=class, _children={}, _attributes={}, Name=class,
         Touched=signal(), Changed=signal(), Triggered=signal(), Died=signal(),
         CharacterAdded=signal(), OnServerEvent=signal(), Completed=signal()}, instMeta)
-    if class == "ProximityPrompt" then obj.Enabled = true end
+    if class == "ProximityPrompt" or class == "PointLight" then obj.Enabled = true end
     return obj
 end}
 local services = {}
@@ -222,7 +261,14 @@ end
 services.RunService.Heartbeat = signal()
 task = {spawn = function(f) table.insert(deferred, f) end,
     defer = function(f) table.insert(deferred, f) end,
-    delay = function(_, f) f() end, wait = function() return 0.1 end}
+    delay = function(_, f) f() end,
+    wait = function(seconds)
+        if seconds == 0.5 then
+            observed.graceElapsed = observed.graceElapsed + seconds
+            if observed.graceCheck then observed.graceCheck() end
+        end
+        return seconds or 0.1
+    end}
 function services.ReplicatedStorage:FireClient() end
 function services.ReplicatedStorage:FireAllClients() end
 local oldNew = Instance.new
@@ -247,14 +293,17 @@ end)();
 ${server}
 -- Different runs must rearrange ACTUAL room types; the same seed is replayable.
 local a, b, repeated = planRooms(154511), planRooms(984451), planRooms(154511)
-local differences, threatDifferences, lastKind = 0, 0, nil
+local differences, threatDifferences, shapeDifferences, darkCount, lastKind = 0, 0, 0, 0, nil
 local kinds = {}
 for index = 0, 99 do
     local roomA, roomB = a[index], b[index]
     if roomA.kind ~= roomB.kind then differences = differences + 1 end
     if roomA.threat ~= roomB.threat then threatDifferences = threatDifferences + 1 end
+    if roomA.shape ~= roomB.shape then shapeDifferences = shapeDifferences + 1 end
+    if roomA.dark then darkCount = darkCount + 1 end
     assert(roomA.kind == repeated[index].kind and roomA.threat == repeated[index].threat
-        and roomA.locked == repeated[index].locked and roomA.decorSeed == repeated[index].decorSeed,
+        and roomA.locked == repeated[index].locked and roomA.dark == repeated[index].dark
+        and roomA.shape == repeated[index].shape and roomA.decorSeed == repeated[index].decorSeed,
         "room plan changed for the same seed")
     if not NocturneLayout.IsStair(index) and not NocturneLayout.IsTurn(index, 154511) then
         assert(roomA.kind ~= lastKind or index == 0, "consecutive rooms repeated")
@@ -264,8 +313,25 @@ for index = 0, 99 do
 end
 local total = 0
 for _ in pairs(kinds) do total = total + 1 end
-assert(differences > 38 and threatDifferences > 8 and total == 12,
-    "rooms/threats are still a deterministic cycle rather than a seeded shuffled set")
+assert(differences > 38 and threatDifferences > 8 and shapeDifferences > 35
+    and darkCount >= 10 and total >= 11,
+    "seed did not independently regenerate interiors, geometry, threats and unlit rooms")
+local ordinary = {}
+for index = 2, 99 do
+    if a[index].kind ~= "STAIRWELL" and a[index].kind ~= "TURN" then
+        table.insert(ordinary, a[index].kind)
+    end
+end
+local repeatsWithinTwelve = 0
+for block = 0, 3 do
+    local seen = {}
+    for i = block * 12 + 1, block * 12 + 12 do
+        if seen[ordinary[i]] then repeatsWithinTwelve = repeatsWithinTwelve + 1 end
+        seen[ordinary[i]] = true
+    end
+end
+assert(repeatsWithinTwelve >= 2,
+    "interiors still arrive in fixed bags containing each of the 12 types once")
 end)()
 services.Players._players = {}
 local function addPlayer(name)
@@ -282,6 +348,12 @@ local function addPlayer(name)
             or CFrame.new(0, 3, 0)
         root.AssemblyLinearVelocity = Vector3.new()
         root.Parent = character
+        local hand = Instance.new("Part")
+        hand.Name = "RightHand"
+        hand.Size = Vector3.new(0.6, 0.5, 0.6)
+        hand.CFrame = root.CFrame * CFrame.new(0.7, 1.1, 0)
+        hand.Anchored = false
+        hand.Parent = character
         local human = Instance.new("Humanoid")
         human.Name = "Humanoid"
         human.Health = 100
@@ -303,7 +375,7 @@ end
 local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v5", "old third-person place was loaded")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 local spawn = world:FindFirstChild("CheckpointSpawn")
 assert(spawn and spawn.Anchored and spawn.CanCollide and spawn.Transparency == 1
@@ -323,7 +395,8 @@ end
 local remote = services.ReplicatedStorage:FindFirstChild("NocturneRemote")
 local L = NocturneLayout.RoomLength
 local lockCount, turnCount, rushCount, blindCount, mothCount = 0, 0, 0, 0, 0
-local variants, signatures = {}, {}
+local darkCount, physicalShapes = 0, {}
+local variants, signatures, structures = {}, {}, {}
 local function rootOf(p) return p.Character:FindFirstChild("HumanoidRootPart") end
 local function healthOf(p) return p.Character:FindFirstChildOfClass("Humanoid").Health end
 local function countEvent(name, kind)
@@ -347,8 +420,14 @@ for index = 0, 99 do
     assert(room:GetAttribute("EntryY") == NocturneLayout.EntranceY(index))
     assert(room:GetAttribute("ExitY") == NocturneLayout.ExitY(index))
     variants[room:GetAttribute("Variant")] = true
-    signatures[index] = room:GetAttribute("Variant") .. ":" .. tostring(room:GetAttribute("DecorSeed"))
+    local shape, dark = room:GetAttribute("Shape"), room:GetAttribute("Dark")
+    physicalShapes[shape] = true
+    if dark then darkCount = darkCount + 1 end
+    structures[index] = room:GetAttribute("Variant") .. ":" .. tostring(shape)
+        .. ":" .. tostring(dark)
+    signatures[index] = structures[index] .. ":" .. tostring(room:GetAttribute("DecorSeed"))
     local wardrobes, treads, solidFlanks, partitions, arches, drawers, walls = 0, 0, 0, 0, 0, 0, 0
+    local crossWalls, columns, vaults, lamps = 0, 0, 0, 0
     -- Collision belongs to the real structural parts, not to the decorative
     -- non-colliding carpet. Test EACH streamed room so a missing floor in a
     -- later storey cannot pass a foyer-only check.
@@ -356,7 +435,8 @@ for index = 0, 99 do
         ["Continuous wooden subfloor"] = true, ["Load-bearing corridor wall"] = true,
         ["Solid enclosed stair flank"] = true, ["Lower stair landing"] = true,
         ["Upper stair landing"] = true, ["Solid stair tread"] = true,
-        ["Doorway threshold"] = true,
+        ["Doorway threshold"] = true, ["Vestibule cross-wall"] = true,
+        ["Freestanding marble arcade column"] = true,
     }
     for _, child in ipairs(room:GetDescendants()) do
         if child.Name == "Wardrobe_A" or child.Name == "Wardrobe_B" then wardrobes = wardrobes + 1 end
@@ -365,13 +445,33 @@ for index = 0, 99 do
         if child.Name == "Load-bearing corridor wall" then walls = walls + 1 end
         if child.Name == "Dogleg masonry partition" then partitions = partitions + 1 end
         if child.Name == "Dogleg arch lintel" then arches = arches + 1 end
+        if child.Name == "Vestibule cross-wall" then
+            crossWalls = crossWalls + 1
+            assert(math.abs(child.Position.X) - child.Size.X / 2 >= 6.39,
+                "generated wall blocks the door-to-door passage")
+        end
+        if child.Name == "Freestanding marble arcade column" then
+            columns = columns + 1
+            assert(math.abs(child.Position.X) > 8.6, "column blocks the main route")
+        end
+        if child.Name == "Deep coffered cross-vault" then vaults = vaults + 1 end
+        if child._class == "PointLight" and child.Parent.Name == "Warm filament" then
+            lamps = lamps + 1
+            assert(child.Enabled == (not dark), "dark rooms must have OFF physical lamps")
+            assert(child.Parent.Material == (dark and Enum.Material.Glass or Enum.Material.Neon),
+                "a Neon GUI-like bulb is shining in an unlit room")
+        end
         if child.Name == "OpenDrawer" then drawers = drawers + 1 end
         if loadBearing[child.Name] then
             assert(child.Anchored == true and child.CanCollide == true,
                 "non-colliding " .. child.Name .. " in room " .. index)
         end
     end
-    assert(wardrobes == 2, "room without two hinged wardrobe models at " .. index)
+    assert(wardrobes == 2 and lamps > 0, "room without two wardrobes or physical fixtures at " .. index)
+    assert(crossWalls == (shape == "VESTIBULE" and 4 or 0)
+        and columns == (shape == "ARCADE" and 4 or 0)
+        and vaults == (shape == "COFFERED" and 4 or 0),
+        "room shape attribute did not produce DIFFERENT traversable masonry")
     for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
         local wardrobe = room:FindFirstChild(name)
         assert(wardrobe:FindFirstChild("Left hinged leaf") and wardrobe:FindFirstChild("Right hinged leaf"),
@@ -432,12 +532,19 @@ for index = 0, 99 do
             local root = rootOf(player)
             root.CFrame = CFrame.new(hidePrompt.Parent.Position)
             hidePrompt.Triggered:Fire(player)
-            assert(not player:GetAttribute("Hidden") and hidePrompt.ActionText == "Спрятаться",
-                "opening the wardrobe must not instantly teleport the player")
+            assert(not player:GetAttribute("Hidden") and wardrobe:GetAttribute("Open")
+                and hidePrompt.Enabled and hidePrompt.ActionText == "" and hidePrompt.ObjectText == "",
+                "opening the wardrobe must not teleport or show a textual hint")
             assert(closePrompt.Enabled, "an open wardrobe should have a close interaction")
             hidePrompt.Triggered:Fire(player)
             assert(player:GetAttribute("Hidden") and root.Anchored, "wardrobe did not hide player")
-            assert(hidePrompt.ActionText == "Открыть шкаф", "leaves did not swing shut behind player")
+            assert(not wardrobe:GetAttribute("Open") and hidePrompt.ActionText == "",
+                "leaves did not swing shut with a real viewing gap")
+            local left = wardrobe:FindFirstChild("Left hinged leaf"):FindFirstChild("Lower oak wardrobe panel")
+            local right = wardrobe:FindFirstChild("Right hinged leaf"):FindFirstChild("Lower oak wardrobe panel")
+            assert(left and right and right.Position.X - right.Size.X / 2
+                - (left.Position.X + left.Size.X / 2) >= 0.9,
+                "closed leaves block the player's sightline to the monster")
             remote.OnServerEvent:Fire(player, "Exit")
             assert(not player:GetAttribute("Hidden") and root.Anchored == false
                 and player.Character:FindFirstChildOfClass("Humanoid").AutoRotate == true,
@@ -477,20 +584,20 @@ for index = 0, 99 do
         assert(world:GetAttribute("DoorsOpened") == 0, "distant prompt bypassed the server")
     end
     rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
+    assert(prompt.ActionText == "" and prompt.ObjectText == "", "door displayed text hints")
     if room:GetAttribute("Locked") then
         lockCount = lockCount + 1
-        assert(prompt.ActionText == "Нужен ключ", "locked door offers to open without a key")
         local dresser = room:FindFirstChild("Three-drawer dresser")
         local concealedKey = dresser:FindFirstChild("TakeKey", true)
         assert(concealedKey and not concealedKey.Enabled, "key should start concealed in a closed drawer")
         rootOf(player).CFrame = CFrame.new(concealedKey.Parent.Position)
         concealedKey.Triggered:Fire(player) -- deliberately bypass the UI as a hostile caller
-        assert(not room:GetAttribute("KeyFound"), "unopened drawer allowed key collection")
+        assert(not room:GetAttribute("KeyFound") and not player:GetAttribute("HeldKey"),
+            "unopened drawer allowed key collection")
         rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
-        local lockedEvents = countEvent("Locked")
         prompt.Triggered:Fire(player)
-        assert(world:GetAttribute("DoorsOpened") == index, "locked door opened without a key")
-        assert(countEvent("Locked") == lockedEvents + 1)
+        assert(world:GetAttribute("DoorsOpened") == index and not door:GetAttribute("Open")
+            and countEvent("Locked") == 0, "locked door opened or displayed instructions")
         local firstDrawer = dresser:FindFirstChild("Drawer_1"):FindFirstChild("OpenDrawer", true)
         firstDrawer.Triggered:Fire(player)
         assert(firstDrawer.Enabled, "remote drawer interaction ignored server-side distance")
@@ -510,21 +617,49 @@ for index = 0, 99 do
                 end
             end
         end
-        assert(foundKey and room:GetAttribute("KeyFound") and not room:GetAttribute("Locked"),
-            "room's own drawers did not unlock room's own numbered door")
-        assert(prompt.ActionText == "Открыть")
+        local held = player.Character:FindFirstChild("HeldKey")
+        assert(foundKey and room:GetAttribute("KeyFound") and room:GetAttribute("Locked")
+            and held and player:GetAttribute("HeldKey") == index + 1
+            and held:FindFirstChild("Key grip in Roblox hand", true)
+            and held:FindFirstChild("Key grip in Roblox hand", true).Part0
+                == player.Character:FindFirstChild("RightHand"),
+            "key was spent on pickup rather than held in a normal Roblox hand")
+        if index == 4 then
+            -- Dying with a key leaves it in the revealed drawer for a teammate.
+            local keyPrompt = dresser:FindFirstChild("TakeKey", true)
+            player.Character:FindFirstChildOfClass("Humanoid").Died:Fire()
+            assert(not player:GetAttribute("HeldKey") and not player.Character:FindFirstChild("HeldKey")
+                and keyPrompt.Enabled and not room:GetAttribute("KeyFound")
+                and room:GetAttribute("Locked"), "death permanently lost the only key")
+            local teammate = addPlayer("KeyCarrierWhoDisconnected")
+            rootOf(teammate).CFrame = CFrame.new(keyPrompt.Parent.Position)
+            keyPrompt.Triggered:Fire(teammate)
+            assert(teammate:GetAttribute("HeldKey") == 5 and not keyPrompt.Enabled,
+                "teammate cannot pick up the returned key")
+            removePlayer(teammate)
+            assert(keyPrompt.Enabled and not room:GetAttribute("KeyFound"),
+                "disconnect permanently lost the team's only key")
+            rootOf(player).CFrame = CFrame.new(keyPrompt.Parent.Position)
+            keyPrompt.Triggered:Fire(player)
+            assert(player:GetAttribute("HeldKey") == 5 and room:GetAttribute("KeyFound"),
+                "a returned key cannot be recovered")
+        end
         rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(index) + 3, (index + 1) * L - 5)
     end
     prompt.Triggered:Fire(player)
     assert(world:GetAttribute("DoorsOpened") == index + 1, "player trapped by door " .. index + 1)
-    assert(prompt.Enabled and prompt.ActionText == "Закрыть" and leaf.CanCollide,
+    assert(prompt.Enabled and door:GetAttribute("Open") and leaf.CanCollide,
         "hinged door did not restore collision after opening")
+    if room:GetAttribute("KeyFound") then
+        assert(not room:GetAttribute("Locked") and not player:GetAttribute("HeldKey")
+            and not player.Character:FindFirstChild("HeldKey"), "used key remains in hand after unlocking")
+    end
     if index == 0 or NocturneLayout.IsTurn(index, world:GetAttribute("Seed")) then
         prompt.Triggered:Fire(player)
-        assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Открыть",
+        assert(world:GetAttribute("DoorsOpened") == index + 1 and not door:GetAttribute("Open"),
             "visited door cannot close")
         prompt.Triggered:Fire(player)
-        assert(world:GetAttribute("DoorsOpened") == index + 1 and prompt.ActionText == "Закрыть",
+        assert(world:GetAttribute("DoorsOpened") == index + 1 and door:GetAttribute("Open"),
             "visited door cannot reopen")
     end
     if index < 99 then
@@ -548,10 +683,13 @@ for index = 0, 99 do
         hidePrompt.Triggered:Fire(player)
         local runner = addPlayer("RunnerBeyondOneDoor")
         rootOf(runner).CFrame = CFrame.new(10, NocturneLayout.EntranceY(6) + 3, 6 * L + 21)
+        local lampChanges = observed.sconceChanges
         drainTasks()
         assert(healthOf(player) == 100 and player:GetAttribute("Hidden"), "a wardrobe did not shield from the Rush")
         assert(healthOf(runner) == 0, "a single next door or side alcove stopped the Rush")
-        assert(countEvent("Warning", "RUSH") == 1 and countEvent("Safe", "RUSH") == 1)
+        assert(observed.sconceChanges > lampChanges + 20
+            and countEvent("Warning") == 0 and countEvent("Safe") == 0,
+            "Rush cue must blink the actual bulbs without GUI or textual events")
         local furthest = 0
         for _, m in ipairs(observed.monsterPositions) do
             if m.name == "TheRush" then furthest = math.max(furthest, m.z) end
@@ -585,7 +723,7 @@ for index = 0, 99 do
         local previousDoor = roomAt(8):FindFirstChild("Door_009"):FindFirstChild("OpenDoor", true)
         root.CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 3)
         previousDoor.Triggered:Fire(player)
-        assert(previousDoor.ActionText == "Открыть", "failed to shut the visited door")
+        assert(not previousDoor.Parent.Parent:GetAttribute("Open"), "failed to shut the visited door")
         root.CFrame = CFrame.new(-11, NocturneLayout.EntranceY(index) + 3, index * L + 5)
         local retreater = addPlayer("RetreatedIntoRoomEight")
         rootOf(retreater).CFrame = CFrame.new(0, NocturneLayout.EntranceY(8) + 3, 8 * L + 22)
@@ -597,7 +735,7 @@ for index = 0, 99 do
         assert(healthOf(loud) == 0, "standing player was not pursued")
         assert(healthOf(contact) == 0, "crouching allowed walking THROUGH the monster")
         assert(healthOf(hidden) == 0, "the Blind Guest did not inspect the occupied wardrobe")
-        assert(previousDoor.ActionText == "Закрыть", "a shut old door shielded the fleeing player")
+        assert(previousDoor.Parent.Parent:GetAttribute("Open"), "a shut old door shielded the fleeing player")
         assert(healthOf(retreater) == 0 and healthOf(turnRunner) == 0,
             "Guest stopped at the first doorway or failed to descend to the earlier turn")
         local furthestBack = math.huge
@@ -613,7 +751,8 @@ for index = 0, 99 do
         end
         assert(furthestBack < 7 * L and crossedTurnGate,
             "Guest cut across masonry or never physically entered the earlier turn")
-        assert(countEvent("Warning", "BLIND") == 1 and countEvent("Safe", "BLIND") == 1)
+        assert(countEvent("Warning") == 0 and countEvent("Safe") == 0,
+            "Blind Guest gave textual warnings or survival advice")
         remote.OnServerEvent:Fire(player, "Crouch", false)
         removePlayer(loud)
         removePlayer(contact)
@@ -635,7 +774,28 @@ for index = 0, 99 do
         rootOf(bright).CFrame = CFrame.new(0, NocturneLayout.EntranceY(index) + 3, index * L + 30)
         local previousBright = addPlayer("FledBackWithLightOn")
         rootOf(previousBright).CFrame = CFrame.new(0, NocturneLayout.EntranceY(14) + 3, 14 * L + 26)
+        observed.graceElapsed = 0
+        observed.graceCheck = function()
+            assert(world:FindFirstChild("ThePaleMoth") and healthOf(bright) == 100,
+                "Moth was invisible or killed a torch user DURING its four-second grace")
+            local paleFixture = false
+            for _, piece in ipairs(room:GetDescendants()) do
+                if piece._class == "PointLight" and piece.Parent.Name == "Warm filament"
+                    and piece.Enabled and piece.Color.G > piece.Color.R then paleFixture = true end
+            end
+            assert(paleFixture, "cue is a GUI overlay instead of the room's real cold-coloured lamp")
+        end
         drainTasks()
+        observed.graceCheck = nil
+        assert(observed.graceElapsed >= 4 and countEvent("Warning") == 0,
+            "Moth did not give a visible four-second textless warning")
+        if room:GetAttribute("Dark") then
+            for _, piece in ipairs(room:GetDescendants()) do
+                if piece._class == "PointLight" and piece.Parent.Name == "Warm filament" then
+                    assert(not piece.Enabled, "Moth left a naturally dark room permanently illuminated")
+                end
+            end
+        end
         assert(healthOf(player) == 100, "unlit player was killed by the light-seeker")
         assert(healthOf(bright) == 0, "crouching protected a player shining a torch")
         assert(healthOf(previousBright) == 0,
@@ -645,13 +805,17 @@ for index = 0, 99 do
             if m.name == "ThePaleMoth" then mothBack = math.min(mothBack, m.z) end
         end
         assert(mothBack < 15 * L - 1, "Moth never crossed the previous doorway")
-        assert(countEvent("Warning", "MOTH") == 1 and countEvent("Safe", "MOTH") == 1)
+        assert(countEvent("Warning") == 0 and countEvent("Safe") == 0,
+            "Moth encounter still transmitted on-screen survival hints")
         remote.OnServerEvent:Fire(player, "Torch", true)
         removePlayer(bright)
         removePlayer(previousBright)
     end
 end
 assert(lockCount >= 8 and turnCount == 10, "insufficient locked rooms or turns")
+assert(darkCount >= 10 and physicalShapes.ARCADE and physicalShapes.COFFERED
+    and physicalShapes.VESTIBULE and physicalShapes.OPEN,
+    "new runs need multiple actual room structures and fully unlit rooms")
 assert(rushCount >= 4 and blindCount >= 4 and mothCount >= 4
     and rushCount + blindCount + mothCount >= 15,
     "seeded threat spacing omitted one of the three survival mechanics")
@@ -674,17 +838,21 @@ local blindLook = observed.monsterLooks.TheBlindGuest
 local mothLook = observed.monsterLooks.ThePaleMoth
 assert(rushLook and rushLook.parts >= 32 and rushLook.mist >= 5 and rushLook.halos == 1
     and rushLook.names["Cracked funeral mask"] == 1
-    and rushLook.names["Three hooked talons"] == 6 and observed.clawFrames > 3,
+    and rushLook.names["Three hooked talons"] == 6 and observed.clawFrames > 3
+    and rushLook.names["Mandible tendon"] == 2 and observed.jawFrames > 3,
     "Rush lost its face, moving claws or corridor-wide ash wake")
 assert(blindLook and blindLook.parts >= 65 and blindLook.blocks == 0 and blindLook.halos == 1
     and blindLook.names["Sculpted ivory eyeless face"] == 1
     and blindLook.names["Overlapping hanging coat fold"] == 5
     and blindLook.names["Hand-sewn eyelid stitch"] == 8
+    and blindLook.names["Uneven trailing wool coat tail"] == 2
     and observed.maskFrames > 2 and observed.limbFrames > 8,
     "Blind Guest lost its smooth sculpted face, tailored silhouette or walking gait")
 assert(mothLook and mothLook.parts >= 45 and mothLook.wings == 2 and mothLook.halos == 1
     and mothLook.names["Soft layered wing"] == 4
-    and mothLook.names["Dark eye on the wing"] == 4 and observed.wingFrames > 3,
+    and mothLook.names["Dark eye on the wing"] == 4
+    and mothLook.names["Translucent scalloped wing fringe"] == 16
+    and observed.wingFrames > 3,
     "Pale Moth lost its layered, animated wings")
 local first = 100 - 8
 assert(not roomAt(first - 1), "old rooms were never culled")
@@ -703,15 +871,23 @@ local nextFirst = nextWorld:FindFirstChild("Room_000_HALL")
 local nextDoor = nextFirst:FindFirstChild("Door_001"):FindFirstChild("OpenDoor", true)
 rootOf(player).CFrame = CFrame.new(0, 3, L - 5)
 nextDoor.Triggered:Fire(player)
-local changed = false
+local nextStair = nextWorld:FindFirstChild("Room_001_STAIRWELL")
+local stairDoor = nextStair:FindFirstChild("Door_002"):FindFirstChild("OpenDoor", true)
+rootOf(player).CFrame = CFrame.new(0, NocturneLayout.ExitY(1) + 3, 2 * L - 5)
+stairDoor.Triggered:Fire(player)
+local changed, structuralChanged = false, false
 for _, child in ipairs(nextWorld:GetChildren()) do
     local index = child:GetAttribute("RoomIndex")
     if index and index >= 2 and index <= 3 then
-        local signature = child:GetAttribute("Variant") .. ":" .. tostring(child:GetAttribute("DecorSeed"))
+        local structure = child:GetAttribute("Variant") .. ":"
+            .. tostring(child:GetAttribute("Shape")) .. ":" .. tostring(child:GetAttribute("Dark"))
+        local signature = structure .. ":" .. tostring(child:GetAttribute("DecorSeed"))
         if signature ~= signatures[index] then changed = true end
+        if structure ~= structures[index] then structuralChanged = true end
     end
 end
-assert(changed, "replay regenerated exactly the same early room details")
+assert(changed and structuralChanged,
+    "Retry changed only a seed label; the first new rooms kept the same physical form")
 return world:GetAttribute("DoorsOpened")
 `;
 const state = lauxlib.luaL_newstate();

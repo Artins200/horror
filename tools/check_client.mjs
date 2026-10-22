@@ -218,6 +218,11 @@ local view = scare:FindFirstChild("Attacking creature")
 local stage = view:FindFirstChild("The approaching face")
 assert(reticle.Visible and scare.Visible == false and modal.Visible == false
     and view.CurrentCamera and stage, "close-up/first-person UI not initialized")
+for _,name in ipairs({"Controls", "Interaction status", "Threat flash", "Threat darkness",
+    "Wardrobe controls", "Flashlight status", "Door caption", "Storey"}) do
+    assert(not gui:FindFirstChild(name), "survival instruction/GUI flash is still on screen: " .. name)
+end
+assert(not modal:FindFirstChild("End detail"), "death menu still explains monsters")
 local originalCF = root.CFrame
 runService.render(0.016)
 assert(root.CFrame == originalCF and not root.Anchored
@@ -229,12 +234,27 @@ uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F}, false)
 assert(remote.actions[#remote.actions][1] == "Torch" and remote.actions[#remote.actions][2] == false,
     "turning off the light did not signal the Moth survival rule")
 local peek = CFrame.new(1, 5, 21)
+local hotel = Instance.new("Folder")
+hotel.Name = "NocturneWorld"
+hotel.Parent = workspace
+local monster = Instance.new("Model")
+monster.Name = "TheBlindGuest"
+monster.Parent = hotel
+local body = Instance.new("Part")
+body.Position = Vector3.new(1, 5, 27)
+body.Parent = monster
+monster.PrimaryPart = body
 remote.OnClientEvent:Fire("Hide", true, peek)
 runService.render(0.016)
-assert(camera.CameraType == Enum.CameraType.Scriptable and camera.CFrame == peek
-    and player:GetAttribute("NocturnePeek") and not reticle.Visible,
-    "wardrobe did not cover the real character with a temporary peek")
+local left = gui:FindFirstChild("Left wardrobe edge")
+assert(camera.CameraType == Enum.CameraType.Scriptable
+    and (camera.CFrame.Position - peek.Position).Magnitude < 0.1
+    and player:GetAttribute("NocturnePeek") and not reticle.Visible
+    and left.Size[1] < 0.2 and camera.FieldOfView < 70,
+    "wardrobe hides the actual monster or has no nearby-threat pressure")
 assert(root.CFrame == originalCF, "wardrobe viewpoint moved the physical avatar")
+monster:Destroy()
+hotel:Destroy()
 remote.OnClientEvent:Fire("Hide", false)
 runService.render(0.016)
 assert(camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid

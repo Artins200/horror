@@ -71,7 +71,8 @@ class PlaceTests(unittest.TestCase):
         self.assertAlmostEqual(y + sy / 2, 0)
         self.assertAlmostEqual(z, 10)
         self.assertEqual(names.count("Wardrobe back"), 2)
-        self.assertEqual(names.count("Carved wardrobe leaf"), 4)
+        self.assertEqual(names.count("Lower wardrobe panel"), 4)
+        self.assertEqual(names.count("Spaced wardrobe louvre"), 28)
         self.assertEqual(names.count("Sliding drawer front"), 3)
         self.assertGreaterEqual(len(preview.findall(".//Item[@class='PointLight']")), 4)
         self.assertIsNotNone(self.named("Atmosphere", "CorridorHaze"))
@@ -147,7 +148,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("humanoid.AutoRotate = true", self.server)
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
-        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v5")', self.server)
+        self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v6")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -161,7 +162,8 @@ class PlaceTests(unittest.TestCase):
         self.assertNotIn("rbxasset://sounds/", self.client + self.perspective)
         render = self.client.split('RunService:BindToRenderStep(', 1)[1]
         self.assertNotIn('camera.CFrame =', render.split('if hidden and peekCF then', 1)[0])
-        self.assertIn('if hidden and peekCF then\n\t\tcamera.CameraType = Enum.CameraType.Scriptable', render)
+        self.assertIn('if hidden and peekCF then', render)
+        self.assertIn('camera.CameraType = Enum.CameraType.Scriptable', render)
 
     def test_keys_crouching_monsters_and_first_person_avatar_are_embedded(self):
         self.assertIn("local function makeDresser", self.server)
@@ -186,21 +188,51 @@ class PlaceTests(unittest.TestCase):
         self.assertNotIn('"Whisper"', self.server + self.client)
         self.assertNotIn('play(heartbeat', self.client)
         self.assertNotIn('play(knock', self.client)
-        warning_handler = self.client.split('elseif event == "Warning" then', 1)[1].split(
-            'elseif event == "Safe" then', 1)[0]
-        self.assertNotIn('play(', warning_handler, 'light-flicker warning must be silent')
+        self.assertNotIn('elseif event == "Warning"', self.client)
+        self.assertNotIn('remote:FireAllClients("Warning"', self.server)
+        self.assertNotIn('remote:FireAllClients("Safe"', self.server)
         self.assertIn('function Layout.IsTurn(index, seed)', self.layout)
         self.assertIn('function Layout.PathX(index, localZ, seed)', self.layout)
         self.assertIn('local function planRooms(seed)', self.server)
         self.assertIn('local function walkRoute(position, destination, speed, dt, height)', self.server)
         self.assertIn('local function showScare(kind, source)', self.client)
 
+    def test_no_hint_overlays_and_physical_lighting(self):
+        self.assertNotIn('showNotice(', self.client)
+        self.assertNotIn('"Controls",', self.client)
+        self.assertNotIn('"Interaction status",', self.client)
+        self.assertNotIn('"Threat flash",', self.client)
+        self.assertNotIn('"Wardrobe controls",', self.client)
+        self.assertNotIn('"End detail",', self.client)
+        self.assertNotRegex(self.server, r'ActionText\s*=\s*"[^"]+"')
+        self.assertNotRegex(self.server, r'ObjectText\s*=\s*"[^"]+"')
+        self.assertIn('setLamp(lamp, rng:NextNumber() > 0.48)', self.server)
+        self.assertIn('setLamp(lamp, lamp.normallyOn)', self.server)
+        self.assertIn('model:SetAttribute("Dark", plan.dark)', self.server)
+        self.assertIn('bulb.Material = Enum.Material.Glass', self.server)
+        self.assertIn('MothGraceSeconds = 4', self.server)
+        self.assertIn('task.wait(CONFIG.MothGraceSeconds / 8)', self.server)
+        self.assertNotIn('remote:FireAllClients("Warning"', self.server)
+
+    def test_keys_live_in_roblox_hands_only_until_used(self):
+        self.assertIn('hand = character and (character:FindFirstChild("RightHand")', self.server)
+        self.assertIn('grip.Part0 = hand', self.server)
+        self.assertIn('player:SetAttribute("HeldKey", room.index + 1)', self.server)
+        self.assertIn('if state.keys[player] == index then', self.server)
+        self.assertIn('putBackKey(player)', self.server)
+        self.assertIn('local visible = keyNumber ~= nil and not peek', self.perspective)
+        self.assertIn('local keyModel', self.perspective)
+        self.assertIn('local function makeViewKey()', self.perspective)
+        self.assertIn('player:GetAttribute("KeyTurning")', self.perspective)
+        self.assertIn('cameraCF = cf * CFrame.new(0, 5.0, -1.02)', self.server)
+        self.assertIn('"Spaced wooden louvre"', self.server)
+
     def test_all_three_binary_filenames_open_the_same_place(self):
         binary = (ROOT / "Nocturne.rbxl").read_bytes()
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v5.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v6.rbxl").read_bytes())
 
 
 if __name__ == "__main__":

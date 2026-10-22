@@ -1,44 +1,51 @@
--- Optional CLIENT Command Bar check in Roblox Studio, in a fresh Play session.
--- Native first-person camera must stay attached to the real, grounded avatar.
+-- CLIENT Command Bar in Roblox Studio, during Play (not Run). Run once before
+-- finding a key, then again while carrying a key from a drawer (door 005).
 local player = game:GetService("Players").LocalPlayer
-assert(player, "Run this in the CLIENT Command Bar while playing")
+assert(player, "Run this in the CLIENT Command Bar during Play")
 local character = player.Character or player.CharacterAdded:Wait()
 local root = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 local head = character:WaitForChild("Head")
-task.wait(2)
+task.wait(0.25)
 local world = workspace:FindFirstChild("NocturneWorld")
-assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v5",
-	"Open Nocturne-v5.rbxl in a NEW Studio tab, not the cached v4")
+assert(world and world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6",
+	"Open Nocturne-v6.rbxl in a NEW Studio tab")
 local camera = workspace.CurrentCamera
-assert(player.CameraMode == Enum.CameraMode.LockFirstPerson, "First-person camera is not enabled")
+assert(player.CameraMode == Enum.CameraMode.LockFirstPerson)
 assert(camera and camera.CameraType == Enum.CameraType.Custom and camera.CameraSubject == humanoid,
-	"First-person camera must follow the REAL Humanoid, not a scriptable ghost")
+	"First person must follow the REAL Roblox Humanoid")
 assert((camera.CFrame.Position - head.Position).Magnitude < 2.5,
-	"Camera is detached from the avatar's head")
+	"Camera is detached from the character's head")
 assert(not root.Anchored and humanoid.AutoRotate, "Character movement is locked")
-assert(humanoid.FloorMaterial ~= Enum.Material.Air, "Character is not standing on the floor")
--- Roblox itself may locally fade the head in first person. The game must not
--- change the real character's Transparency, nor use a pixel-block substitute.
-local realArm = character:FindFirstChild("LeftHand") or character:FindFirstChild("Left Arm")
-assert(realArm and realArm.Transparency < 0.95, "Roblox avatar limbs are not present")
+assert(humanoid.FloorMaterial ~= Enum.Material.Air, "Character is not standing on a floor")
+local real = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
+assert(real and real.Transparency < 0.95, "Normal Roblox avatar hands are missing")
 local view = camera:FindFirstChild("AvatarArmsFirstPerson")
-assert(view, "No first-person copies of the Roblox avatar arms")
+assert(view, "Key-only avatar display is missing")
+local held = player:GetAttribute("HeldKey")
 local displayed, inFrame = 0, 0
 local vertical = math.tan(math.rad(camera.FieldOfView / 2))
+local horizontal = vertical * camera.ViewportSize.X / camera.ViewportSize.Y
 for _, part in ipairs(view:GetChildren()) do
 	if part:IsA("BasePart") then
 		assert(part.Anchored and not part.CanCollide and not part.CanTouch,
-			"Display arm unexpectedly affects player collision")
-		if part.Name ~= "Invisible torch light source" and part.Transparency < 0.95 then
+			"Copied arm must NEVER affect avatar physics")
+		if part.Transparency < 0.95 then
 			displayed = displayed + 1
-			local localPoint = camera.CFrame:PointToObjectSpace(part.Position)
-			if localPoint.Z < -0.2 and math.abs(localPoint.Y) < -localPoint.Z * vertical then
+			local v = camera.CFrame:PointToObjectSpace(part.Position)
+			if v.Z < -0.2 and math.abs(v.Y) < -v.Z * vertical
+				and math.abs(v.X) < -v.Z * horizontal then
 				inFrame = inFrame + 1
 			end
 		end
 	end
 end
-assert(displayed >= 2 and inFrame >= 2,
-	"Avatar arms exist but fall OUTSIDE the first-person camera frame")
-print("NOCTURNE v5: real avatar hands INSIDE the native first-person frame; grounded physics OK")
+if held then
+	assert(character:FindFirstChild("HeldKey"), "Physical key is not in the right Roblox hand")
+	assert(view:FindFirstChild("Key in avatar hand"), "Visible first-person key is missing")
+	assert(displayed >= 2 and inFrame >= 1, "Small hands/key are not in the first-person frame")
+else
+	assert(displayed == 0 and not view:FindFirstChild("Key in avatar hand"),
+		"Hands appeared before a key was picked up")
+end
+print("NOCTURNE v6: real Humanoid grounded, key-only hands", held or "no key", displayed, inFrame)

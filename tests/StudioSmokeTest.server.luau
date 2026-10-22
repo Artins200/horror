@@ -4,8 +4,8 @@ local world = workspace:WaitForChild("NocturneWorld", 15)
 assert(world, "Server generator did not create NocturneWorld")
 local Layout = require(game:GetService("ReplicatedStorage"):WaitForChild("NocturneLayout"))
 assert(world:GetAttribute("TotalDoors") == 100)
-assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v5",
-	"Old place loaded: open Nocturne-v5.rbxl in a NEW Studio tab")
+assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v6",
+	"Old place loaded: open Nocturne-v6.rbxl in a NEW Studio tab")
 assert(world:GetAttribute("DoorsOpened") == 0, "Start a fresh Play session")
 assert(world:GetAttribute("Storeys") == 18)
 assert(math.abs(workspace.Gravity - 196.2) < 0.01, "Gravity is disabled: the player will float")
@@ -22,6 +22,8 @@ for index = 0, 1 do
 	assert(room, "Missing generated room " .. index)
 	assert(room:GetAttribute("EntryY") == Layout.EntranceY(index))
 	assert(room:GetAttribute("ExitY") == Layout.ExitY(index))
+	assert(type(room:GetAttribute("Shape")) == "string" and type(room:GetAttribute("Dark")) == "boolean",
+		"Room shape/darkness were not generated")
 	assert(room:FindFirstChild("Wardrobe_A") and room:FindFirstChild("Wardrobe_B"),
 		"A generated room has fewer than two accessible hiding places")
 	for _, name in ipairs({"Wardrobe_A", "Wardrobe_B"}) do
@@ -48,6 +50,7 @@ for index = 0, 1 do
 	assert(door, "Missing numbered door")
 	local prompt = door:FindFirstChild("OpenDoor", true)
 	assert(prompt and prompt:IsA("ProximityPrompt"), "Door cannot be opened")
+	assert(prompt.ActionText == "" and prompt.ObjectText == "", "No text hints over the game")
 	assert(prompt.Enabled == (index == 0), "Doors must open in order")
 	assert(math.abs(prompt.Parent.Position.Y - (Layout.ExitY(index) + 5.1)) < 0.02,
 		"Door is not at the height of its landing")

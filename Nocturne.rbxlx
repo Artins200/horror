@@ -1552,7 +1552,7 @@
       </Item>
       <Item class="Part" referent="RBX51">
         <Properties>
-          <string name="Name">Carved wardrobe leaf</string>
+          <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1562,13 +1562,13 @@
           </Color3>
           <Vector3 name="Size">
             <X>0.18</X>
-            <Y>8.05</Y>
-            <Z>1.74</Z>
+            <Y>2.0</Y>
+            <Z>1.32</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-11.030000000000001</X>
-            <Y>4.14</Y>
-            <Z>20.13</Z>
+            <Y>1.42</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1587,23 +1587,23 @@
       </Item>
       <Item class="Part" referent="RBX52">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.89</X>
-            <Y>1.57</Y>
-            <Z>20.13</Z>
+            <X>-11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>19.259999999999998</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1622,23 +1622,23 @@
       </Item>
       <Item class="Part" referent="RBX53">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.89</X>
-            <Y>2.35</Y>
-            <Z>20.13</Z>
+            <X>-11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>20.4</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1657,7 +1657,7 @@
       </Item>
       <Item class="Part" referent="RBX54">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1666,14 +1666,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>3.13</Y>
-            <Z>20.13</Z>
+            <Y>3.0300000000000002</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1692,7 +1692,7 @@
       </Item>
       <Item class="Part" referent="RBX55">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1701,14 +1701,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>3.91</Y>
-            <Z>20.13</Z>
+            <Y>3.71</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1727,7 +1727,7 @@
       </Item>
       <Item class="Part" referent="RBX56">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1736,14 +1736,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>4.69</Y>
-            <Z>20.13</Z>
+            <Y>4.390000000000001</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1762,7 +1762,7 @@
       </Item>
       <Item class="Part" referent="RBX57">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1771,14 +1771,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>5.47</Y>
-            <Z>20.13</Z>
+            <Y>5.07</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1797,7 +1797,7 @@
       </Item>
       <Item class="Part" referent="RBX58">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1806,14 +1806,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>6.25</Y>
-            <Z>20.13</Z>
+            <Y>5.75</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1832,7 +1832,7 @@
       </Item>
       <Item class="Part" referent="RBX59">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1841,14 +1841,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>7.03</Y>
-            <Z>20.13</Z>
+            <Y>6.43</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1867,23 +1867,23 @@
       </Item>
       <Item class="Part" referent="RBX60">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.870000000000001</X>
-            <Y>0.63</Y>
-            <Z>20.13</Z>
+            <X>-10.89</X>
+            <Y>7.110000000000001</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1913,12 +1913,12 @@
           <Vector3 name="Size">
             <X>0.18</X>
             <Y>0.26</Y>
-            <Z>1.76</Z>
+            <Z>1.32</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.870000000000001</X>
-            <Y>7.65</Y>
-            <Z>20.13</Z>
+            <Y>0.63</Y>
+            <Z>19.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -1936,6 +1936,41 @@
         </Properties>
       </Item>
       <Item class="Part" referent="RBX62">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-10.870000000000001</X>
+            <Y>7.65</Y>
+            <Z>19.83</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX63">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -1970,9 +2005,9 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX63">
+      <Item class="Part" referent="RBX64">
         <Properties>
-          <string name="Name">Carved wardrobe leaf</string>
+          <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -1982,48 +2017,13 @@
           </Color3>
           <Vector3 name="Size">
             <X>0.18</X>
-            <Y>8.05</Y>
-            <Z>1.74</Z>
+            <Y>2.0</Y>
+            <Z>1.32</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-11.030000000000001</X>
-            <Y>4.14</Y>
-            <Z>21.87</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX64">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>-10.89</X>
-            <Y>1.57</Y>
-            <Z>21.87</Z>
+            <Y>1.42</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2042,23 +2042,23 @@
       </Item>
       <Item class="Part" referent="RBX65">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.89</X>
-            <Y>2.35</Y>
-            <Z>21.87</Z>
+            <X>-11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>21.6</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2077,23 +2077,23 @@
       </Item>
       <Item class="Part" referent="RBX66">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.89</X>
-            <Y>3.13</Y>
-            <Z>21.87</Z>
+            <X>-11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>22.740000000000002</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2112,7 +2112,7 @@
       </Item>
       <Item class="Part" referent="RBX67">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2121,14 +2121,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>3.91</Y>
-            <Z>21.87</Z>
+            <Y>3.0300000000000002</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2147,7 +2147,7 @@
       </Item>
       <Item class="Part" referent="RBX68">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2156,14 +2156,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>4.69</Y>
-            <Z>21.87</Z>
+            <Y>3.71</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2182,7 +2182,7 @@
       </Item>
       <Item class="Part" referent="RBX69">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2191,14 +2191,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>5.47</Y>
-            <Z>21.87</Z>
+            <Y>4.390000000000001</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2217,7 +2217,7 @@
       </Item>
       <Item class="Part" referent="RBX70">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2226,14 +2226,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>6.25</Y>
-            <Z>21.87</Z>
+            <Y>5.07</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2252,7 +2252,7 @@
       </Item>
       <Item class="Part" referent="RBX71">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2261,14 +2261,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>-10.89</X>
-            <Y>7.03</Y>
-            <Z>21.87</Z>
+            <Y>5.75</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2287,23 +2287,23 @@
       </Item>
       <Item class="Part" referent="RBX72">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.870000000000001</X>
-            <Y>0.63</Y>
-            <Z>21.87</Z>
+            <X>-10.89</X>
+            <Y>6.43</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2322,23 +2322,23 @@
       </Item>
       <Item class="Part" referent="RBX73">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-10.870000000000001</X>
-            <Y>7.65</Y>
-            <Z>21.87</Z>
+            <X>-10.89</X>
+            <Y>7.110000000000001</Y>
+            <Z>22.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2356,6 +2356,76 @@
         </Properties>
       </Item>
       <Item class="Part" referent="RBX74">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-10.870000000000001</X>
+            <Y>0.63</Y>
+            <Z>22.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX75">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-10.870000000000001</X>
+            <Y>7.65</Y>
+            <Z>22.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX76">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -2390,7 +2460,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX75">
+      <Item class="Part" referent="RBX77">
         <Properties>
           <string name="Name">Wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -2425,7 +2495,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX76">
+      <Item class="Part" referent="RBX78">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -2460,7 +2530,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX77">
+      <Item class="Part" referent="RBX79">
         <Properties>
           <string name="Name">Wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -2495,7 +2565,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX78">
+      <Item class="Part" referent="RBX80">
         <Properties>
           <string name="Name">Wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -2530,9 +2600,9 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX79">
+      <Item class="Part" referent="RBX81">
         <Properties>
-          <string name="Name">Carved wardrobe leaf</string>
+          <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2542,83 +2612,13 @@
           </Color3>
           <Vector3 name="Size">
             <X>0.18</X>
-            <Y>8.05</Y>
-            <Z>1.74</Z>
+            <Y>2.0</Y>
+            <Z>1.32</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>11.030000000000001</X>
-            <Y>4.14</Y>
-            <Z>23.13</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX80">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>1.57</Y>
-            <Z>23.13</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX81">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>2.35</Y>
-            <Z>23.13</Z>
+            <Y>1.42</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2637,23 +2637,23 @@
       </Item>
       <Item class="Part" referent="RBX82">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>3.13</Y>
-            <Z>23.13</Z>
+            <X>11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>22.259999999999998</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2672,23 +2672,23 @@
       </Item>
       <Item class="Part" referent="RBX83">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>3.91</Y>
-            <Z>23.13</Z>
+            <X>11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>23.4</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2707,7 +2707,7 @@
       </Item>
       <Item class="Part" referent="RBX84">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2716,14 +2716,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>4.69</Y>
-            <Z>23.13</Z>
+            <Y>3.0300000000000002</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2742,7 +2742,7 @@
       </Item>
       <Item class="Part" referent="RBX85">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2751,14 +2751,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>5.47</Y>
-            <Z>23.13</Z>
+            <Y>3.71</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2777,7 +2777,7 @@
       </Item>
       <Item class="Part" referent="RBX86">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2786,14 +2786,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>6.25</Y>
-            <Z>23.13</Z>
+            <Y>4.390000000000001</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2812,7 +2812,7 @@
       </Item>
       <Item class="Part" referent="RBX87">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2821,14 +2821,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>7.03</Y>
-            <Z>23.13</Z>
+            <Y>5.07</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2847,23 +2847,23 @@
       </Item>
       <Item class="Part" referent="RBX88">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.870000000000001</X>
-            <Y>0.63</Y>
-            <Z>23.13</Z>
+            <X>10.89</X>
+            <Y>5.75</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2882,23 +2882,23 @@
       </Item>
       <Item class="Part" referent="RBX89">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.870000000000001</X>
-            <Y>7.65</Y>
-            <Z>23.13</Z>
+            <X>10.89</X>
+            <Y>6.43</Y>
+            <Z>22.83</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -2916,6 +2916,111 @@
         </Properties>
       </Item>
       <Item class="Part" referent="RBX90">
+        <Properties>
+          <string name="Name">Spaced wardrobe louvre</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.89</X>
+            <Y>7.110000000000001</Y>
+            <Z>22.83</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX91">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.870000000000001</X>
+            <Y>0.63</Y>
+            <Z>22.83</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX92">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.870000000000001</X>
+            <Y>7.65</Y>
+            <Z>22.83</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX93">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -2950,9 +3055,9 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX91">
+      <Item class="Part" referent="RBX94">
         <Properties>
-          <string name="Name">Carved wardrobe leaf</string>
+          <string name="Name">Lower wardrobe panel</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -2962,118 +3067,13 @@
           </Color3>
           <Vector3 name="Size">
             <X>0.18</X>
-            <Y>8.05</Y>
-            <Z>1.74</Z>
+            <Y>2.0</Y>
+            <Z>1.32</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>11.030000000000001</X>
-            <Y>4.14</Y>
-            <Z>24.87</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX92">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>1.57</Y>
-            <Z>24.87</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX93">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>2.35</Y>
-            <Z>24.87</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX94">
-        <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>3.13</Y>
-            <Z>24.87</Z>
+            <Y>1.42</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3092,23 +3092,23 @@
       </Item>
       <Item class="Part" referent="RBX95">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>3.91</Y>
-            <Z>24.87</Z>
+            <X>11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>24.6</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3127,23 +3127,23 @@
       </Item>
       <Item class="Part" referent="RBX96">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Wardrobe vertical stile</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
+            <R>0.172549020</R>
+            <G>0.121568627</G>
+            <B>0.113725490</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.18</X>
+            <Y>8.05</Y>
+            <Z>0.17</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.89</X>
-            <Y>4.69</Y>
-            <Z>24.87</Z>
+            <X>11.030000000000001</X>
+            <Y>4.14</Y>
+            <Z>25.740000000000002</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3162,7 +3162,7 @@
       </Item>
       <Item class="Part" referent="RBX97">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -3171,14 +3171,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>5.47</Y>
-            <Z>24.87</Z>
+            <Y>3.0300000000000002</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3197,7 +3197,7 @@
       </Item>
       <Item class="Part" referent="RBX98">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -3206,14 +3206,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>6.25</Y>
-            <Z>24.87</Z>
+            <Y>3.71</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3232,7 +3232,7 @@
       </Item>
       <Item class="Part" referent="RBX99">
         <Properties>
-          <string name="Name">Inset wardrobe louvre</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -3241,14 +3241,14 @@
             <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.12</X>
-            <Y>0.31</Y>
-            <Z>1.48</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>10.89</X>
-            <Y>7.03</Y>
-            <Z>24.87</Z>
+            <Y>4.390000000000001</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3267,23 +3267,23 @@
       </Item>
       <Item class="Part" referent="RBX100">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.870000000000001</X>
-            <Y>0.63</Y>
-            <Z>24.87</Z>
+            <X>10.89</X>
+            <Y>5.07</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3302,23 +3302,23 @@
       </Item>
       <Item class="Part" referent="RBX101">
         <Properties>
-          <string name="Name">Carved leaf rail</string>
+          <string name="Name">Spaced wardrobe louvre</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
-            <R>0.325490196</R>
-            <G>0.258823529</G>
-            <B>0.192156863</B>
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.26</Y>
-            <Z>1.76</Z>
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>10.870000000000001</X>
-            <Y>7.65</Y>
-            <Z>24.87</Z>
+            <X>10.89</X>
+            <Y>5.75</Y>
+            <Z>25.17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3336,6 +3336,146 @@
         </Properties>
       </Item>
       <Item class="Part" referent="RBX102">
+        <Properties>
+          <string name="Name">Spaced wardrobe louvre</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.89</X>
+            <Y>6.43</Y>
+            <Z>25.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX103">
+        <Properties>
+          <string name="Name">Spaced wardrobe louvre</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.13</X>
+            <Y>0.22</Y>
+            <Z>1.14</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.89</X>
+            <Y>7.110000000000001</Y>
+            <Z>25.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX104">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.870000000000001</X>
+            <Y>0.63</Y>
+            <Z>25.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX105">
+        <Properties>
+          <string name="Name">Carved leaf rail</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.325490196</R>
+            <G>0.258823529</G>
+            <B>0.192156863</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.26</Y>
+            <Z>1.32</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>10.870000000000001</X>
+            <Y>7.65</Y>
+            <Z>25.17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX106">
         <Properties>
           <string name="Name">Wardrobe handle</string>
           <bool name="Anchored">true</bool>
@@ -3370,7 +3510,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX103">
+      <Item class="Part" referent="RBX107">
         <Properties>
           <string name="Name">Three-drawer dresser back</string>
           <bool name="Anchored">true</bool>
@@ -3405,7 +3545,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX104">
+      <Item class="Part" referent="RBX108">
         <Properties>
           <string name="Name">Dresser end panel</string>
           <bool name="Anchored">true</bool>
@@ -3440,7 +3580,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX105">
+      <Item class="Part" referent="RBX109">
         <Properties>
           <string name="Name">Dresser end panel</string>
           <bool name="Anchored">true</bool>
@@ -3475,7 +3615,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX106">
+      <Item class="Part" referent="RBX110">
         <Properties>
           <string name="Name">Marble dresser top</string>
           <bool name="Anchored">true</bool>
@@ -3510,146 +3650,6 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX107">
-        <Properties>
-          <string name="Name">Sliding drawer front</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.89</Y>
-            <Z>4.13</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>9.48</X>
-            <Y>0.94</Y>
-            <Z>17</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX108">
-        <Properties>
-          <string name="Name">Brass drawer pull</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.533333333</R>
-            <G>0.392156863</G>
-            <B>0.243137255</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.22</Y>
-            <Z>0.82</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>9.32</X>
-            <Y>0.94</Y>
-            <Z>17</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">1088</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX109">
-        <Properties>
-          <string name="Name">Sliding drawer front</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.282352941</R>
-            <G>0.200000000</G>
-            <B>0.156862745</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.89</Y>
-            <Z>4.13</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>9.48</X>
-            <Y>2.0</Y>
-            <Z>17</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">512</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
-      <Item class="Part" referent="RBX110">
-        <Properties>
-          <string name="Name">Brass drawer pull</string>
-          <bool name="Anchored">true</bool>
-          <bool name="CanCollide">true</bool>
-          <Color3 name="Color">
-            <R>0.533333333</R>
-            <G>0.392156863</G>
-            <B>0.243137255</B>
-          </Color3>
-          <Vector3 name="Size">
-            <X>0.18</X>
-            <Y>0.22</Y>
-            <Z>0.82</Z>
-          </Vector3>
-          <CoordinateFrame name="CFrame">
-            <X>9.32</X>
-            <Y>2.0</Y>
-            <Z>17</Z>
-            <R00>1</R00>
-            <R01>0</R01>
-            <R02>0</R02>
-            <R10>0</R10>
-            <R11>1</R11>
-            <R12>0</R12>
-            <R20>0</R20>
-            <R21>0</R21>
-            <R22>1</R22>
-          </CoordinateFrame>
-          <token name="Material">1088</token>
-          <float name="Transparency">0</float>
-          <token name="TopSurface">0</token>
-          <token name="BottomSurface">0</token>
-        </Properties>
-      </Item>
       <Item class="Part" referent="RBX111">
         <Properties>
           <string name="Name">Sliding drawer front</string>
@@ -3667,7 +3667,7 @@
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>9.48</X>
-            <Y>3.06</Y>
+            <Y>0.94</Y>
             <Z>17</Z>
             <R00>1</R00>
             <R01>0</R01>
@@ -3702,7 +3702,7 @@
           </Vector3>
           <CoordinateFrame name="CFrame">
             <X>9.32</X>
-            <Y>3.06</Y>
+            <Y>0.94</Y>
             <Z>17</Z>
             <R00>1</R00>
             <R01>0</R01>
@@ -3722,23 +3722,23 @@
       </Item>
       <Item class="Part" referent="RBX113">
         <Properties>
-          <string name="Name">Fluted stone pillar</string>
+          <string name="Name">Sliding drawer front</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
             <R>0.282352941</R>
-            <G>0.301960784</G>
-            <B>0.301960784</B>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
           </Color3>
           <Vector3 name="Size">
-            <X>1.1</X>
-            <Y>11</Y>
-            <Z>1.1</Z>
+            <X>0.18</X>
+            <Y>0.89</Y>
+            <Z>4.13</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-12.9</X>
-            <Y>5.5</Y>
-            <Z>9</Z>
+            <X>9.48</X>
+            <Y>2.0</Y>
+            <Z>17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3749,7 +3749,7 @@
             <R21>0</R21>
             <R22>1</R22>
           </CoordinateFrame>
-          <token name="Material">800</token>
+          <token name="Material">512</token>
           <float name="Transparency">0</float>
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
@@ -3757,7 +3757,7 @@
       </Item>
       <Item class="Part" referent="RBX114">
         <Properties>
-          <string name="Name">Pillar capital</string>
+          <string name="Name">Brass drawer pull</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
           <Color3 name="Color">
@@ -3766,14 +3766,14 @@
             <B>0.243137255</B>
           </Color3>
           <Vector3 name="Size">
-            <X>1.7</X>
-            <Y>0.6</Y>
-            <Z>1.7</Z>
+            <X>0.18</X>
+            <Y>0.22</Y>
+            <Z>0.82</Z>
           </Vector3>
           <CoordinateFrame name="CFrame">
-            <X>-12.9</X>
-            <Y>11.25</Y>
-            <Z>9</Z>
+            <X>9.32</X>
+            <Y>2.0</Y>
+            <Z>17</Z>
             <R00>1</R00>
             <R01>0</R01>
             <R02>0</R02>
@@ -3792,6 +3792,146 @@
       </Item>
       <Item class="Part" referent="RBX115">
         <Properties>
+          <string name="Name">Sliding drawer front</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.282352941</R>
+            <G>0.200000000</G>
+            <B>0.156862745</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.89</Y>
+            <Z>4.13</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>9.48</X>
+            <Y>3.06</Y>
+            <Z>17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">512</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX116">
+        <Properties>
+          <string name="Name">Brass drawer pull</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>0.18</X>
+            <Y>0.22</Y>
+            <Z>0.82</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>9.32</X>
+            <Y>3.06</Y>
+            <Z>17</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX117">
+        <Properties>
+          <string name="Name">Fluted stone pillar</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.282352941</R>
+            <G>0.301960784</G>
+            <B>0.301960784</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.1</X>
+            <Y>11</Y>
+            <Z>1.1</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.9</X>
+            <Y>5.5</Y>
+            <Z>9</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">800</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX118">
+        <Properties>
+          <string name="Name">Pillar capital</string>
+          <bool name="Anchored">true</bool>
+          <bool name="CanCollide">true</bool>
+          <Color3 name="Color">
+            <R>0.533333333</R>
+            <G>0.392156863</G>
+            <B>0.243137255</B>
+          </Color3>
+          <Vector3 name="Size">
+            <X>1.7</X>
+            <Y>0.6</Y>
+            <Z>1.7</Z>
+          </Vector3>
+          <CoordinateFrame name="CFrame">
+            <X>-12.9</X>
+            <Y>11.25</Y>
+            <Z>9</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <token name="Material">1088</token>
+          <float name="Transparency">0</float>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX119">
+        <Properties>
           <string name="Name">Fluted stone pillar</string>
           <bool name="Anchored">true</bool>
           <bool name="CanCollide">true</bool>
@@ -3825,7 +3965,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX116">
+      <Item class="Part" referent="RBX120">
         <Properties>
           <string name="Name">Pillar capital</string>
           <bool name="Anchored">true</bool>
@@ -3860,7 +4000,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX117">
+      <Item class="Part" referent="RBX121">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -3895,7 +4035,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX118">
+      <Item class="Part" referent="RBX122">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -3929,7 +4069,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX119">
+        <Item class="PointLight" referent="RBX123">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -3944,11 +4084,11 @@
         </Item>
       </Item>
     </Item>
-    <Item class="Model" referent="RBX120">
+    <Item class="Model" referent="RBX124">
       <Properties>
         <string name="Name">PreviewEnclosedStair</string>
       </Properties>
-      <Item class="Part" referent="RBX121">
+      <Item class="Part" referent="RBX125">
         <Properties>
           <string name="Name">Stair foundation</string>
           <bool name="Anchored">true</bool>
@@ -3983,7 +4123,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX122">
+      <Item class="Part" referent="RBX126">
         <Properties>
           <string name="Name">Continuous wall handrail</string>
           <bool name="Anchored">true</bool>
@@ -4018,7 +4158,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX123">
+      <Item class="Part" referent="RBX127">
         <Properties>
           <string name="Name">Solid enclosed stair flank</string>
           <bool name="Anchored">true</bool>
@@ -4053,7 +4193,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX124">
+      <Item class="Part" referent="RBX128">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4088,7 +4228,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX125">
+      <Item class="Part" referent="RBX129">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4123,7 +4263,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX126">
+      <Item class="Part" referent="RBX130">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4158,7 +4298,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX127">
+      <Item class="Part" referent="RBX131">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4193,7 +4333,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX128">
+      <Item class="Part" referent="RBX132">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4228,7 +4368,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX129">
+      <Item class="Part" referent="RBX133">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4263,7 +4403,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX130">
+      <Item class="Part" referent="RBX134">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4298,7 +4438,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX131">
+      <Item class="Part" referent="RBX135">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4333,7 +4473,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX132">
+      <Item class="Part" referent="RBX136">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4368,7 +4508,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX133">
+      <Item class="Part" referent="RBX137">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4403,7 +4543,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX134">
+      <Item class="Part" referent="RBX138">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4437,7 +4577,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX135">
+        <Item class="PointLight" referent="RBX139">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4451,7 +4591,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX136">
+      <Item class="Part" referent="RBX140">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4486,7 +4626,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX137">
+      <Item class="Part" referent="RBX141">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4520,7 +4660,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX138">
+        <Item class="PointLight" referent="RBX142">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4534,7 +4674,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX139">
+      <Item class="Part" referent="RBX143">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4569,7 +4709,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX140">
+      <Item class="Part" referent="RBX144">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4603,7 +4743,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX141">
+        <Item class="PointLight" referent="RBX145">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4617,7 +4757,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX142">
+      <Item class="Part" referent="RBX146">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -4652,7 +4792,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX143">
+      <Item class="Part" referent="RBX147">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -4686,7 +4826,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX144">
+        <Item class="PointLight" referent="RBX148">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -4700,7 +4840,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX145">
+      <Item class="Part" referent="RBX149">
         <Properties>
           <string name="Name">Continuous wall handrail</string>
           <bool name="Anchored">true</bool>
@@ -4735,7 +4875,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX146">
+      <Item class="Part" referent="RBX150">
         <Properties>
           <string name="Name">Solid enclosed stair flank</string>
           <bool name="Anchored">true</bool>
@@ -4770,7 +4910,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX147">
+      <Item class="Part" referent="RBX151">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4805,7 +4945,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX148">
+      <Item class="Part" referent="RBX152">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4840,7 +4980,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX149">
+      <Item class="Part" referent="RBX153">
         <Properties>
           <string name="Name">Doorway side masonry</string>
           <bool name="Anchored">true</bool>
@@ -4875,7 +5015,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX150">
+      <Item class="Part" referent="RBX154">
         <Properties>
           <string name="Name">Structural door jamb</string>
           <bool name="Anchored">true</bool>
@@ -4910,7 +5050,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX151">
+      <Item class="Part" referent="RBX155">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4945,7 +5085,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX152">
+      <Item class="Part" referent="RBX156">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -4980,7 +5120,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX153">
+      <Item class="Part" referent="RBX157">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5015,7 +5155,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX154">
+      <Item class="Part" referent="RBX158">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5050,7 +5190,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX155">
+      <Item class="Part" referent="RBX159">
         <Properties>
           <string name="Name">Interior stair pilaster</string>
           <bool name="Anchored">true</bool>
@@ -5085,7 +5225,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX156">
+      <Item class="Part" referent="RBX160">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5120,7 +5260,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX157">
+      <Item class="Part" referent="RBX161">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5154,7 +5294,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX158">
+        <Item class="PointLight" referent="RBX162">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5168,7 +5308,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX159">
+      <Item class="Part" referent="RBX163">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5203,7 +5343,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX160">
+      <Item class="Part" referent="RBX164">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5237,7 +5377,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX161">
+        <Item class="PointLight" referent="RBX165">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5251,7 +5391,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX162">
+      <Item class="Part" referent="RBX166">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5286,7 +5426,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX163">
+      <Item class="Part" referent="RBX167">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5320,7 +5460,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX164">
+        <Item class="PointLight" referent="RBX168">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5334,7 +5474,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX165">
+      <Item class="Part" referent="RBX169">
         <Properties>
           <string name="Name">Tarnished brass lamp</string>
           <bool name="Anchored">true</bool>
@@ -5369,7 +5509,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX166">
+      <Item class="Part" referent="RBX170">
         <Properties>
           <string name="Name">Filament</string>
           <bool name="Anchored">true</bool>
@@ -5403,7 +5543,7 @@
           <token name="TopSurface">0</token>
           <token name="BottomSurface">0</token>
         </Properties>
-        <Item class="PointLight" referent="RBX167">
+        <Item class="PointLight" referent="RBX171">
           <Properties>
             <string name="Name">WarmPointLight</string>
             <float name="Brightness">1.2</float>
@@ -5417,7 +5557,7 @@
           </Properties>
         </Item>
       </Item>
-      <Item class="Part" referent="RBX168">
+      <Item class="Part" referent="RBX172">
         <Properties>
           <string name="Name">Lower arch lintel</string>
           <bool name="Anchored">true</bool>
@@ -5452,7 +5592,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX169">
+      <Item class="Part" referent="RBX173">
         <Properties>
           <string name="Name">Solid wall below upper exit</string>
           <bool name="Anchored">true</bool>
@@ -5487,7 +5627,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX170">
+      <Item class="Part" referent="RBX174">
         <Properties>
           <string name="Name">Upper arch lintel</string>
           <bool name="Anchored">true</bool>
@@ -5522,7 +5662,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX171">
+      <Item class="Part" referent="RBX175">
         <Properties>
           <string name="Name">Lower stair landing</string>
           <bool name="Anchored">true</bool>
@@ -5557,7 +5697,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX172">
+      <Item class="Part" referent="RBX176">
         <Properties>
           <string name="Name">Upper stair landing</string>
           <bool name="Anchored">true</bool>
@@ -5592,7 +5732,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX173">
+      <Item class="Part" referent="RBX177">
         <Properties>
           <string name="Name">Lower enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5627,7 +5767,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX174">
+      <Item class="Part" referent="RBX178">
         <Properties>
           <string name="Name">Upper enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5662,7 +5802,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX175">
+      <Item class="Part" referent="RBX179">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -5697,7 +5837,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX176">
+      <Item class="Part" referent="RBX180">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5732,7 +5872,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX177">
+      <Item class="Part" referent="RBX181">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -5767,7 +5907,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX178">
+      <Item class="Part" referent="RBX182">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -5802,7 +5942,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX179">
+      <Item class="Part" referent="RBX183">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -5837,7 +5977,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX180">
+      <Item class="Part" referent="RBX184">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -5872,7 +6012,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX181">
+      <Item class="Part" referent="RBX185">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -5907,7 +6047,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX182">
+      <Item class="Part" referent="RBX186">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -5942,7 +6082,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX183">
+      <Item class="Part" referent="RBX187">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -5977,7 +6117,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX184">
+      <Item class="Part" referent="RBX188">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6012,7 +6152,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX185">
+      <Item class="Part" referent="RBX189">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6047,7 +6187,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX186">
+      <Item class="Part" referent="RBX190">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6082,7 +6222,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX187">
+      <Item class="Part" referent="RBX191">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6117,7 +6257,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX188">
+      <Item class="Part" referent="RBX192">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6152,7 +6292,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX189">
+      <Item class="Part" referent="RBX193">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6187,7 +6327,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX190">
+      <Item class="Part" referent="RBX194">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6222,7 +6362,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX191">
+      <Item class="Part" referent="RBX195">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6257,7 +6397,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX192">
+      <Item class="Part" referent="RBX196">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6292,7 +6432,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX193">
+      <Item class="Part" referent="RBX197">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6327,7 +6467,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX194">
+      <Item class="Part" referent="RBX198">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6362,7 +6502,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX195">
+      <Item class="Part" referent="RBX199">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6397,7 +6537,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX196">
+      <Item class="Part" referent="RBX200">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6432,7 +6572,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX197">
+      <Item class="Part" referent="RBX201">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6467,7 +6607,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX198">
+      <Item class="Part" referent="RBX202">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6502,7 +6642,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX199">
+      <Item class="Part" referent="RBX203">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6537,7 +6677,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX200">
+      <Item class="Part" referent="RBX204">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6572,7 +6712,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX201">
+      <Item class="Part" referent="RBX205">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6607,7 +6747,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX202">
+      <Item class="Part" referent="RBX206">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6642,7 +6782,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX203">
+      <Item class="Part" referent="RBX207">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6677,7 +6817,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX204">
+      <Item class="Part" referent="RBX208">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6712,7 +6852,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX205">
+      <Item class="Part" referent="RBX209">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6747,7 +6887,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX206">
+      <Item class="Part" referent="RBX210">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6782,7 +6922,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX207">
+      <Item class="Part" referent="RBX211">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6817,7 +6957,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX208">
+      <Item class="Part" referent="RBX212">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -6852,7 +6992,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX209">
+      <Item class="Part" referent="RBX213">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -6887,7 +7027,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX210">
+      <Item class="Part" referent="RBX214">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -6922,7 +7062,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX211">
+      <Item class="Part" referent="RBX215">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -6957,7 +7097,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX212">
+      <Item class="Part" referent="RBX216">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -6992,7 +7132,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX213">
+      <Item class="Part" referent="RBX217">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7027,7 +7167,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX214">
+      <Item class="Part" referent="RBX218">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7062,7 +7202,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX215">
+      <Item class="Part" referent="RBX219">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7097,7 +7237,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX216">
+      <Item class="Part" referent="RBX220">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7132,7 +7272,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX217">
+      <Item class="Part" referent="RBX221">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7167,7 +7307,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX218">
+      <Item class="Part" referent="RBX222">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7202,7 +7342,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX219">
+      <Item class="Part" referent="RBX223">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7237,7 +7377,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX220">
+      <Item class="Part" referent="RBX224">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7272,7 +7412,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX221">
+      <Item class="Part" referent="RBX225">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7307,7 +7447,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX222">
+      <Item class="Part" referent="RBX226">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7342,7 +7482,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX223">
+      <Item class="Part" referent="RBX227">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7377,7 +7517,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX224">
+      <Item class="Part" referent="RBX228">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7412,7 +7552,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX225">
+      <Item class="Part" referent="RBX229">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7447,7 +7587,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX226">
+      <Item class="Part" referent="RBX230">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7482,7 +7622,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX227">
+      <Item class="Part" referent="RBX231">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7517,7 +7657,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX228">
+      <Item class="Part" referent="RBX232">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7552,7 +7692,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX229">
+      <Item class="Part" referent="RBX233">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7587,7 +7727,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX230">
+      <Item class="Part" referent="RBX234">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7622,7 +7762,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX231">
+      <Item class="Part" referent="RBX235">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7657,7 +7797,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX232">
+      <Item class="Part" referent="RBX236">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7692,7 +7832,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX233">
+      <Item class="Part" referent="RBX237">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7727,7 +7867,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX234">
+      <Item class="Part" referent="RBX238">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7762,7 +7902,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX235">
+      <Item class="Part" referent="RBX239">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7797,7 +7937,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX236">
+      <Item class="Part" referent="RBX240">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -7832,7 +7972,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX237">
+      <Item class="Part" referent="RBX241">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -7867,7 +8007,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX238">
+      <Item class="Part" referent="RBX242">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -7902,7 +8042,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX239">
+      <Item class="Part" referent="RBX243">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -7937,7 +8077,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX240">
+      <Item class="Part" referent="RBX244">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -7972,7 +8112,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX241">
+      <Item class="Part" referent="RBX245">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8007,7 +8147,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX242">
+      <Item class="Part" referent="RBX246">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8042,7 +8182,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX243">
+      <Item class="Part" referent="RBX247">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8077,7 +8217,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX244">
+      <Item class="Part" referent="RBX248">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8112,7 +8252,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX245">
+      <Item class="Part" referent="RBX249">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -8147,7 +8287,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX246">
+      <Item class="Part" referent="RBX250">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8182,7 +8322,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX247">
+      <Item class="Part" referent="RBX251">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8217,7 +8357,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX248">
+      <Item class="Part" referent="RBX252">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8252,7 +8392,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX249">
+      <Item class="Part" referent="RBX253">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8287,7 +8427,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX250">
+      <Item class="Part" referent="RBX254">
         <Properties>
           <string name="Name">Solid stair tread</string>
           <bool name="Anchored">true</bool>
@@ -8322,7 +8462,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX251">
+      <Item class="Part" referent="RBX255">
         <Properties>
           <string name="Name">Stepped enclosed ceiling</string>
           <bool name="Anchored">true</bool>
@@ -8357,7 +8497,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX252">
+      <Item class="Part" referent="RBX256">
         <Properties>
           <string name="Name">Sealed ceiling riser</string>
           <bool name="Anchored">true</bool>
@@ -8392,7 +8532,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX253">
+      <Item class="Part" referent="RBX257">
         <Properties>
           <string name="Name">Carpeted tread</string>
           <bool name="Anchored">true</bool>
@@ -8427,7 +8567,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX254">
+      <Item class="Part" referent="RBX258">
         <Properties>
           <string name="Name">Brass tread nosing</string>
           <bool name="Anchored">true</bool>
@@ -8462,7 +8602,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX255">
+      <Item class="Part" referent="RBX259">
         <Properties>
           <string name="Name">Door 002 / upper landing</string>
           <bool name="Anchored">true</bool>
@@ -8497,7 +8637,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX256">
+      <Item class="Part" referent="RBX260">
         <Properties>
           <string name="Name">Stair wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -8532,7 +8672,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX257">
+      <Item class="Part" referent="RBX261">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8567,7 +8707,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX258">
+      <Item class="Part" referent="RBX262">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8602,7 +8742,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX259">
+      <Item class="Part" referent="RBX263">
         <Properties>
           <string name="Name">Stair wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -8637,7 +8777,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX260">
+      <Item class="Part" referent="RBX264">
         <Properties>
           <string name="Name">Stair wardrobe back</string>
           <bool name="Anchored">true</bool>
@@ -8672,7 +8812,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX261">
+      <Item class="Part" referent="RBX265">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8707,7 +8847,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX262">
+      <Item class="Part" referent="RBX266">
         <Properties>
           <string name="Name">Stair wardrobe side</string>
           <bool name="Anchored">true</bool>
@@ -8742,7 +8882,7 @@
           <token name="BottomSurface">0</token>
         </Properties>
       </Item>
-      <Item class="Part" referent="RBX263">
+      <Item class="Part" referent="RBX267">
         <Properties>
           <string name="Name">Stair wardrobe roof</string>
           <bool name="Anchored">true</bool>
@@ -8778,7 +8918,7 @@
         </Properties>
       </Item>
     </Item>
-    <Item class="SpawnLocation" referent="RBX264">
+    <Item class="SpawnLocation" referent="RBX268">
       <Properties>
         <string name="Name">PreviewSpawn</string>
         <bool name="Anchored">true</bool>
@@ -8816,7 +8956,7 @@
       </Properties>
     </Item>
   </Item>
-  <Item class="Lighting" referent="RBX265">
+  <Item class="Lighting" referent="RBX269">
     <Properties>
       <string name="Name">Lighting</string>
       <float name="ClockTime">0</float>
@@ -8840,7 +8980,7 @@
       <float name="FogEnd">95</float>
       <bool name="GlobalShadows">true</bool>
     </Properties>
-    <Item class="Atmosphere" referent="RBX266">
+    <Item class="Atmosphere" referent="RBX270">
       <Properties>
         <string name="Name">CorridorHaze</string>
         <float name="Density">0.39</float>
@@ -8857,7 +8997,7 @@
         </Color3>
       </Properties>
     </Item>
-    <Item class="ColorCorrectionEffect" referent="RBX267">
+    <Item class="ColorCorrectionEffect" referent="RBX271">
       <Properties>
         <string name="Name">ColdShadowsWarmLights</string>
         <Color3 name="TintColor">
@@ -8869,7 +9009,7 @@
         <float name="Saturation">-0.32</float>
       </Properties>
     </Item>
-    <Item class="BloomEffect" referent="RBX268">
+    <Item class="BloomEffect" referent="RBX272">
       <Properties>
         <string name="Name">WarmBloom</string>
         <float name="Intensity">0.37</float>
@@ -8878,11 +9018,11 @@
       </Properties>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="RBX269">
+  <Item class="ServerScriptService" referent="RBX273">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="RBX270">
+    <Item class="Script" referent="RBX274">
       <Properties>
         <string name="Name">NocturneServer</string>
         <ProtectedString name="Source">-- NOCTURNE / a self-contained, original, 100-door horror game.
@@ -8913,6 +9053,9 @@ local CONFIG = {
 	RushMaximumSeconds = 18,
 	BlindLifetime = 24, -- enough time to track retreating players through stairs/doors
 	MothLifetime = 18,
+	MothSpeed = 17, -- sprinting can briefly outpace it; darkness stops it hunting
+	MothGraceSeconds = 4, -- visible and harmless before it can pursue any torch
+	KeyTurnSeconds = 0.7,
 	-- Set to an integer for a repeatable layout, or leave nil for a new run.
 	Seed = nil,
 }
@@ -8955,6 +9098,7 @@ local state = {
 	seed = 0,
 	plan = {},
 	hidden = {},
+	keys = {}, -- door index carried by each player; the drawer key is not spent on pickup
 	players = {},
 	rush = nil,
 	blind = nil,
@@ -8979,6 +9123,16 @@ local function newPart(parent, name, size, cf, color, material, transparency, co
 	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.Parent = parent
 	return p
+end
+
+-- Keep the native E/touch/gamepad interaction affordance, but never show
+-- explanatory action/object text over the scene.
+local function iconPrompt(prompt)
+	prompt.ActionText = ""
+	prompt.ObjectText = ""
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	return prompt
 end
 
 local function block(parent, name, sx, sy, sz, x, y, z, color, material)
@@ -9011,8 +9165,26 @@ local function addLight(parent, position, room, brightness, color)
 	-- One shadow-casting sconce per room keeps mobile lighting affordable.
 	light.Shadows = #room.lamps == 0
 	light.Parent = bulb
-	table.insert(room.lamps, {light = light, bulb = bulb, brightness = light.Brightness})
+	local lamp = {light = light, bulb = bulb, brightness = light.Brightness,
+		color = light.Color, normallyOn = not room.dark}
+	table.insert(room.lamps, lamp)
+	if room.dark then
+		light.Enabled = false
+		bulb.Material = Enum.Material.Glass
+		bulb.Color = Color3.fromRGB(37, 42, 44)
+		bulb.Transparency = 0.32
+	end
 	return fixture
+end
+
+local function setLamp(lamp, on, tint, intensity)
+	if not lamp.light.Parent then return end
+	lamp.light.Enabled = on
+	lamp.light.Color = tint or lamp.color
+	lamp.light.Brightness = lamp.brightness * (intensity or 1)
+	lamp.bulb.Material = on and Enum.Material.Neon or Enum.Material.Glass
+	lamp.bulb.Color = on and (tint or lamp.color) or Color3.fromRGB(37, 42, 44)
+	lamp.bulb.Transparency = on and 0 or 0.32
 end
 
 local function inscription(parent, part, text, small)
@@ -9044,6 +9216,7 @@ end
 local function hingeDoor(parent, doorNumber, z, floorY)
 	local assembly = Instance.new("Model")
 	assembly.Name = string.format("Door_%03d", doorNumber)
+	assembly:SetAttribute("Open", false)
 	assembly.Parent = parent
 	local leaf = block(assembly, "Solid oak door", 6.6, 10.2, 0.42,
 		0, floorY + 5.1, z, C.woodLight, Enum.Material.WoodPlanks)
@@ -9067,8 +9240,7 @@ local function hingeDoor(parent, doorNumber, z, floorY)
 		2.58, floorY + 3.53, z - 0.54, C.shadow, Enum.Material.Metal)
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "OpenDoor"
-	prompt.ActionText = "Открыть"
-	prompt.ObjectText = string.format("Дверь %03d", doorNumber)
+	iconPrompt(prompt)
 	prompt.HoldDuration = 0.35
 	prompt.MaxActivationDistance = 9
 	prompt.RequiresLineOfSight = false
@@ -9114,8 +9286,8 @@ local function swingDoor(room, opening)
 		room.open = opening
 		room.busy = false
 		if room.door.Parent then
+			room.door:SetAttribute("Open", opening)
 			setModelCollision(room.door, true)
-			room.prompt.ActionText = opening and "Закрыть" or "Открыть"
 			room.prompt.Enabled = true
 		end
 	end)
@@ -9151,9 +9323,9 @@ local function swingCloset(closet, opening)
 			pending = pending - 1
 			if pending ~= 0 or closet.motion ~= motion or not closet.model.Parent then return end
 			closet.open = opening
+			closet.model:SetAttribute("Open", opening)
 			closet.barrier.CanCollide = not opening
 			for _, part in ipairs(closet.leaves) do setModelCollision(part.model, not opening) end
-			closet.prompt.ActionText = opening and "Спрятаться" or "Открыть шкаф"
 			closet.prompt.Enabled = not closet.occupant
 			closet.closePrompt.Enabled = opening and not closet.occupant
 		end)
@@ -9229,6 +9401,7 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 		* CFrame.Angles(0, side * math.pi / 2, 0)
 	local model = Instance.new("Model")
 	model.Name = "Wardrobe_" .. serial
+	model:SetAttribute("Open", false)
 	model.Parent = room.model
 	local function panel(name, size, localCF, color, material, alpha, collide)
 		return newPart(model, name, size, cf * localCF, color, material, alpha, collide)
@@ -9247,16 +9420,23 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 		local leaf = Instance.new("Model")
 		leaf.Name = leafSide == -1 and "Left hinged leaf" or "Right hinged leaf"
 		leaf.Parent = model
-		local centreX = leafSide * 0.87
-		newPart(leaf, "Oak wardrobe leaf", Vector3.new(1.74, 8.05, 0.18),
-			cf * CFrame.new(centreX, 4.14, -1.52), C.wood, Enum.Material.Wood)
-		for j = 1, 8 do
-			newPart(leaf, "Inset wooden louvre", Vector3.new(1.48, 0.31, 0.12),
-				cf * CFrame.new(centreX, 0.79 + j * 0.78, -1.66)
+		-- A genuine central viewing gap and spaced louvres, not a full-height
+		-- opaque slab hidden behind a fake GUI slit. Monster geometry can be
+		-- seen THROUGH the closed leaves while the collision barrier stays solid.
+		local centreX = leafSide * 1.17
+		newPart(leaf, "Lower oak wardrobe panel", Vector3.new(1.32, 2.0, 0.18),
+			cf * CFrame.new(centreX, 1.42, -1.52), C.wood, Enum.Material.Wood)
+		for _, edgeX in ipairs({centreX - 0.57, centreX + 0.57}) do
+			newPart(leaf, "Wardrobe vertical stile", Vector3.new(0.17, 8.05, 0.18),
+				cf * CFrame.new(edgeX, 4.14, -1.52), C.wood, Enum.Material.Wood)
+		end
+		for j = 1, 7 do
+			newPart(leaf, "Spaced wooden louvre", Vector3.new(1.14, 0.22, 0.13),
+				cf * CFrame.new(centreX, 2.35 + j * 0.68, -1.66)
 					* CFrame.Angles(math.rad(-16), 0, 0), C.woodLight, Enum.Material.Wood)
 		end
 		for _, edge in ipairs({0.63, 7.65}) do
-			newPart(leaf, "Carved leaf rail", Vector3.new(1.76, 0.26, 0.18),
+			newPart(leaf, "Carved leaf rail", Vector3.new(1.32, 0.26, 0.18),
 				cf * CFrame.new(centreX, edge, -1.68), C.brassDark, Enum.Material.Wood)
 		end
 		handles[leafSide] = newPart(leaf, "Wardrobe handle", Vector3.new(0.27, 0.73, 0.2),
@@ -9267,8 +9447,7 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	end
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "HideInside"
-	prompt.ActionText = "Открыть шкаф"
-	prompt.ObjectText = "Шкаф"
+	iconPrompt(prompt)
 	prompt.HoldDuration = 0.22
 	prompt.MaxActivationDistance = 8
 	prompt.RequiresLineOfSight = false
@@ -9277,8 +9456,7 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	prompt.Parent = handles[-1]
 	local closePrompt = Instance.new("ProximityPrompt")
 	closePrompt.Name = "CloseWardrobe"
-	closePrompt.ActionText = "Закрыть шкаф"
-	closePrompt.ObjectText = "Шкаф"
+	iconPrompt(closePrompt)
 	closePrompt.HoldDuration = 0.22
 	closePrompt.MaxActivationDistance = 8
 	closePrompt.RequiresLineOfSight = false
@@ -9290,7 +9468,7 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 		model = model, barrier = barrier, leaves = leaves, prompt = prompt, closePrompt = closePrompt,
 		front = (cf * CFrame.new(0, 4, -1.6)).Position,
 		rootCF = cf * CFrame.new(0, 3, 0.1),
-		cameraCF = cf * CFrame.new(0, 5.0, -0.1),
+		cameraCF = cf * CFrame.new(0, 5.0, -1.02), -- eye close to the real gap, behind the leaves
 		exitCF = cf * CFrame.new(0, 3, -3.45),
 		epoch = session,
 		occupant = nil, open = false,
@@ -9304,9 +9482,72 @@ local function makeCloset(room, side, z, serial, floorY, passageHalfWidth)
 	table.insert(room.closets, closet)
 end
 
+-- The drawer key stays there until somebody REALLY picks it up. A second copy
+-- is welded to that player's ordinary R6/R15 right hand, visible to the group.
+-- On death/disconnect the real key reappears in its open drawer, so a team
+-- cannot soft-lock itself; only turning it in its own door consumes it.
+local function putBackKey(player)
+	local index = state.keys[player]
+	state.keys[player] = nil
+	player:SetAttribute("HeldKey", nil)
+	player:SetAttribute("KeyTurning", false)
+	local character = player.Character
+	local held = character and character:FindFirstChild("HeldKey")
+	if held then held:Destroy() end
+	local room = index and state.rooms[index]
+	if room and room.epoch == session and not room.unlocked and room.key then
+		for _, part in ipairs(room.key.model:GetDescendants()) do
+			if part:IsA("BasePart") then part.Transparency = 0 end
+		end
+		room.key.prompt.Enabled = true
+		room.model:SetAttribute("KeyFound", false)
+	end
+end
+
+local function holdKey(player, key)
+	local character = player.Character
+	local hand = character and (character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm"))
+	if not hand or not hand:IsA("BasePart") then return false end
+	local held = key:Clone()
+	held.Name = "HeldKey"
+	for _, descendant in ipairs(held:GetDescendants()) do
+		if descendant:IsA("ProximityPrompt") then descendant:Destroy() end
+	end
+	local bow = held.PrimaryPart
+	if not bow then held:Destroy(); return false end
+	held.Parent = character
+	-- Welds, not anchored display parts or a replacement Humanoid: Roblox's
+	-- normal animation/physics keeps moving the owner's actual hand.
+	held:PivotTo(hand.CFrame * CFrame.new(0, -hand.Size.Y / 2 - 0.11, -0.23)
+		* CFrame.Angles(math.rad(70), 0, math.rad(-12)))
+	local parts = {}
+	for _, part in ipairs(held:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Transparency = 0
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = false
+			part.Massless = true
+			table.insert(parts, part)
+			if part ~= bow then
+				local joint = Instance.new("WeldConstraint")
+				joint.Part0 = bow
+				joint.Part1 = part
+				joint.Parent = bow
+			end
+		end
+	end
+	local grip = Instance.new("WeldConstraint")
+	grip.Name = "Key grip in Roblox hand"
+	grip.Part0 = hand
+	grip.Part1 = bow
+	grip.Parent = bow
+	for _, part in ipairs(parts) do part.Anchored = false end
+	return true
+end
+
 -- The key is in exactly one of three physical drawers in the SAME room as its
--- locked door. Prompts and distance checks live on the server; finding a key
--- unlocks that numbered door for everyone in the current run.
+-- locked door. Searching, taking and turning it are server-authoritative.
 local function makeDresser(room, rng)
 	local side = room.kind == "TURN" and Layout.TurnSide(room.index, state.seed) or 1
 	local dresserZ = room.kind == "TURN" and 22 or (room.kind == "CONSERVATORY" and 14.5 or 17)
@@ -9353,8 +9594,7 @@ local function makeDresser(room, rng)
 		drawer.WorldPivot = pivot
 		local openPrompt = Instance.new("ProximityPrompt")
 		openPrompt.Name = "OpenDrawer"
-		openPrompt.ActionText = "Выдвинуть"
-		openPrompt.ObjectText = "Ящик " .. slot
+		iconPrompt(openPrompt)
 		openPrompt.HoldDuration = 0.27
 		openPrompt.MaxActivationDistance = 8
 		openPrompt.RequiresLineOfSight = false
@@ -9366,17 +9606,24 @@ local function makeDresser(room, rng)
 			key = Instance.new("Model")
 			key.Name = "Key_for_door_" .. (room.index + 1)
 			key.Parent = drawer
-			local bow = newPart(key, "Brass key bow", Vector3.new(0.56, 0.15, 0.56),
-				cf * CFrame.new(0, drawerY - 0.22, -0.68), C.brass, Enum.Material.Metal, 1, false)
-			bow.Shape = Enum.PartType.Cylinder
+			local bow = newPart(key, "Brass key bow", Vector3.new(0.2, 0.15, 0.2),
+				cf * CFrame.new(0, drawerY - 0.22, -0.68), C.brassDark, Enum.Material.Metal, 1, false)
+			bow.Shape = Enum.PartType.Ball
+			key.PrimaryPart = bow
+			for bead = 1, 10 do
+				local angle = bead * math.pi * 2 / 10
+				local loop = newPart(key, "Forged circular key loop", Vector3.new(0.13, 0.12, 0.13),
+					cf * CFrame.new(math.cos(angle) * 0.24, drawerY - 0.22,
+						-0.68 + math.sin(angle) * 0.24), C.brass, Enum.Material.Metal, 1, false)
+				loop.Shape = Enum.PartType.Ball
+			end
 			newPart(key, "Key stem", Vector3.new(0.16, 0.15, 0.85),
 				cf * CFrame.new(0, drawerY - 0.22, -0.22), C.brass, Enum.Material.Metal, 1, false)
 			newPart(key, "Key teeth", Vector3.new(0.34, 0.15, 0.14),
 				cf * CFrame.new(0.1, drawerY - 0.22, 0.18), C.brass, Enum.Material.Metal, 1, false)
 			takePrompt = Instance.new("ProximityPrompt")
 			takePrompt.Name = "TakeKey"
-			takePrompt.ActionText = "Взять ключ"
-			takePrompt.ObjectText = string.format("Дверь %03d", room.index + 1)
+			iconPrompt(takePrompt)
 			takePrompt.HoldDuration = 0.2
 			takePrompt.MaxActivationDistance = 8
 			takePrompt.RequiresLineOfSight = false
@@ -9384,17 +9631,21 @@ local function makeDresser(room, rng)
 			takePrompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 			takePrompt.Enabled = false
 			takePrompt.Parent = bow
+			room.key = {model = key, prompt = takePrompt}
 			takePrompt.Triggered:Connect(function(player)
-				if room.epoch ~= session or room.unlocked or not takePrompt.Enabled then return end
+				if room.epoch ~= session or room.unlocked or not takePrompt.Enabled
+					or state.keys[player] then return end
 				local root = playerRoot(player)
 				if not root or state.hidden[player]
 					or (root.Position - bow.Position).Magnitude &gt; 10 then return end
-				room.unlocked = true
+				if not holdKey(player, key) then return end
+				takePrompt.Enabled = false
+				for _, part in ipairs(key:GetDescendants()) do
+					if part:IsA("BasePart") then part.Transparency = 1 end
+				end
+				state.keys[player] = room.index
 				room.model:SetAttribute("KeyFound", true)
-				room.model:SetAttribute("Locked", false)
-				room.prompt.ActionText = "Открыть"
-				key:Destroy()
-				remote:FireAllClients("Key", room.index + 1)
+				player:SetAttribute("HeldKey", room.index + 1)
 			end)
 		end
 		local opened = false
@@ -9724,6 +9975,49 @@ local WALL_STYLES = {
 	{wall = Color3.fromRGB(58, 52, 47), runner = Color3.fromRGB(81, 43, 38), trim = Color3.fromRGB(122, 94, 61)},
 	{wall = Color3.fromRGB(38, 39, 55), runner = Color3.fromRGB(61, 31, 54), trim = Color3.fromRGB(89, 75, 101)},
 }
+local function roomArchitecture(room)
+	local z = room.index * L
+	local style = WALL_STYLES[room.style]
+	if room.shape == "VESTIBULE" then
+		-- Two full-height cross-walls make distinct entrance/exit chambers.
+		-- The 12.8-stud central passage stays wider than the numbered doors;
+		-- wardrobes at z21/24 and the dresser at z17 remain accessible.
+		for _, dz in ipairs({5, 39}) do
+			for _, side in ipairs({-1, 1}) do
+				roomBlock(room, "Vestibule cross-wall", W / 2 - 6.4, H, 0.85,
+					side * (W / 2 + 6.4) / 2, H / 2, z + dz,
+					style.wall, Enum.Material.Concrete)
+				roomBlock(room, "Vestibule doorway moulding", 0.22, 10.8, 1,
+					side * 6.4, 5.4, z + dz, style.trim, Enum.Material.Metal)
+			end
+			roomBlock(room, "Vestibule arch lintel", 12.8, H - 10.8, 0.86,
+				0, (H + 10.8) / 2, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+	elseif room.shape == "ARCADE" then
+		for _, dz in ipairs({4.5, 39.5}) do
+			for _, side in ipairs({-1, 1}) do
+				local pillar = roomBlock(room, "Freestanding marble arcade column", 12.4, 1.08, 1.08,
+					side * 9.2, 6.2, z + dz, C.marble, Enum.Material.Marble)
+				pillar.Shape = Enum.PartType.Cylinder
+				pillar.CFrame = pillar.CFrame * CFrame.Angles(0, 0, math.pi / 2)
+				roomBlock(room, "Arcade gilded capital", 1.62, 0.53, 1.62,
+					side * 9.2, 12.6, z + dz, style.trim, Enum.Material.Metal)
+			end
+			roomBlock(room, "Arcade transverse beam", 19.1, 0.7, 1.25,
+				0, 13.1, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+	elseif room.shape == "COFFERED" then
+		for _, dz in ipairs({9, 18, 31, 39}) do
+			roomBlock(room, "Deep coffered cross-vault", W - 1.4, 1.35, 1.15,
+				0, H - 0.66, z + dz, C.woodDark, Enum.Material.Wood)
+		end
+		for _, side in ipairs({-1, 1}) do
+			roomBlock(room, "Long arcade cornice", 0.4, 1.05, L - 1.5,
+				side * 11.4, H - 0.55, z + L / 2, style.trim, Enum.Material.Metal)
+		end
+	end
+end
+
 local function flatRoom(room, rng)
 	local model = room.model
 	local z = room.index * L
@@ -9787,6 +10081,7 @@ local function flatRoom(room, rng)
 	end
 	endWall(room, z + 0.45, y, y, y + H, room.index == 0)
 	endWall(room, z + L - 0.45, y, y, y + H, false)
+	roomArchitecture(room)
 	if room.index == 0 then
 		local sign = roomBlock(room, "Hotel sign", 12, 2.2, 0.15,
 			0, 9.5, z + 0.86, C.woodDark, Enum.Material.Wood)
@@ -9909,46 +10204,56 @@ local function stairRoom(room)
 	makeCloset(room, 1, z + 40.4, "B", upper, half)
 end
 
--- Draw without replacement so the nine rooms of a bag don't repeat in a
--- fixed cycle, and the boundary between shuffled bags never repeats either.
--- Threats and keys have spaced random schedules; the first three encounters
--- stay predictable for teaching the player how to survive them.
+-- Each room is an independent seeded draw, NOT the same shuffled bag of 12
+-- repeated every twelve doors. Only the two most recent interiors are excluded.
+-- Shape, furniture seed, finish, darkness, locks and threats are drawn anew
+-- for each run, then the next segment is physically built as doors open.
 local function planRooms(seed)
 	local rng = Random.new(seed)
 	local kinds = {"HALL", "LIBRARY", "GALLERY", "SUITE", "STORAGE", "FLOODED",
 		"DINING", "CONSERVATORY", "OFFICE", "CHAPEL", "LAUNDRY", "MIRROR"}
+	local shapes = {"OPEN", "ARCADE", "COFFERED", "VESTIBULE"}
 	local threats = {"RUSH", "BLIND", "MOTH"}
-	local bag, threatBag, previousKind, previousThreat = {}, {}, "HALL", nil
+	local recent, threatBag, previousThreat = {"HALL"}, {}, nil
 	local plan = {}
-	local nextThreat, nextLock = 19, 4
-	local function draw(pool, source, previous)
-		if #pool == 0 then
-			for _, value in ipairs(source) do table.insert(pool, value) end
+	local nextThreat, nextLock, nextDark = 19, 4, rng:NextInteger(3, 6)
+	local function drawThreat()
+		if #threatBag == 0 then
+			for _, name in ipairs(threats) do table.insert(threatBag, name) end
 		end
-		local pick = rng:NextInteger(1, #pool)
-		if #pool &gt; 1 and pool[pick] == previous then pick = pick % #pool + 1 end
-		return table.remove(pool, pick)
+		local pick = rng:NextInteger(1, #threatBag)
+		if #threatBag &gt; 1 and threatBag[pick] == previousThreat then pick = pick % #threatBag + 1 end
+		return table.remove(threatBag, pick)
 	end
 	for index = 0, CONFIG.Doors - 1 do
 		local stair, turn = Layout.IsStair(index), Layout.IsTurn(index, seed)
 		local kind = stair and "STAIRWELL" or turn and "TURN" or index == 0 and "HALL"
 		if not kind then
-			kind = draw(bag, kinds, previousKind)
-			previousKind = kind
+			local choices = {}
+			for _, value in ipairs(kinds) do
+				if value ~= recent[1] and value ~= recent[2] then table.insert(choices, value) end
+			end
+			kind = choices[rng:NextInteger(1, #choices)]
+			table.insert(recent, kind)
+			if #recent &gt; 2 then table.remove(recent, 1) end
 		end
 		local threat
 		if index == 5 then threat = "RUSH"
 		elseif index == 9 then threat = "BLIND"
 		elseif index == 15 then threat = "MOTH"
 		elseif index &gt;= nextThreat and not stair and not turn then
-			threat = draw(threatBag, threats, previousThreat)
+			threat = drawThreat()
 			nextThreat = index + rng:NextInteger(3, 6)
 		end
 		if threat then previousThreat = threat end
 		local locked = index &gt;= nextLock and not stair and not turn and not threat
 		if locked then nextLock = index + rng:NextInteger(5, 8) end
+		local dark = index &gt;= nextDark and not stair
+		if dark then nextDark = index + rng:NextInteger(3, 7) end
 		plan[index] = {
-			kind = kind, threat = threat, locked = locked,
+			kind = kind, threat = threat, locked = locked, dark = dark,
+			shape = (not stair and not turn and index &gt; 0)
+				and shapes[rng:NextInteger(1, #shapes)] or "FIXED",
 			decorSeed = rng:NextInteger(1, 1000000000),
 			style = rng:NextInteger(1, 4),
 		}
@@ -9968,6 +10273,8 @@ buildRoom = function(index)
 	model:SetAttribute("RoomIndex", index)
 	model:SetAttribute("Variant", kind)
 	model:SetAttribute("Style", plan.style)
+	model:SetAttribute("Shape", plan.shape)
+	model:SetAttribute("Dark", plan.dark)
 	model:SetAttribute("DecorSeed", plan.decorSeed)
 	if Layout.IsTurn(index, state.seed) then model:SetAttribute("TurnSide", Layout.TurnSide(index, state.seed)) end
 	model:SetAttribute("EntryY", Layout.EntranceY(index))
@@ -9979,6 +10286,7 @@ buildRoom = function(index)
 	model.Parent = state.world
 	local room = {
 		index = index, model = model, kind = kind, style = plan.style,
+		shape = plan.shape, dark = plan.dark,
 		lamps = {}, closets = {}, entered = {},
 		entryY = Layout.EntranceY(index), exitY = Layout.ExitY(index),
 		threat = threat, locked = locked, unlocked = not locked,
@@ -9992,7 +10300,6 @@ buildRoom = function(index)
 	room.leaf = leaf
 	room.prompt = prompt
 	room.hinge = hinge
-	prompt.ActionText = locked and "Нужен ключ" or "Открыть"
 	prompt.Enabled = index == state.opened
 	local mySession = session
 	prompt.Triggered:Connect(function(player)
@@ -10119,7 +10426,43 @@ openDoor = function(player, index)
 	end
 	if index ~= state.opened or root.Position.Z &lt; index * L + L - 13 then return end
 	if not room.unlocked then
-		remote:FireClient(player, "Locked", index + 1)
+		if state.keys[player] == index then
+			-- The same key must be in the finder’s real hand until it enters its
+			-- OWN lock. The client's viewmodel raises that very key during this
+			-- turn; only after the animation may the door open for the group.
+			room.busy = true
+			room.prompt.Enabled = false
+			player:SetAttribute("KeyTurning", true)
+			local mySession = session
+			task.delay(CONFIG.KeyTurnSeconds, function()
+				if room.epoch ~= session or mySession ~= session or not room.door.Parent then return end
+				room.busy = false
+				room.prompt.Enabled = true
+				player:SetAttribute("KeyTurning", false)
+				local holderRoot = playerRoot(player)
+				if state.keys[player] ~= index or not holderRoot
+					or (holderRoot.Position - room.leaf.Position).Magnitude &gt; 12
+					or state.opened ~= index then return end
+				room.unlocked = true
+				room.model:SetAttribute("Locked", false)
+				putBackKey(player)
+				if room.key.model.Parent then room.key.model:Destroy() end
+				openDoor(player, index)
+			end)
+		else
+			-- A silent physical rattle instead of advice about drawers or a key.
+			room.busy = true
+			room.prompt.Enabled = false
+			tweenPivot(room.door, room.hinge,
+				room.hinge * CFrame.Angles(0, math.rad(-3), 0), 0.12, function()
+				tweenPivot(room.door, room.hinge * CFrame.Angles(0, math.rad(-3), 0),
+					room.hinge, 0.15, function()
+						if room.epoch ~= session or not room.door.Parent then return end
+						room.busy = false
+						room.prompt.Enabled = true
+					end)
+			end)
+		end
 		return
 	end
 	-- Construct the next enclosed segment before swinging the leaf open.
@@ -10131,7 +10474,6 @@ openDoor = function(player, index)
 	end
 	if state.rooms[state.opened] then state.rooms[state.opened].prompt.Enabled = true end
 	swingDoor(room, true)
-	remote:FireAllClients("Door", state.opened)
 	pruneRooms()
 end
 
@@ -10242,12 +10584,23 @@ local function makeRush()
 		creatureLimb(entity, "Split antler of soot", Vector3.new(side * 0.7, 4.13, -0.2),
 			Vector3.new(side * 1.31, 5.05, 0.25), 0.23, soot, Enum.Material.Slate)
 	end
-	creaturePart(entity, "Open dark jaw", Vector3.new(1.12, 0.62, 0.17),
-		CFrame.new(0, 2.41, -1.29), soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	local jaw = Instance.new("Model")
+	jaw.Name = "Hinged split mandible"
+	jaw.Parent = entity
+	local jawHinge = CFrame.new(0, 2.72, -1.10)
+	jaw.WorldPivot = jawHinge
+	creaturePart(jaw, "Open dark jaw", Vector3.new(1.24, 0.55, 0.27),
+		CFrame.new(0, 2.35, -1.29), soot, Enum.Material.Slate, 0, Enum.PartType.Ball)
 	for tooth = -2, 2 do
-		creaturePart(entity, "Uneven bone tooth", Vector3.new(0.14, 0.26, 0.1),
-			CFrame.new(tooth * 0.2, 2.51 - math.abs(tooth) * 0.04, -1.39),
-			bone, Enum.Material.Slate)
+		creaturePart(jaw, "Uneven bone tooth", Vector3.new(0.14, 0.26, 0.1),
+			CFrame.new(tooth * 0.22, 2.50 - math.abs(tooth) * 0.04, -1.44),
+			bone, Enum.Material.Slate, 0, Enum.PartType.Ball)
+	end
+	for _, side in ipairs({-1, 1}) do
+		creatureLimb(jaw, "Mandible tendon", Vector3.new(side * 0.53, 2.39, -1.16),
+			Vector3.new(side * 0.81, 2.88, -0.83), 0.12, ash, Enum.Material.Slate)
+		creatureLimb(entity, "Mask fracture lit from within", Vector3.new(side * 0.15, 4.19, -1.21),
+			Vector3.new(side * 0.71, 3.96, -1.11), 0.064, ember, Enum.Material.Neon, 0.19)
 	end
 	local glow = Instance.new("PointLight")
 	glow.Name = "Embers through the mask"
@@ -10262,7 +10615,7 @@ local function makeRush()
 		creatureMist(torso, "Cold ash wake", Vector3.new(x, -1.8, 1.5),
 			Color3.fromRGB(33, 30, 36), x == 0 and 28 or 13, x == 0 and 3.0 or 2.1)
 	end
-	return entity, claws, glow
+	return entity, claws, glow, jaw, jawHinge
 end
 
 local function pathPoint(z)
@@ -10294,7 +10647,8 @@ startRush = function(room, epoch)
 	local limit = math.min(CONFIG.Doors - 1, room.index + 3)
 	local rush = {origin = origin, limit = limit, positionZ = origin * L + 5}
 	state.rush = rush
-	remote:FireAllClients("Warning", "RUSH", room.index)
+	-- Only the PHYSICAL sconces/fittings blink. No GUI flash, colour wash,
+	-- screen text or sound tells the player what the light means.
 	local rng = Random.new(state.seed + room.index * 97 + 41)
 	for _ = 1, math.ceil(CONFIG.RushWarningSeconds / 0.2) do
 		if epoch ~= session then return end
@@ -10302,18 +10656,14 @@ startRush = function(room, epoch)
 			local litRoom = state.rooms[index]
 			if litRoom then
 				for _, lamp in ipairs(litRoom.lamps) do
-					if lamp.light.Parent then
-						local on = rng:NextNumber() &gt; 0.48
-						lamp.light.Enabled = on
-						lamp.bulb.Transparency = on and 0 or 0.94
-						end
+					setLamp(lamp, rng:NextNumber() &gt; 0.48)
 				end
 			end
 		end
 		task.wait(0.2)
 	end
 	if epoch ~= session then return end
-	local entity, claws, glow = makeRush()
+	local entity, claws, glow, jaw, jawHinge = makeRush()
 	local z = rush.positionZ
 	entity:PivotTo(CFrame.lookAt(pathPoint(z), pathPoint(z) + Vector3.new(0, 0, 1)))
 	local maxZ = (limit + 1) * L - 4
@@ -10336,6 +10686,8 @@ startRush = function(room, epoch)
 				math.sin(elapsed * 11 + claw.side) * 0.42, 0,
 				claw.side * math.sin(elapsed * 8) * 0.17))
 		end
+		jaw:PivotTo(facing * jawHinge
+			* CFrame.Angles(-0.26 - math.sin(elapsed * 10) * 0.19, 0, 0))
 		glow.Brightness = 1.15 + math.sin(elapsed * 15) * 0.25
 		for _, player in ipairs(Players:GetPlayers()) do
 			local root, humanoid = playerRoot(player)
@@ -10359,16 +10711,11 @@ startRush = function(room, epoch)
 		local litRoom = state.rooms[index]
 		if litRoom then
 			for _, lamp in ipairs(litRoom.lamps) do
-				if lamp.light.Parent then
-					lamp.light.Enabled = true
-					lamp.light.Brightness = lamp.brightness
-					lamp.bulb.Transparency = 0
-				end
+				setLamp(lamp, lamp.normallyOn)
 			end
 		end
 	end
 	state.rush = nil
-	remote:FireAllClients("Safe", "RUSH", room.index)
 	pruneRooms()
 end
 
@@ -10549,6 +10896,18 @@ local function makeBlind()
 			CFrame.new(side * 0.54, -2.64, 0.15), dark, Enum.Material.Fabric, 0, Enum.PartType.Ball)
 		creaturePart(leg, "Well-worn leather shoe", Vector3.new(0.95, 0.53, 1.5),
 			CFrame.new(side * 0.54, -4.15, -0.42), dark, Enum.Material.SmoothPlastic, 0, Enum.PartType.Ball)
+		local hem = Instance.new("Model")
+		hem.Name = side == -1 and "Left swaying coat hem" or "Right swaying coat hem"
+		hem.Parent = entity
+		local hemHinge = CFrame.new(side * 0.68, -0.56, 0.28)
+		hem.WorldPivot = hemHinge
+		table.insert(limbs, {model = hem, hinge = hemHinge, side = side, sway = 0.09})
+		creaturePart(hem, "Uneven trailing wool coat tail", Vector3.new(1.26, 3.85, 1.18),
+			CFrame.new(side * 0.85, -2.28, 0.49) * CFrame.Angles(0, 0, side * 0.08),
+			wool, Enum.Material.Fabric, 0, Enum.PartType.Ball)
+		creatureLimb(hem, "Hand-stitched coat-edge piping",
+			Vector3.new(side * 0.28, -3.94, -0.23),
+			Vector3.new(side * 1.36, -3.91, -0.04), 0.08, brass, Enum.Material.Metal, 0.24)
 	end
 	local head = Instance.new("Model")
 	head.Name = "Searching mask and neck"
@@ -10605,9 +10964,8 @@ end
 startBlind = function(room, epoch)
 	if epoch ~= session or state.blind then return end
 	state.blind = {index = room.index}
-	remote:FireAllClients("Warning", "BLIND", room.index)
 	for _, lamp in ipairs(room.lamps) do
-		if lamp.light.Parent then lamp.light.Brightness = lamp.brightness * 0.45 end
+		if lamp.normallyOn then setLamp(lamp, true, nil, 0.45) end
 	end
 	task.wait(0.8)
 	if epoch ~= session then return end
@@ -10663,11 +11021,8 @@ startBlind = function(room, epoch)
 	end
 	retireMonster(entity)
 	if epoch ~= session then return end
-	for _, lamp in ipairs(room.lamps) do
-		if lamp.light.Parent then lamp.light.Brightness = lamp.brightness end
-	end
+	for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
 	state.blind = nil
-	remote:FireAllClients("Safe", "BLIND", room.index)
 	pruneRooms()
 end
 
@@ -10710,6 +11065,12 @@ local function makeMoth()
 			Vector3.new(side * 1.12, -0.83, -1.12), 0.26, ivory)
 		creatureLimb(entity, "Delicate lower limb", Vector3.new(side * 0.58, -1.67, -0.1),
 			Vector3.new(side * 0.86, -4.34, -0.35), 0.22, vein)
+		for tuft = 1, 4 do
+			creaturePart(entity, "Soft neck fur tuft", Vector3.new(0.38, 1.1, 0.43),
+				CFrame.new(side * (0.45 + tuft * 0.15), 1.52 - tuft * 0.18, -0.62)
+					* CFrame.Angles(0, 0, side * -0.27),
+				ivory, Enum.Material.Fabric, 0.05, Enum.PartType.Ball)
+		end
 		for claw = 1, 3 do
 			creatureLimb(entity, "Fine hanging claw", Vector3.new(side * 1.12 + (claw - 2) * 0.14, -0.78, -1.13),
 				Vector3.new(side * 1.15 + (claw - 2) * 0.17, -1.45, -1.61),
@@ -10745,6 +11106,12 @@ local function makeMoth()
 			creatureLimb(wing, "Wing main vein", Vector3.new(side * 1.0, 0.75, 0.4),
 				Vector3.new(side * (lobe[1] + 1.35), lobe[2] + 0.58, 0.43),
 				0.12, vein, Enum.Material.SmoothPlastic, 0.22)
+			for scallop = 1, 4 do
+				creaturePart(wing, "Translucent scalloped wing fringe", Vector3.new(0.74, 0.58, 0.14),
+					CFrame.new(side * (lobe[1] + lobe[3] / 2 - 0.4 + scallop * 0.16),
+						lobe[2] + (scallop - 2.5) * lobe[4] / 4, 0.56),
+					wingIvory, Enum.Material.Glass, 0.37, Enum.PartType.Ball)
+			end
 		end
 		for n = 1, 3 do
 			creatureLimb(wing, "Radiating wing vein", Vector3.new(side * 1.45, 0.55, 0.36),
@@ -10768,16 +11135,30 @@ end
 startMoth = function(room, epoch)
 	if epoch ~= session or state.moth then return end
 	state.moth = {index = room.index}
-	remote:FireAllClients("Warning", "MOTH", room.index)
-	for _, lamp in ipairs(room.lamps) do
-		if lamp.light.Parent then lamp.light.Brightness = lamp.brightness * 0.65 end
-	end
-	task.wait(0.7)
-	if epoch ~= session then return end
 	local entity, wings = makeMoth()
 	local startZ = room.index * L
-	local position = Vector3.new(0, room.entryY + 6.5, startZ + 32)
-	entity:PivotTo(CFrame.lookAt(position, position + Vector3.new(0, 0, -1)))
+	local position = Vector3.new(0, room.entryY + 6.5, startZ + 36)
+	local facing = CFrame.lookAt(position, position + Vector3.new(0, 0, -1))
+	entity:PivotTo(facing)
+	-- First sight is not an instant death: four full seconds of a visible,
+	-- harmless moth at the far end. Its dust, face glow and a real sconce's
+	-- slow change to pale green communicate the threat without ANY text or GUI.
+	local cold = Color3.fromRGB(120, 197, 167)
+	for i = 1, 8 do
+		if epoch ~= session then return end
+		for _, lamp in ipairs(room.lamps) do
+			if lamp.normallyOn or lamp == room.lamps[#room.lamps] then
+				setLamp(lamp, true, cold, 0.25 + i * 0.026)
+			end
+		end
+		for _, wing in ipairs(wings) do
+			wing.model:PivotTo(facing * wing.hinge
+				* CFrame.Angles(0, wing.side * math.sin(i * 0.8) * 0.1,
+					wing.side * math.sin(i * 1.2) * 0.21))
+		end
+		task.wait(CONFIG.MothGraceSeconds / 8)
+	end
+	if epoch ~= session then return end
 	local patrolZ = startZ + 9
 	local elapsed = 0
 	while epoch == session and elapsed &lt; CONFIG.MothLifetime do
@@ -10791,7 +11172,7 @@ startMoth = function(room, epoch)
 			destination = Vector3.new(0, position.Y, patrolZ)
 		end
 		local old = position
-		local onRoute = walkRoute(position, destination, nearest &lt; math.huge and 26 or 9, dt, 6.5)
+		local onRoute = walkRoute(position, destination, nearest &lt; math.huge and CONFIG.MothSpeed or 8, dt, 6.5)
 		position = Vector3.new(onRoute.X, onRoute.Y + math.sin(elapsed * 4.1) * 0.28, onRoute.Z)
 		local heading = Vector3.new(position.X - old.X, 0, position.Z - old.Z)
 		if heading.Magnitude &gt; 0.01 then
@@ -10819,15 +11200,13 @@ startMoth = function(room, epoch)
 	end
 	retireMonster(entity)
 	if epoch ~= session then return end
-	for _, lamp in ipairs(room.lamps) do
-		if lamp.light.Parent then lamp.light.Brightness = lamp.brightness end
-	end
+	for _, lamp in ipairs(room.lamps) do setLamp(lamp, lamp.normallyOn) end
 	state.moth = nil
-	remote:FireAllClients("Safe", "MOTH", room.index)
 	pruneRooms()
 end
 
 local function resetWorld()
+	for player in pairs(state.keys) do putBackKey(player) end
 	session = session + 1
 	for player in pairs(state.hidden) do leaveCloset(player, false) end
 	if state.world then state.world:Destroy() end
@@ -10838,6 +11217,7 @@ local function resetWorld()
 	state.world.Parent = Workspace
 	state.rooms = {}
 	state.hidden = {}
+	state.keys = {}
 	state.opened = 0
 	state.rush = nil
 	state.blind = nil
@@ -10850,7 +11230,7 @@ local function resetWorld()
 	end
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
-	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v5")
+	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v6")
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -10874,6 +11254,8 @@ local function resetWorld()
 		player.RespawnLocation = spawn
 		player:SetAttribute("Hidden", false)
 		player:SetAttribute("Finished", false)
+		player:SetAttribute("HeldKey", nil)
+		player:SetAttribute("KeyTurning", false)
 		remote:FireClient(player, "State", state.opened, state.seed, L)
 	end
 end
@@ -10891,6 +11273,8 @@ local function registerPlayer(player)
 	player:SetAttribute("Hidden", false)
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("Finished", false)
+	player:SetAttribute("HeldKey", nil)
+	player:SetAttribute("KeyTurning", false)
 	player.CharacterAdded:Connect(function(character)
 		local humanoid = character:WaitForChild("Humanoid", 12)
 		local root = character:WaitForChild("HumanoidRootPart", 12)
@@ -10921,6 +11305,7 @@ local function registerPlayer(player)
 		end
 		remote:FireClient(player, "State", state.opened, state.seed, L)
 		humanoid.Died:Connect(function()
+			putBackKey(player)
 			leaveCloset(player, false)
 			remote:FireClient(player, "Death")
 		end)
@@ -10932,6 +11317,7 @@ end
 Players.PlayerAdded:Connect(registerPlayer)
 for _, player in ipairs(Players:GetPlayers()) do task.spawn(registerPlayer, player) end
 Players.PlayerRemoving:Connect(function(player)
+	putBackKey(player)
 	leaveCloset(player, false)
 	state.players[player] = nil
 end)
@@ -10962,7 +11348,18 @@ remote.OnServerEvent:Connect(function(player, action, argument)
 		if (not finished and (not oldHum or oldHum.Health &gt; 0)) or state.hidden[player] then return end
 		if info.lastRetry and os.clock() - info.lastRetry &lt; 1.5 then return end
 		info.lastRetry = os.clock()
-		if #Players:GetPlayers() == 1 then
+		local groupFinished = true
+		for _, other in ipairs(Players:GetPlayers()) do
+			local human = other.Character and other.Character:FindFirstChildOfClass("Humanoid")
+			if not other:GetAttribute("Finished") and (not human or human.Health &gt; 0) then
+				groupFinished = false
+				break
+			end
+		end
+		-- Regenerate the whole shared hotel when nobody is still exploring.
+		-- A solo retry is always a new layout; one dead teammate cannot erase
+		-- a living teammate's building from under their feet.
+		if groupFinished then
 			resetWorld()
 		else
 			player:SetAttribute("Finished", false)
@@ -11020,13 +11417,13 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v5 / native first person] 100 doors, shuffled room plan, sealed stairs; three roaming threats ready.")
+print("[NOCTURNE v6 / physical keys and room lights] 100 doors, independently regenerated rooms; three threats ready.")
 </ProtectedString>
         <bool name="Disabled">false</bool>
       </Properties>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="RBX271">
+  <Item class="StarterPlayer" referent="RBX275">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <token name="CameraMode">1</token>
@@ -11034,11 +11431,11 @@ print("[NOCTURNE v5 / native first person] 100 doors, shuffled room plan, sealed
       <float name="CameraMaxZoomDistance">0.5</float>
       <bool name="EnableMouseLockOption">false</bool>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="RBX272">
+    <Item class="StarterPlayerScripts" referent="RBX276">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="RBX273">
+      <Item class="LocalScript" referent="RBX277">
         <Properties>
           <string name="Name">NocturneClient</string>
           <ProtectedString name="Source">-- NOCTURNE / HUD, hiding treatment, light and close-up scares.
@@ -11054,7 +11451,6 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("NocturneRemote")
-local Layout = require(ReplicatedStorage:WaitForChild("NocturneLayout"))
 local camera = Workspace.CurrentCamera
 local isTouch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
@@ -11064,8 +11460,9 @@ local RED = Color3.fromRGB(196, 62, 55)
 local DARK = Color3.fromRGB(8, 11, 16)
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
 
--- A drawn interface, not imported images. It remains legible at low light and
--- scales with the viewport. Default ProximityPrompts keep native mobile/gamepad use.
+-- No instructions, objectives, danger text or full-screen warning flashes.
+-- The only in-world UI is a small stamina line and an aim point; native
+-- interaction prompts are icon-only. Mobile action buttons remain usable.
 local ui = Instance.new("ScreenGui")
 ui.Name = "NocturneHUD"
 ui.IgnoreGuiInset = true
@@ -11131,72 +11528,25 @@ local function edge(name, size, pos, rotation)
 	local gradient = Instance.new("UIGradient")
 	gradient.Rotation = rotation
 	gradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.12),
+		NumberSequenceKeypoint.new(0, 0.18),
 		NumberSequenceKeypoint.new(1, 1),
 	})
 	gradient.Parent = f
 end
-edge("Top vignette", UDim2.fromScale(1, 0.25), UDim2.fromScale(0, 0), 90)
-edge("Bottom vignette", UDim2.fromScale(1, 0.3), UDim2.fromScale(0, 0.7), 270)
-edge("Left vignette", UDim2.fromScale(0.19, 1), UDim2.fromScale(0, 0), 0)
-edge("Right vignette", UDim2.fromScale(0.19, 1), UDim2.fromScale(0.81, 0), 180)
-
-local topLine = frame(ui, "Fine top rule", UDim2.new(1, -72, 0, 1), UDim2.new(0, 36, 0, 35), GOLD, 0.58)
-topLine.ZIndex = 4
-local brand = label(ui, "Title", "N O C T U R N E", UDim2.new(0, 350, 0, 38),
-	UDim2.new(0, 39, 0, 42), Enum.Font.Garamond, 30, GOLD)
-brand.ZIndex = 4
-local tagline = label(ui, "Tagline", "100 ДВЕРЕЙ  ·  18 ЭТАЖЕЙ", UDim2.new(0, 370, 0, 22),
-	UDim2.new(0, 40, 0, 80), Enum.Font.GothamMedium, 11, PALE)
-tagline.TextTransparency = 0.27
-tagline.ZIndex = 4
-local doorTitle = label(ui, "Door caption", "СЛЕДУЮЩАЯ ДВЕРЬ", UDim2.new(0, 228, 0, 22),
-	UDim2.new(1, -263, 0, 43), Enum.Font.GothamMedium, 11, GOLD, Enum.TextXAlignment.Right)
-doorTitle.ZIndex = 4
-local doorLabel = label(ui, "Door number", "001  /  100", UDim2.new(0, 230, 0, 45),
-	UDim2.new(1, -265, 0, 65), Enum.Font.Garamond, 34, PALE, Enum.TextXAlignment.Right)
-doorLabel.ZIndex = 4
-local progressBase = frame(ui, "Progress track", UDim2.new(0, 204, 0, 2),
-	UDim2.new(1, -241, 0, 112), GOLD, 0.79)
-progressBase.ZIndex = 4
-local progressFill = frame(progressBase, "Progress", UDim2.fromScale(0, 1), UDim2.fromScale(0, 0), GOLD, 0)
-progressFill.ZIndex = 5
-local floorLabel = label(ui, "Storey", "ЭТАЖ 01  /  18", UDim2.new(0, 215, 0, 24),
-	UDim2.new(1, -253, 0, 122), Enum.Font.GothamMedium, 12, GOLD, Enum.TextXAlignment.Right)
-floorLabel.ZIndex = 4
-
-local staminaCaption = label(ui, "Stamina label", "ДЫХАНИЕ", UDim2.new(0, 170, 0, 22),
-	UDim2.new(0, 40, 1, -93), Enum.Font.GothamMedium, 11, GOLD)
-staminaCaption.ZIndex = 4
-local staminaTrack = frame(ui, "Stamina track", UDim2.new(0, 168, 0, 3),
-	UDim2.new(0, 40, 1, -66), PALE, 0.78)
+edge("Top vignette", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0), 90)
+edge("Bottom vignette", UDim2.fromScale(1, 0.18), UDim2.fromScale(0, 0.82), 270)
+edge("Left vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0, 0), 0)
+edge("Right vignette", UDim2.fromScale(0.09, 1), UDim2.fromScale(0.91, 0), 180)
+local staminaTrack = frame(ui, "Stamina track", UDim2.fromOffset(108, 2),
+	UDim2.new(0, 18, 1, -27), PALE, 0.79)
 staminaTrack.ZIndex = 4
-local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), PALE, 0)
+local staminaFill = frame(staminaTrack, "Stamina", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), PALE, 0)
 staminaFill.ZIndex = 5
-local help = label(ui, "Controls", isTouch and "СЛЕВА — ИДТИ   ·   СПРАВА — ОСМОТР" or
-	"WASD — идти   SHIFT — бег   C/CTRL — присесть   E — действие   F — фонарь", UDim2.new(0.67, 0, 0, 25),
-	UDim2.new(0.5, 0, 1, -49), Enum.Font.GothamMedium, 11, PALE, Enum.TextXAlignment.Center)
-help.AnchorPoint = Vector2.new(0.5, 0)
-help.TextTransparency = 0.25
-help.ZIndex = 4
-local flashLabel = label(ui, "Flashlight status", "F  ·  ФОНАРЬ", UDim2.new(0, 175, 0, 24),
-	UDim2.new(1, -211, 1, -76), Enum.Font.GothamMedium, 12, GOLD, Enum.TextXAlignment.Right)
-flashLabel.ZIndex = 4
-
-local notice = label(ui, "Interaction status", "", UDim2.new(0.84, 0, 0, 74), UDim2.fromScale(0.08, 0.69),
-	Enum.Font.Garamond, 27, GOLD, Enum.TextXAlignment.Center)
-notice.TextWrapped = true
-notice.TextTransparency = 1
-notice.ZIndex = 8
-local reticle = frame(ui, "Reticle", UDim2.fromOffset(3, 3), UDim2.fromScale(0.5, 0.5), PALE, 0.25)
+local reticle = frame(ui, "Reticle", UDim2.fromOffset(3, 3),
+	UDim2.fromScale(0.5, 0.5), PALE, 0.25)
 reticle.AnchorPoint = Vector2.new(0.5, 0.5)
 reticle.ZIndex = 5
-local redWash = frame(ui, "Threat flash", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), RED, 1)
-redWash.ZIndex = 10
-redWash.Active = false
-local darkness = frame(ui, "Threat darkness", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 1)
-darkness.ZIndex = 9
-darkness.Active = false
 
 -- A dying player gets a close-up of the attacking creature, not a brief red
 -- wash hidden immediately behind the retry menu. ViewportFrame never takes
@@ -11228,28 +11578,22 @@ local scareVeil = frame(scare, "Split second red flash", UDim2.fromScale(1, 1),
 scareVeil.ZIndex = 20
 local scareToken = 0
 
--- Two wooden panels leave a narrow slit while hidden. The server actually anchors
--- the character inside the wardrobe; the overlay is only a camera treatment.
-local leftPanel = frame(ui, "Left wardrobe door", UDim2.fromScale(0, 1), UDim2.fromScale(0, 0),
+-- These dark edges frame the actual open sightline through the slatted
+-- wardrobe doors. They do NOT cover the centre or draw advice over a monster.
+local leftPanel = frame(ui, "Left wardrobe edge", UDim2.fromScale(0, 1), UDim2.fromScale(0, 0),
 	Color3.fromRGB(19, 15, 16), 0.03)
 leftPanel.ZIndex = 12
-local rightPanel = frame(ui, "Right wardrobe door", UDim2.fromScale(0, 1), UDim2.fromScale(1, 0),
+local rightPanel = frame(ui, "Right wardrobe edge", UDim2.fromScale(0, 1), UDim2.fromScale(1, 0),
 	Color3.fromRGB(19, 15, 16), 0.03)
 rightPanel.AnchorPoint = Vector2.new(1, 0)
 rightPanel.ZIndex = 12
 for _, panel in ipairs({leftPanel, rightPanel}) do
-	for j = 1, 4 do
+	for j = 1, 3 do
 		local strip = frame(panel, "Wood grain", UDim2.new(0, 1, 1, 0),
-			UDim2.fromScale(j / 5, 0), GOLD, 0.86)
+			UDim2.fromScale(j / 4, 0), GOLD, 0.86)
 		strip.ZIndex = 13
 	end
 end
-local hiddenNote = label(ui, "Wardrobe controls", "E — ВЫЙТИ  ·  ШКАФ НЕ ЗАЩИЩАЕТ ОТ СЛЕПОГО",
-	UDim2.fromScale(0.46, 0.08), UDim2.fromScale(0.27, 0.84),
-	Enum.Font.Garamond, 20, PALE, Enum.TextXAlignment.Center)
-hiddenNote.Visible = false
-hiddenNote.TextWrapped = true
-hiddenNote.ZIndex = 14
 
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
@@ -11262,73 +11606,30 @@ local modalTitle = label(modal, "End title", "ПРОХОЖДЕНИЕ ПРЕРВ�
 	UDim2.fromScale(0.07, 0.36), Enum.Font.Garamond, 52, PALE, Enum.TextXAlignment.Center)
 modalTitle.TextScaled = true
 modalTitle.ZIndex = 26
-local modalDetail = label(modal, "End detail", "Свет — спрячься от погони. Слепой — присядь и не прикасайся.",
-	UDim2.fromScale(0.78, 0.09), UDim2.fromScale(0.11, 0.51),
-	Enum.Font.Gotham, 16, GOLD, Enum.TextXAlignment.Center)
-modalDetail.TextWrapped = true
-modalDetail.ZIndex = 26
 local retryButton = button(modal, "Try again", "ПОПРОБОВАТЬ СНОВА", UDim2.fromOffset(272, 48),
 	UDim2.fromScale(0.5, 0.67))
 retryButton.AnchorPoint = Vector2.new(0.5, 0)
 retryButton.ZIndex = 27
 
-local sprintButton = button(ui, "Mobile sprint", "БЕГ", UDim2.fromOffset(77, 53),
+local sprintButton = button(ui, "Mobile sprint", "»", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -277))
 sprintButton.ZIndex = 18
 sprintButton.Visible = isTouch
-local crouchButton = button(ui, "Mobile crouch", "ПРИСЕСТЬ", UDim2.fromOffset(100, 53),
+local crouchButton = button(ui, "Mobile crouch", "↓", UDim2.fromOffset(100, 53),
 	UDim2.new(1, -122, 1, -215))
 crouchButton.ZIndex = 18
 crouchButton.Visible = isTouch
-local lightButton = button(ui, "Mobile torch", "СВЕТ", UDim2.fromOffset(77, 53),
+local lightButton = button(ui, "Mobile torch", "☼", UDim2.fromOffset(77, 53),
 	UDim2.new(1, -99, 1, -153))
 lightButton.ZIndex = 18
 lightButton.Visible = isTouch
-local exitButton = button(ui, "Leave wardrobe", "ВЫЙТИ", UDim2.fromOffset(105, 52),
+local exitButton = button(ui, "Leave wardrobe", "↩", UDim2.fromOffset(105, 52),
 	UDim2.new(1, -124, 1, -222))
 exitButton.ZIndex = 18
 exitButton.Visible = false
 
--- Show the real character and hotel immediately on spawn: no opaque intro
--- hiding the first seconds of ordinary Roblox movement.
-
-if isTouch then
-	-- Portrait phones have a separate compact header and large action targets.
-	topLine.Size = UDim2.new(1, -28, 0, 1)
-	topLine.Position = UDim2.fromOffset(14, 13)
-	brand.Size = UDim2.fromOffset(220, 31)
-	brand.Position = UDim2.fromOffset(15, 19)
-	brand.TextSize = 21
-	tagline.Size = UDim2.fromOffset(210, 17)
-	tagline.Position = UDim2.fromOffset(16, 51)
-	tagline.TextSize = 9
-	doorTitle.Size = UDim2.fromOffset(125, 19)
-	doorTitle.Position = UDim2.new(1, -142, 0, 20)
-	doorTitle.TextSize = 9
-	doorLabel.Size = UDim2.fromOffset(130, 35)
-	doorLabel.Position = UDim2.new(1, -147, 0, 41)
-	doorLabel.TextSize = 24
-	progressBase.Size = UDim2.fromOffset(125, 2)
-	progressBase.Position = UDim2.new(1, -145, 0, 79)
-	floorLabel.Size = UDim2.fromOffset(130, 20)
-	floorLabel.Position = UDim2.new(1, -148, 0, 84)
-	floorLabel.TextSize = 10
-	staminaCaption.Position = UDim2.new(0, 17, 1, -89)
-	staminaTrack.Size = UDim2.fromOffset(119, 3)
-	staminaTrack.Position = UDim2.new(0, 17, 1, -64)
-	help.Size = UDim2.new(1, -20, 0, 22)
-	help.Position = UDim2.new(0.5, 0, 1, -32)
-	help.Text = "СЛЕВА — ИДТИ    ·    СПРАВА — СМОТРЕТЬ"
-	help.TextSize = 9
-	flashLabel.Visible = false
-	notice.Size = UDim2.fromScale(0.9, 0.12)
-	notice.Position = UDim2.fromScale(0.05, 0.66)
-	notice.TextSize = 21
-	hiddenNote.Text = "ВЫЙТИ — СПРАВА  ·  ШКАФ ОПАСЕН"
-	hiddenNote.Size = UDim2.fromScale(0.6, 0.11)
-	hiddenNote.Position = UDim2.fromScale(0.2, 0.81)
-	hiddenNote.TextSize = 15
-end
+-- No tutorial captions or button hints at the bottom of the screen.
+-- Mobile action buttons are controls, not on-screen survival instructions.
 
 -- Studio cannot reliably read local built-in sound files. Do not create or
 -- preload failing Sound instances; threats are intentionally signalled visually.
@@ -11343,15 +11644,7 @@ local head = nil
 local hidden = false
 local dead = false
 local finished = false
-local danger = 0
-local warningRoom = -1
-local warningKind = nil
-local roomLength = Layout.RoomLength
-local finalFloor = math.floor(Layout.EntranceY(100) / Layout.StoreyRise) + 1
-local displayedFloor = -1
-local fright = 0
 local elapsed = 0
-local noticeId = 0
 local flashlightOn = true
 local sprinting = false
 local crouching = false
@@ -11387,7 +11680,7 @@ local function setCrouch(on)
 	if hidden or dead or finished or crouching == on then return end
 	if on then setSprint(false) end
 	crouching = on
-	crouchButton.Text = on and "ВСТАТЬ" or "ПРИСЕСТЬ"
+	crouchButton.Text = on and "↑" or "↓"
 	-- Only change the native camera's target height. Avatar motion/collision
 	-- remain with Roblox's Humanoid, and the server owns the crouch speed.
 	if humanoid then humanoid.CameraOffset = Vector3.new(0, on and -0.65 or 0, 0) end
@@ -11398,26 +11691,6 @@ local function toggleTorch()
 	flashlightOn = not flashlightOn
 	torch.Enabled = flashlightOn
 	remote:FireServer("Torch", flashlightOn)
-	flashLabel.Text = flashlightOn and "F  ·  ФОНАРЬ" or "F  ·  ВКЛЮЧИТЬ"
-	flashLabel.TextColor3 = flashlightOn and GOLD or Color3.fromRGB(136, 143, 146)
-end
-local function showNotice(text, color, duration)
-	noticeId = noticeId + 1
-	local current = noticeId
-	notice.Text = text
-	notice.TextColor3 = color or GOLD
-	TweenService:Create(notice, TweenInfo.new(0.24), {TextTransparency = 0}):Play()
-	task.delay(duration or 3.3, function()
-		if current == noticeId then
-			TweenService:Create(notice, TweenInfo.new(1.1), {TextTransparency = 1}):Play()
-		end
-	end)
-end
-local function setDoor(opened)
-	local nextNumber = math.clamp(opened + 1, 1, 100)
-	doorLabel.Text = string.format("%03d  /  100", nextNumber)
-	TweenService:Create(progressFill, TweenInfo.new(0.7, Enum.EasingStyle.Quad),
-		{Size = UDim2.fromScale(opened / 100, 1)}):Play()
 end
 local function fallbackScareFace(kind)
 	local model = Instance.new("Model")
@@ -11452,7 +11725,6 @@ end
 local function showScare(kind, source)
 	scareToken = scareToken + 1
 	local token = scareToken
-	fright = 1
 	reticle.Visible = false
 	scare.Visible = true
 	scareVeil.BackgroundTransparency = 0.1
@@ -11487,7 +11759,6 @@ local function showEnd(win)
 		modalEyebrow.Text = "100 / 100  ·  РАССВЕТ"
 		modalEyebrow.TextColor3 = GOLD
 		modalTitle.Text = "ВЫХОД"
-		modalDetail.Text = "100 / 100 · Все двери пройдены."
 		retryButton.Text = "СЫГРАТЬ ЕЩЁ РАЗ"
 	else
 		dead = true
@@ -11495,7 +11766,6 @@ local function showEnd(win)
 		modalEyebrow.Text = "ПОРАЖЕНИЕ"
 		modalEyebrow.TextColor3 = RED
 		modalTitle.Text = "ПРОХОЖДЕНИЕ ПРЕРВАНО"
-		modalDetail.Text = "Погоня — шкаф. Слепой — присесть и обойти. Мотылёк — выключить фонарь."
 		retryButton.Text = "ПОПРОБОВАТЬ СНОВА"
 	end
 	modal.Visible = true
@@ -11560,22 +11830,14 @@ end
 
 remote.OnClientEvent:Connect(function(event, a, b, c)
 	if event == "State" then
-		roomLength = c or Layout.RoomLength
-		setDoor(a or 0)
 		if not dead and not finished then modal.Visible = false end
-	elseif event == "Door" then
-		setDoor(a)
-	elseif event == "Locked" then
-		showNotice(string.format("ДВЕРЬ %03d ЗАПЕРТА  ·  КЛЮЧ В ЯЩИКАХ", a), GOLD, 4)
-	elseif event == "Key" then
-		showNotice(string.format("КЛЮЧ НАЙДЕН  ·  ДВЕРЬ %03d", a), GOLD, 3)
 	elseif event == "Hide" then
 		hidden = a
 		player:SetAttribute("NocturnePeek", hidden)
 		setSprint(false)
 		crouching = false
 		if humanoid then humanoid.CameraOffset = Vector3.new(0, 0, 0) end
-		crouchButton.Text = "ПРИСЕСТЬ"
+		crouchButton.Text = "↓"
 		crouchButton.Visible = not hidden and isTouch
 		reticle.Visible = not hidden and not dead and not finished
 		if a then
@@ -11586,38 +11848,17 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 				camera.CameraType = Enum.CameraType.Scriptable
 				camera.CFrame = peekCF
 			end
-			TweenService:Create(leftPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.33, 1)}):Play()
-			TweenService:Create(rightPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.33, 1)}):Play()
-			hiddenNote.Visible = true
+			TweenService:Create(leftPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.13, 1)}):Play()
+			TweenService:Create(rightPanel, TweenInfo.new(0.32), {Size = UDim2.fromScale(0.13, 1)}):Play()
 		else
 			peekCF = nil
 			restoreCamera()
 			TweenService:Create(leftPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
 			TweenService:Create(rightPanel, TweenInfo.new(0.27), {Size = UDim2.fromScale(0, 1)}):Play()
-			hiddenNote.Visible = false
 		end
 		exitButton.Visible = hidden and isTouch
 		sprintButton.Visible = not hidden and isTouch
-	elseif event == "Warning" then
-		warningKind = a
-		warningRoom = b
-		local nearby = root and math.abs(root.Position.Z - b * roomLength) &lt; roomLength * 4.1
-		if nearby then
-			danger = a == "RUSH" and 1 or 0.35
-			if a == "RUSH" then
-				showNotice("МИГАЕТ СВЕТ  ·  ПОГОНЯ СЗАДИ  ·  СПРЯЧЬСЯ", RED, 4.2)
-			elseif a == "BLIND" then
-				showNotice("СЛЕПОЙ ВПЕРЕДИ  ·  ПРИСЯДЬ  ·  ОБОЙДИ", PALE, 4.5)
-			elseif a == "MOTH" then
-				showNotice("МОТЫЛЁК ИЩЕТ СВЕТ  ·  ВЫКЛЮЧИ ФОНАРЬ", GOLD, 4.5)
-			end
-		end
-	elseif event == "Safe" then
-		if warningKind == a and warningRoom == b then
-			danger = 0
-			warningKind = nil
-			warningRoom = -1
-		end
+		lightButton.Visible = not hidden and isTouch
 	elseif event == "Jumpscare" then
 		showScare(a, b)
 	elseif event == "Death" then
@@ -11634,7 +11875,6 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			showEnd(false)
 		end
 	elseif event == "Victory" then
-		setDoor(100)
 		showEnd(true)
 	end
 end)
@@ -11652,20 +11892,16 @@ local function onCharacter(character)
 	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
 	scare.Visible = false
 	for _, child in ipairs(scareWorld:GetChildren()) do child:Destroy() end
-	danger = 0
-	warningKind = nil
-	warningRoom = -1
 	crouching = false
 	humanoid.CameraOffset = Vector3.new(0, 0, 0)
-	crouchButton.Text = "ПРИСЕСТЬ"
+	crouchButton.Text = "↓"
 	crouchButton.Visible = isTouch
-	displayedFloor = -1
 	modal.Visible = false
 	leftPanel.Size = UDim2.fromScale(0, 1)
 	rightPanel.Size = UDim2.fromScale(0, 1)
-	hiddenNote.Visible = false
 	exitButton.Visible = false
 	sprintButton.Visible = isTouch
+	lightButton.Visible = isTouch
 	reticle.Visible = true
 	player:SetAttribute("NocturnePeek", false)
 	-- Native first person remains attached to the real Humanoid. The real
@@ -11701,20 +11937,30 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if not camera or not root or not humanoid or not root.Parent then return end
-	local roomIndex = Layout.RoomIndexAt(root.Position.Z)
-	local storey = math.floor(Layout.EntranceY(roomIndex) / Layout.StoreyRise) + 1
-	if Layout.IsStair(roomIndex)
-		and root.Position.Y &gt; Layout.EntranceY(roomIndex) + Layout.StoreyRise / 2 + 3 then
-		storey = storey + 1
-	end
-	if storey ~= displayedFloor then
-		displayedFloor = storey
-		floorLabel.Text = string.format("ЭТАЖ %02d  /  %02d", storey, finalFloor)
-	end
-
+	local pressure = 0
 	if hidden and peekCF then
+		-- The server still controls the threat. Measure its replicated model in
+		-- the REAL room; the closer it gets to the wardrobe, the less steadily
+		-- the player breathes. The clear centre stays visible at all times.
+		local world = Workspace:FindFirstChild("NocturneWorld")
+		if world then
+			for _, name in ipairs({"TheRush", "TheBlindGuest", "ThePaleMoth"}) do
+				local monster = world:FindFirstChild(name)
+				local body = monster and monster.PrimaryPart
+				if body then
+					local distance = (body.Position - peekCF.Position).Magnitude
+					pressure = math.max(pressure, math.clamp(1 - distance / 30, 0, 1))
+				end
+			end
+		end
+		local breath = math.sin(elapsed * (2.2 + pressure * 3.2))
 		camera.CameraType = Enum.CameraType.Scriptable
-		camera.CFrame = peekCF
+		camera.CFrame = peekCF * CFrame.new(
+			breath * (0.013 + pressure * 0.041) + math.sin(elapsed * 17) * pressure * 0.008,
+			math.sin(elapsed * 1.2) * 0.012, 0)
+			* CFrame.Angles(0, math.sin(elapsed * 0.9) * 0.009 * (1 + pressure), 0)
+		leftPanel.BackgroundTransparency = math.clamp(0.14 - pressure * (0.105 + breath * 0.018), 0.01, 0.14)
+		rightPanel.BackgroundTransparency = leftPanel.BackgroundTransparency
 	elseif camera.CameraType == Enum.CameraType.Scriptable then
 		restoreCamera() -- also recovers after death/respawn inside a wardrobe
 	end
@@ -11723,27 +11969,24 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	local moving = not hidden and not dead and horizontalSpeed &gt; 1.5
 		and humanoid.MoveDirection.Magnitude &gt; 0.05
 	local running = moving and not crouching and horizontalSpeed &gt; 15
-	camera.FieldOfView = camera.FieldOfView + ((hidden and 70 or (running and 79 or 73))
-		+ danger * 2 - camera.FieldOfView) * damp(4, dt)
+	camera.FieldOfView = camera.FieldOfView + ((hidden and (70 - pressure * 9) or (running and 79 or 73))
+		- camera.FieldOfView) * damp(4, dt)
 	local origin = head and head.Parent and head.Position or (root.Position + Vector3.new(0, 1.6, 0))
 	origin = origin + camera.CFrame.RightVector * 0.45
 	torchMount.CFrame = CFrame.lookAt(origin, origin + camera.CFrame.LookVector)
 	torch.Enabled = flashlightOn and not hidden and not dead and not finished
-
-	fright = math.max(0, fright - dt * 0.65)
-	local pulse = danger &gt; 0 and (0.11 + 0.085 * math.sin(elapsed * 9)) or 0
-	redWash.BackgroundTransparency = math.clamp(1 - fright * 0.63 - pulse, 0.03, 1)
-	darkness.BackgroundTransparency = math.clamp(1 - danger * 0.13 - (hidden and 0.09 or 0), 0, 1)
 end)
 </ProtectedString>
           <bool name="Disabled">false</bool>
         </Properties>
       </Item>
-      <Item class="LocalScript" referent="RBX274">
+      <Item class="LocalScript" referent="RBX278">
         <Properties>
           <string name="Name">NocturnePerspective</string>
-          <ProtectedString name="Source">-- Independent from the HUD and from the server remote. Even if either starts
--- late, Roblox's own CameraModule must follow a real, colliding Humanoid.
+          <ProtectedString name="Source">-- Native Roblox first-person camera on an ordinary, colliding R6/R15 Humanoid.
+-- No viewmodel arms at all until THIS player actually holds a drawer key.
+-- MeshParts/SpecialMeshes and the avatar's original colours/clothing are copied;
+-- no pixel-block arms, independent flying camera or moved real limbs.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -11754,6 +11997,11 @@ local character
 local humanoid
 local arms = {}
 local shirt
+local keyModel
+local keyNumber
+local pickupTime = 10
+local turnTime = 10
+local wasTurning = false
 local lastAttempt = 0
 local elapsed = 0
 local stride = 0
@@ -11791,7 +12039,6 @@ local function copyArm(name, side, segment)
 			child:Destroy()
 		end
 	end
-	-- Keep the avatar's OWN mesh, textures, skin and original clothing name.
 	part.Name = name
 	part.Anchored = true
 	part.CanCollide = false
@@ -11799,6 +12046,7 @@ local function copyArm(name, side, segment)
 	part.CanQuery = false
 	part.CastShadow = false
 	part.LocalTransparencyModifier = 0
+	part.Transparency = 1
 	part.Parent = viewModel
 	table.insert(arms, {part = part, source = source, side = side, segment = segment})
 end
@@ -11827,25 +12075,89 @@ local function buildArms()
 	lastAttempt = os.clock()
 end
 
+-- A miniature 3-D brass key drawn alongside the copied Roblox hand. The
+-- server separately welds the corresponding physical key into the REAL hand,
+-- so other players also see what was taken from the drawer.
+local function makeViewKey()
+	local model = Instance.new("Model")
+	model.Name = "Key in avatar hand"
+	local brass = Color3.fromRGB(194, 145, 72)
+	local shadow = Color3.fromRGB(101, 68, 40)
+	local function piece(name, size, offset, color, material, shape)
+		local part = Instance.new("Part")
+		part.Name = name
+		part.Size = size
+		part.CFrame = CFrame.new(offset)
+		part.Color = color
+		part.Material = material
+		part.Shape = shape or Enum.PartType.Block
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+		part.CastShadow = false
+		part.Parent = model
+		return part
+	end
+	piece("Forged key shaft", Vector3.new(0.10, 0.55, 0.1), Vector3.new(0, -0.51, 0),
+		brass, Enum.Material.Metal, Enum.PartType.Cylinder)
+	for i = 1, 9 do
+		local angle = i * math.pi * 2 / 9
+		piece("Round key bow", Vector3.new(0.11, 0.11, 0.1),
+			Vector3.new(math.cos(angle) * 0.19, math.sin(angle) * 0.19, 0),
+			brass, Enum.Material.Metal, Enum.PartType.Ball)
+	end
+	piece("Key bit", Vector3.new(0.34, 0.1, 0.13), Vector3.new(0.12, -0.77, 0),
+		brass, Enum.Material.Metal)
+	piece("Notched tooth", Vector3.new(0.09, 0.13, 0.15), Vector3.new(0.26, -0.7, 0),
+		shadow, Enum.Material.Metal)
+	model.WorldPivot = CFrame.new(0, 0, 0)
+	model.Parent = viewModel
+	return model
+end
+
+local function syncKey()
+	local current = player:GetAttribute("HeldKey")
+	if current == keyNumber then return end
+	keyNumber = current
+	if keyModel then keyModel:Destroy(); keyModel = nil end
+	if current then
+		pickupTime = 0
+		keyModel = makeViewKey()
+	else
+		pickupTime = 10
+	end
+end
+
 local function onCharacter(avatar)
 	local human = avatar:WaitForChild("Humanoid")
 	if player.Character ~= avatar then return end
 	character, humanoid = avatar, human
+	if keyModel then keyModel:Destroy(); keyModel = nil end
+	keyNumber = nil
+	wasTurning = false
+	turnTime = 10
 	player:SetAttribute("NocturnePeek", false)
 	lockCamera()
 	if camera then viewModel.Parent = camera end
 	buildArms()
+	syncKey()
 end
 player.CharacterAdded:Connect(onCharacter)
 player.CharacterAppearanceLoaded:Connect(function(avatar)
 	if avatar == character and player.Character == avatar then buildArms() end
 end)
-lockCamera() -- do NOT wait for NocturneRemote, PlayerGui or character appearance
+player:GetAttributeChangedSignal("HeldKey"):Connect(syncKey)
+lockCamera() -- no wait for HUD, PlayerGui, server event or avatar appearance
 if player.Character then task.spawn(onCharacter, player.Character) end
 
--- CameraModule writes the final view at Camera priority; move ONLY the
--- noncolliding copies afterwards. No root CFrame, real limb or user input is
--- ever altered by this render callback.
+-- Position ordinary-sized limbs so only a small portion reaches the bottom of
+-- the frame when carrying a key. Match elbows to wrists rather than laying
+-- six disconnected parts across half the screen. The right hand raises the
+-- KEY together with the arm on pickup and again while turning the lock.
+local function between(from, to)
+	return CFrame.lookAt((from + to) / 2, to) * CFrame.Angles(-math.pi / 2, 0, 0)
+end
 RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Value + 2, function(dt)
 	camera = Workspace.CurrentCamera
 	if not camera then return end
@@ -11859,50 +12171,80 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 	if #arms &lt; 2 and os.clock() - lastAttempt &gt; 1 then buildArms() end
+	syncKey()
+	local turning = player:GetAttribute("KeyTurning") == true
+	if turning and not wasTurning then turnTime = 0 end
+	wasTurning = turning
 	local root = character:FindFirstChild("HumanoidRootPart")
 	local speed = root and Vector3.new(root.AssemblyLinearVelocity.X, 0,
 		root.AssemblyLinearVelocity.Z).Magnitude or 0
 	dt = math.min(dt, 0.08)
 	elapsed = elapsed + dt
 	stride = stride + math.min(speed / 14, 1.4) * dt * 8
-	local sway = math.sin(stride) * math.min(speed / 14, 1) * 0.055
-	local breathing = math.sin(elapsed * 1.65) * 0.012
-	local visible = not peek and humanoid.Health &gt; 0
+	pickupTime = math.min(10, pickupTime + dt)
+	turnTime = math.min(10, turnTime + dt)
+	local visible = keyNumber ~= nil and not peek and humanoid.Health &gt; 0
+	local actualKey = character:FindFirstChild("HeldKey")
+	if actualKey then
+		-- Only the owner hides the replicated key; everybody else sees it
+		-- welded into the real R6/R15 hand.
+		for _, part in ipairs(actualKey:GetDescendants()) do
+			if part:IsA("BasePart") then part.LocalTransparencyModifier = 1 end
+		end
+	end
 	local viewport = camera.ViewportSize
-	local width = viewport and math.clamp(viewport.X / math.max(1, viewport.Y) / 1.4, 0.5, 1) or 1
+	local width = viewport and math.clamp(viewport.X / math.max(1, viewport.Y) / 1.5, 0.48, 1) or 1
+	local pickup = math.sin(math.min(pickupTime / 0.85, 1) * math.pi) * 0.53
+	local turn = turning and math.min(turnTime / 0.32, 1) or 0
+	local sway = math.sin(stride) * math.min(speed / 14, 1) * 0.025
+	local breathe = math.sin(elapsed * 1.55) * 0.009
+	local hands = {
+		[-1] = Vector3.new(-0.47 * width, -0.81 + pickup * 0.18 + breathe - sway, -1.82),
+		[1] = Vector3.new(0.43 * width - turn * 0.21 * width,
+			-0.72 + pickup + turn * 0.60 + breathe + sway, -1.82 - turn * 0.19),
+	}
 	for _, arm in ipairs(arms) do
 		local side = arm.side
-		local position, rotation
+		local hand = hands[side]
+		local wrist = hand + Vector3.new(side * 0.06, -0.19, 0.07)
+		local elbow = hand + Vector3.new(side * 0.23, -0.73, 0.25)
+		local shoulder = hand + Vector3.new(side * 0.44, -1.43, 0.44)
+		local localCF
 		if arm.segment == "upper" then
-			position = Vector3.new(side * 0.79 * width, -0.52 + sway + breathing, -0.88)
-			rotation = CFrame.Angles(math.rad(48), 0, math.rad(side * 16))
+			localCF = between(shoulder, elbow)
 		elseif arm.segment == "lower" then
-			position = Vector3.new(side * 0.73 * width, -0.66 + sway + breathing, -1.20)
-			rotation = CFrame.Angles(math.rad(65), 0, math.rad(side * 8))
+			localCF = between(elbow, wrist)
 		elseif arm.segment == "hand" then
-			position = Vector3.new(side * 0.68 * width, -0.58 + sway + breathing, -1.55)
-			rotation = CFrame.Angles(math.rad(72), 0, math.rad(side * 6))
-		else -- R6: the player's actual two Roblox arms, with their own mesh.
-			position = Vector3.new(side * 0.82 * width, -0.60 + sway + breathing, -1.28)
-			rotation = CFrame.Angles(math.rad(57), 0, math.rad(side * 12))
+			localCF = CFrame.new(hand) * CFrame.Angles(math.rad(18), 0, math.rad(side * 8))
+		else -- the original single R6 arm, including its actual mesh or shirt
+			localCF = between(shoulder, wrist)
 		end
-		arm.part.CFrame = camera.CFrame * CFrame.new(position) * rotation
+		arm.part.CFrame = camera.CFrame * localCF
 		arm.part.LocalTransparencyModifier = 0
 		arm.part.Transparency = visible and arm.source.Transparency or 1
 	end
+	if keyModel then
+		keyModel:PivotTo(camera.CFrame * CFrame.new(hands[1] + Vector3.new(-0.045, 0.03, -0.29))
+			* CFrame.Angles(math.rad(-18 - turn * 42), 0, math.rad(-15 - turn * 36)))
+		-- Keep the invisible original held-key clone from showing in the
+		-- wardrobe, on respawn or during the death camera transition.
+		for _, part in ipairs(keyModel:GetDescendants()) do
+			if part:IsA("BasePart") then part.Transparency = visible and 0 or 1 end
+		end
+	end
 end)
-print("[NOCTURNE v5 / independent first-person boot] physical avatar camera + avatar arms ready")
+print("[NOCTURNE v6 / native first person] avatar hands and key appear only when carried")
 </ProtectedString>
           <bool name="Disabled">false</bool>
         </Properties>
       </Item>
     </Item>
   </Item>
-  <Item class="ReplicatedStorage" referent="RBX275">
+  <Item class="ReplicatedStorage" referent="RBX279">
     <Properties>
       <string name="Name">ReplicatedStorage</string>
     </Properties>
-    <Item class="ModuleScript" referent="RBX276">
+    <Item class="ModuleScript" referent="RBX280">
       <Properties>
         <string name="Name">NocturneLayout</string>
         <ProtectedString name="Source">-- Single source of truth for the hotel's physical route. The same module is
@@ -11997,7 +12339,7 @@ return Layout
       </Properties>
     </Item>
   </Item>
-  <Item class="SoundService" referent="RBX277">
+  <Item class="SoundService" referent="RBX281">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
