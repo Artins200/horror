@@ -214,7 +214,7 @@ class PlaceTests(unittest.TestCase):
         self.assertIn("hum.AutoRotate = true", self.server)
         self.assertIn('spawn.CanCollide = true', self.server)
         self.assertIn('state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")', self.server)
-        self.assertIn('state.world:SetAttribute("GenerationBuild", "WhiteVoidAndBlindAudio-v15")', self.server)
+        self.assertIn('state.world:SetAttribute("GenerationBuild", "ThresholdScareAndBlindPanic-v16")', self.server)
         self.assertIn('player.CameraMode = Enum.CameraMode.LockFirstPerson', self.client)
         self.assertIn('camera.CameraSubject = humanoid', self.client)
         self.assertIn('camera.CameraType = Enum.CameraType.Custom', self.client)
@@ -294,7 +294,9 @@ class PlaceTests(unittest.TestCase):
         self.assertIn('remote:FireClient(player, "Finale", witness)', self.server)
         self.assertIn('block(model, "Sealed white horizon"', self.server)
         self.assertIn('entry.CanTouch, entry.CanQuery = true, false', self.server)
-        self.assertIn('and state.clock - info.voidStart >= 4', self.server)
+        self.assertIn('VoidTriggerDepth = 0.55', self.server)
+        self.assertIn('triggerFinale(player, root, humanoid) -- recovers even if .Touched was missed', self.server)
+        self.assertNotIn('voidStart', self.server)
         self.assertIn('piece.Transparency = 1', self.server)
         self.assertIn('if kind == "FINAL" then', self.client)
         self.assertIn('if piece:IsA("BasePart") then piece.Transparency = 0 end', self.client)
@@ -302,17 +304,22 @@ class PlaceTests(unittest.TestCase):
     def test_white_finale_and_personal_blind_audio_keep_native_character(self):
         finale = self.server.split('local function makeExit()', 1)[1].split(
             'local function pruneRooms()', 1)[0]
-        for fragment in ('VoidWalkSpeed = 5', 'VoidLength = 48',
+        for fragment in ('VoidLength = 48', 'VoidTriggerDepth = 0.55',
                          'info.voidWalk = true', 'info.sprinting, info.crouching, info.torchOn = false',
                          'if info.voidWalk then return end',
-                         'info.voidWalk and CONFIG.VoidWalkSpeed',
-                         'player:SetAttribute("VoidWalk", false)'):
+                         'player:SetAttribute("Finished", true)',
+                         'state.finalWitness = witness',
+                         'remote:FireClient(player, "Finale", witness)'):
             self.assertIn(fragment, self.server)
         for fragment in ('"Last floor"', '"White void wall"', '"White void ceiling"',
-                         '"Sealed white horizon"', '"White threshold"',
-                         '"End of the nightmare"', 'witness:SetAttribute("Concealed", true)',
-                         'remote:FireClient(player, "Finale", witness)'):
+                         '"Sealed white horizon"', '"End of the nightmare"',
+                         'CFrame.new(0, y + 5, z + 1.3)',
+                         'witness:SetAttribute("Concealed", true)',
+                         'triggerFinale(player, root, humanoid)'):
             self.assertIn(fragment, finale)
+        self.assertNotIn('"White threshold"', finale)
+        self.assertNotIn('VoidWalkSpeed', self.server)
+        self.assertNotIn('VoidScareOffset', self.server)
         self.assertNotIn('announceMonster(', finale)
         self.assertNotIn('"Morning"', finale)
         for fragment in ('player:GetAttribute("VoidWalk") == true',
@@ -324,9 +331,14 @@ class PlaceTests(unittest.TestCase):
                          '"музыка_для_слепого когда в одной комнате"',
                          '"Scary sound"', '"scarygrowl 1"',
                          'blind:GetAttribute("RoomIndex") == math.floor(root.Position.Z / roomLength)',
-                         'blindTheme.Volume = 0.52 * blindBlend',
+                         'blindTheme.Volume = 0.65 * blindBlend',
                          'if not withBlind and blindStarted and blindBlend < 0.008 then',
-                         'panicColor.TintColor = attack and PANIC_TINTS',
+                         'panicColor.TintColor = attack and tint',
+                         'panicLeft = 1.05', 'panicBloom.Intensity = attack',
+                         'panicPulse:Play()', 'panicVeil.BackgroundTransparency = 1 -',
+                         'local function beginFinale(witness)',
+                         'player:GetAttributeChangedSignal("Finished")',
+                         'scareVeil.BackgroundTransparency = kind == "FINAL" and 0.88',
                          'local activeRare, rareBeganAt',
                          'nextRareAt = elapsed + math.random(85, 145)',
                          'if activeRare then', 'voidBloom.Intensity = voidBlend * 2.25',
@@ -439,7 +451,10 @@ class PlaceTests(unittest.TestCase):
         self.assertTrue(binary.startswith(b"<roblox!\x89\xff\r\n\x1a\n"))
         self.assertGreater(len(binary), 10_000)
         self.assertEqual(binary, (ROOT / "13123.rbxl").read_bytes())
-        self.assertEqual(binary, (ROOT / "Nocturne-v15.rbxl").read_bytes())
+        self.assertEqual(binary, (ROOT / "Nocturne-v16.rbxl").read_bytes())
+        self.assertEqual(hashlib.sha256((ROOT / "Nocturne-v15.rbxl").read_bytes()).hexdigest(),
+                         "707e338e2b913d248a3ce380e78858b938705825a161edc8e357c9ad5fb693e4")
+        self.assertNotEqual(binary, (ROOT / "Nocturne-v15.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v14.rbxl").read_bytes())
         self.assertNotEqual(binary, (ROOT / "Nocturne-v13.rbxl").read_bytes())
 

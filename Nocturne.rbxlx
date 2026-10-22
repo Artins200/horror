@@ -10808,9 +10808,8 @@ local CONFIG = {
 	Ahead = 2,
 	KeepBehind = 8,
 	WalkSpeed = 12,
-	VoidWalkSpeed = 5,
 	VoidLength = 48,
-	VoidScareOffset = 43,
+	VoidTriggerDepth = 0.55, -- first step past door 100, not the far wall
 	SprintSpeed = 19,
 	CrouchSpeed = 7,
 	SprintDrain = 19,
@@ -10893,6 +10892,7 @@ local state = {
 	echo = nil,
 	spawn = nil,
 	backSeal = nil,
+	finalWitness = nil, -- replicated but invisible; only a client's scare clone is shown
 }
 
 local function newPart(parent, name, size, cf, color, material, transparency, collide)
@@ -12965,24 +12965,30 @@ buildRoom = function(index)
 		end
 	end)
 end
--- A separate, genuinely collidable space follows door 100. Local exposure
--- makes its white-on-white surfaces look infinite; none of its edges are open.
-local function enterVoidWalk(player, root, humanoid)
+-- The white chamber remains solid, but it is now a THRESHOLD scare. The
+-- engine sometimes touches a sensor with a hand before the root crosses it;
+-- the Heartbeat guard below retries until the actual avatar steps inside.
+local function triggerFinale(player, root, humanoid)
 	local info = state.players[player]
-	if not info or info.voidWalk or not root or not humanoid or humanoid.Health &lt;= 0
-		or state.hidden[player] or state.entering[player] or player:GetAttribute("Finished")
-		or state.opened ~= CONFIG.Doors then return end
+	local witness = state.finalWitness
+	if not info or not witness or not witness.Parent or not root or not humanoid
+		or humanoid.Health &lt;= 0 or state.hidden[player] or state.entering[player]
+		or player:GetAttribute("Finished") or state.opened ~= CONFIG.Doors then return end
 	local z = CONFIG.Doors * L
-	if root.Position.Z &lt; z + 2 or root.Position.Z &gt; z + CONFIG.VoidLength - 3
+	if root.Position.Z &lt; z + CONFIG.VoidTriggerDepth
+		or root.Position.Z &gt; z + CONFIG.VoidLength - 2
 		or math.abs(root.Position.X) &gt; W / 2 - 1
 		or math.abs(root.Position.Y - Layout.EntranceY(CONFIG.Doors) - 3) &gt; 5 then return end
 	info.voidWalk = true
-	info.voidStart = state.clock
 	info.sprinting, info.crouching, info.torchOn = false, false, false
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("VoidWalk", true)
-	humanoid.WalkSpeed = CONFIG.VoidWalkSpeed
-	syncInventory(player) -- extinguish the real hand torch, not the avatar
+	player:SetAttribute("Finished", true) -- once, before either callback can repeat
+	humanoid.WalkSpeed = 0
+	root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+	syncInventory(player) -- turn off a held flashlight; never replace the avatar
+	remote:FireClient(player, "Finale", witness)
 end
 
 local function makeExit()
@@ -13037,8 +13043,11 @@ local function makeExit()
 			piece.Enabled = false
 		end
 	end
-	local entry = newPart(model, "White threshold", Vector3.new(19, 9, 3),
-		CFrame.new(0, y + 4.5, z + 3.5), white, Enum.Material.SmoothPlastic, 1, false)
+	state.finalWitness = witness
+	-- A sensor directly beyond the open door fires INSTANTLY. If its first
+	-- Touched happens too early (a limb before the root), Heartbeat is backup.
+	local entry = newPart(model, "End of the nightmare", Vector3.new(9.5, 10, 2),
+		CFrame.new(0, y + 5, z + 1.3), white, Enum.Material.SmoothPlastic, 1, false)
 	entry.CanTouch, entry.CanQuery = true, false
 	local mySession = session
 	entry.Touched:Connect(function(hit)
@@ -13047,29 +13056,7 @@ local function makeExit()
 		local player = avatar and Players:GetPlayerFromCharacter(avatar)
 		if player then
 			local root, humanoid = playerRoot(player)
-			enterVoidWalk(player, root, humanoid)
-		end
-	end)
-	local trigger = newPart(model, "End of the nightmare", Vector3.new(19, 10, 3),
-		CFrame.new(0, y + 5, z + CONFIG.VoidScareOffset), white,
-		Enum.Material.SmoothPlastic, 1, false)
-	trigger.CanTouch, trigger.CanQuery = true, false
-	trigger.Touched:Connect(function(hit)
-		if mySession ~= session then return end
-		local avatar = hit:FindFirstAncestorOfClass("Model")
-		local player = avatar and Players:GetPlayerFromCharacter(avatar)
-		if not player or player:GetAttribute("Finished") then return end
-		local root, humanoid = playerRoot(player)
-		local info = state.players[player]
-		if info and info.voidWalk and root and humanoid and humanoid.Health &gt; 0
-			and root.Position.Z &gt;= z + CONFIG.VoidScareOffset - 1.5
-			and state.clock - info.voidStart &gt;= 4 then
-			player:SetAttribute("Finished", true)
-			humanoid.WalkSpeed = 0
-			root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-			-- Only this client gets the reveal and its audio. Other players still
-			-- see an untouched, empty white horizon until they reach their end.
-			remote:FireClient(player, "Finale", witness)
+			triggerFinale(player, root, humanoid)
 		end
 	end)
 end
@@ -14377,12 +14364,13 @@ local function resetWorld()
 	state.moth = nil
 	state.echo = nil
 	state.backSeal = nil
+	state.finalWitness = nil
 	for player, info in pairs(state.players) do
 		info.items = emptyItems()
 		info.coins, info.notes, info.gold = 0, 0, 0
 		info.charge, info.health, info.selected = 0, 100, 1
 		info.torchOn, info.pillUntil, info.closetCooldown = false, 0, 0
-		info.voidWalk, info.voidStart = false, nil
+		info.voidWalk = false
 		info.nextSpiderRoom = 0
 		syncInventory(player)
 	end
@@ -14394,13 +14382,13 @@ local function resetWorld()
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
 	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
-	state.world:SetAttribute("GenerationBuild", "WhiteVoidAndBlindAudio-v15")
+	state.world:SetAttribute("GenerationBuild", "ThresholdScareAndBlindPanic-v16")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v15] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v16] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -14444,7 +14432,7 @@ local function registerPlayer(player)
 		stamina = 100, sprinting = false, crouching = false, torchOn = false,
 		items = emptyItems(), coins = 0, notes = 0, gold = 0,
 		charge = 0, health = 100, selected = 1, pillUntil = 0, closetCooldown = 0,
-		voidWalk = false, voidStart = nil, nextSpiderRoom = 0,
+		voidWalk = false, nextSpiderRoom = 0,
 	}
 	player:SetAttribute("Stamina", 100)
 	syncInventory(player)
@@ -14468,7 +14456,7 @@ local function registerPlayer(player)
 		info.torchOn = false
 		info.health = 100 -- a new life, but the run's wallet and items survive
 		info.pillUntil = 0
-		info.voidWalk, info.voidStart = false, nil
+		info.voidWalk = false
 		player:SetAttribute("VoidWalk", false)
 		player:SetAttribute("Stamina", 100)
 		syncInventory(player)
@@ -14499,7 +14487,7 @@ local function registerPlayer(player)
 			leaveCloset(player, false)
 			info.health = 0
 			info.torchOn = false
-			info.voidWalk, info.voidStart = false, nil
+			info.voidWalk = false
 			player:SetAttribute("VoidWalk", false)
 			syncInventory(player)
 			remote:FireClient(player, "Death")
@@ -14676,7 +14664,12 @@ RunService.Heartbeat:Connect(function(dt)
 	local farthest = state.opened == CONFIG.Doors and CONFIG.Doors * L + CONFIG.VoidLength
 		or math.min(CONFIG.Doors, state.opened + CONFIG.Ahead) * L
 	for player in pairs(state.players) do
-		local root = playerRoot(player)
+		local root, humanoid = playerRoot(player)
+		if root and humanoid and not player:GetAttribute("Finished")
+			and state.opened == CONFIG.Doors
+			and root.Position.Z &gt;= CONFIG.Doors * L + CONFIG.VoidTriggerDepth then
+			triggerFinale(player, root, humanoid) -- recovers even if .Touched was missed
+		end
 		if root and not player:GetAttribute("Finished") then
 			local index = Layout.RoomIndexAt(root.Position.Z)
 			local floorY = index &gt;= CONFIG.Doors and Layout.EntranceY(CONFIG.Doors)
@@ -14716,14 +14709,6 @@ RunService.Heartbeat:Connect(function(dt)
 			end
 		elseif humanoid and not player:GetAttribute("Finished") and not state.entering[player] then
 			keepInsideHotel(player, root)
-			-- Touched is normally immediate, but this heartbeat also handles a
-			-- skipped sensor or a streaming/network timing gap on door 100.
-			if info.voidWalk and root.Position.Z &lt; CONFIG.Doors * L + 0.8 then
-				info.voidWalk, info.voidStart = false, nil
-				player:SetAttribute("VoidWalk", false)
-			elseif not info.voidWalk then
-				enterVoidWalk(player, root, humanoid)
-			end
 			local gap = leader and (leaderZ - root.Position.Z) / L or 0
 			local catchup = gap &gt;= 5 and 7 or gap &gt;= 2.5 and 3 or 0
 			if gap &gt;= 7 and leader ~= root
@@ -14759,9 +14744,8 @@ RunService.Heartbeat:Connect(function(dt)
 					info.stamina = math.min(100, info.stamina + CONFIG.StaminaRegen * step)
 				end
 				local fast = state.clock &lt; info.pillUntil and 9 or 0
-				local speed = info.voidWalk and CONFIG.VoidWalkSpeed
-					or (info.crouching and CONFIG.CrouchSpeed
-						or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed) + fast + catchup)
+				local speed = info.crouching and CONFIG.CrouchSpeed
+					or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed) + fast + catchup
 				if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
 				local rounded = math.floor(info.stamina + 0.5)
 				if player:GetAttribute("Stamina") ~= rounded then player:SetAttribute("Stamina", rounded) end
@@ -14780,7 +14764,7 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v15] solid white finale, individual Blind Guest music and native first person.")
+print("[NOCTURNE v16] instant white threshold scare, intensified Blind Guest panic and native first person.")
 </ProtectedString>
         <bool name="Disabled">false</bool>
       </Properties>
@@ -14835,6 +14819,7 @@ local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
 local pendingSelection = nil -- do not undo a click with a late inventory snapshot
 local pillEffectUntil = 0
 local hidden, dead, finished, enteringCloset, voidWalking = false, false, false, false, false
+local finaleStarted = false
 local entranceAge, elapsed = 0, 0
 local walletHasMoney = false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
@@ -15175,18 +15160,30 @@ local panicBlur = Instance.new("BlurEffect")
 panicBlur.Name = "Blind Guest double vision"
 panicBlur.Size = 0
 panicBlur.Parent = Lighting
+local panicBloom = Instance.new("BloomEffect")
+panicBloom.Name = "Blind Guest retinal overload"
+panicBloom.Intensity = 0
+panicBloom.Threshold = 0.85
+panicBloom.Size = 34
+panicBloom.Parent = Lighting
+local panicVeil = frame(ui, "Blind chromatic bleed", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), Color3.fromRGB(255, 77, 148), 1)
+panicVeil.ZIndex = 14
 local panicBars = {}
-for i = 1, 12 do
-	local bar = frame(ui, "Blind signal fracture", UDim2.fromScale(1, 0.003),
-		UDim2.fromScale(0, i / 13), i % 2 == 0 and Color3.fromRGB(138, 224, 220)
-			or Color3.fromRGB(216, 98, 163), 1)
+for i = 1, 18 do
+	local color = i % 3 == 0 and Color3.fromRGB(250, 250, 243)
+		or i % 2 == 0 and Color3.fromRGB(83, 242, 220)
+		or Color3.fromRGB(245, 63, 151)
+	local bar = frame(ui, "Blind signal fracture", UDim2.fromScale(0.9, 0.005),
+		UDim2.fromScale(0, i / 19), color, 1)
 	bar.ZIndex = 15
 	panicBars[i] = bar
 end
 local voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
 local wasWithBlind, blindStarted = false, false
-local PANIC_TINTS = {Color3.fromRGB(255, 95, 166),
-	Color3.fromRGB(81, 245, 229), Color3.fromRGB(172, 132, 255)}
+local PANIC_TINTS = {Color3.fromRGB(255, 58, 146),
+	Color3.fromRGB(67, 252, 229), Color3.fromRGB(173, 101, 255),
+	Color3.fromRGB(202, 249, 91)}
 
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
@@ -15258,6 +15255,7 @@ local arrivalImpact = localCue("Corridor arrival impact", "action_jump_land.mp3"
 local itemClick = localCue("Physical item used", "action_get_up.mp3", 0.31, 1.18)
 local itemDenied = localCue("Item cannot be used yet", "action_get_up.mp3", 0.16, 0.67)
 local spiderImpact = localCue("Drawer spider strike", "action_jump_land.mp3", 0.88, 1.35)
+local panicPulse = localCue("Blind panic heartbeat", "action_jump_land.mp3", 0.72, 0.58)
 local voidDrone = localCue("White void sub-bass", "action_falling.ogg", 0, 0.42)
 voidDrone.Looped = true
 local finalImpact = localCue("Final bone impact", "action_jump_land.mp3", 1.8, 0.55)
@@ -15305,8 +15303,15 @@ local function playFinalAudio()
 		strike:Play()
 	end
 	finalImpact:Stop(); finalImpact:Play()
-	task.delay(0.10, function() if finished and not dead and not modal.Visible then finalVoice:Play() end end)
-	task.delay(0.23, function() if finished and not dead and not modal.Visible then finalRumble:Play() end end)
+	finalVoice:Stop(); finalVoice:Play() -- the face and shriek hit in the SAME frame
+	task.delay(0.10, function()
+		if finished and not dead and not modal.Visible then finalRumble:Play() end
+	end)
+	task.delay(0.31, function()
+		if finished and not dead and not modal.Visible then
+			finalImpact:Stop(); finalImpact:Play() -- second jagged impact during the lunge
+		end
+	end)
 end
 local roomLength = 44
 
@@ -15570,33 +15575,41 @@ local function showScare(kind, source)
 		or kind == "MOTH" and Color3.fromRGB(129, 171, 154)
 		or kind == "RUSH" and Color3.fromRGB(126, 141, 151)
 		or Color3.fromRGB(177, 190, 181)
-	scareVeil.BackgroundTransparency = kind == "FINAL" and 0.03 or 0.78
-	scareCamera.FieldOfView = 58
-	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
-		Vector3.new(0, eyeY, 0))
+	scareVeil.BackgroundTransparency = kind == "FINAL" and 0.88 or 0.78
+	-- The final face is already on screen in the FIRST frame. A distant
+	-- silhouette/opaque white veil made the old threshold feel like no scare.
+	scareCamera.FieldOfView = kind == "FINAL" and 39 or 58
+	scareCamera.CFrame = kind == "FINAL"
+		and CFrame.lookAt(Vector3.new(0, eyeY + 0.08, -nearDistance),
+			Vector3.new(0, eyeY, -0.2))
+		or CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
+			Vector3.new(0, eyeY, 0))
 	if kind == "FINAL" then
-		-- First the white simulation tears; a hard, noisy face lunge follows.
-		-- Keep both eyes framed even on portrait phones, then HOLD the model
-		-- clearly before the win card instead of covering it in a red wash.
-		task.delay(0.11, function()
-			if token ~= scareToken then return end
-			scareVeil.BackgroundTransparency = 0.94
-			TweenService:Create(scareCamera, TweenInfo.new(0.11, Enum.EasingStyle.Quart,
-				Enum.EasingDirection.In), {
-				CFrame = CFrame.lookAt(Vector3.new(0.15, eyeY + 0.08, -nearDistance),
-					Vector3.new(0, eyeY, -0.2)), FieldOfView = 40,
-			}):Play()
-		end)
-		task.delay(0.39, function()
+		-- Jerk closer with two short chromatic cuts, then HOLD the real model.
+		-- Unlike the v15 white fade, this cannot hide its face at entry.
+		task.delay(0.09, function()
 			if token ~= scareToken then return end
 			scareVeil.BackgroundColor3 = Color3.fromRGB(242, 62, 76)
-			scareVeil.BackgroundTransparency = 0.44
-			TweenService:Create(scareVeil, TweenInfo.new(0.13),
+			scareVeil.BackgroundTransparency = 0.48
+			TweenService:Create(scareVeil, TweenInfo.new(0.10),
+				{BackgroundTransparency = 0.95}):Play()
+			TweenService:Create(scareCamera, TweenInfo.new(0.10, Enum.EasingStyle.Quart,
+				Enum.EasingDirection.In), {
+				CFrame = CFrame.lookAt(Vector3.new(0.13, eyeY + 0.09,
+					-math.max(2.8, nearDistance - 0.4)), Vector3.new(0, eyeY, -0.2)),
+				FieldOfView = 37,
+			}):Play()
+		end)
+		task.delay(0.32, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundColor3 = Color3.fromRGB(93, 251, 236)
+			scareVeil.BackgroundTransparency = 0.62
+			TweenService:Create(scareVeil, TweenInfo.new(0.12),
 				{BackgroundTransparency = 0.97}):Play()
 			TweenService:Create(scareCamera, TweenInfo.new(0.10), {
-				CFrame = CFrame.lookAt(Vector3.new(-0.09, eyeY + 0.02,
-					-math.max(2.8, nearDistance - 0.55)), Vector3.new(0, eyeY, -0.3)),
-				FieldOfView = 38,
+				CFrame = CFrame.lookAt(Vector3.new(-0.12, eyeY + 0.02,
+					-math.max(2.8, nearDistance - 0.75)), Vector3.new(0, eyeY, -0.3)),
+				FieldOfView = 36,
 			}):Play()
 		end)
 	else
@@ -15642,6 +15655,22 @@ local function showEnd(win)
 	setTorchLights(false)
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	UserInputService.MouseIconEnabled = true
+end
+
+local function beginFinale(witness)
+	if finaleStarted or dead then return end
+	finaleStarted = true -- the attribute fallback and remote can race
+	finished = true
+	setSprint(false)
+	setTorchLights(false)
+	showScare("FINAL", witness) -- render the face before attempting any audio
+	playFinalAudio()
+	local token = scareToken
+	task.delay(3.25, function()
+		if scareToken ~= token or not finished then return end
+		scare.Visible = false
+		showEnd(true)
+	end)
 end
 
 retryButton.MouseButton1Click:Connect(function()
@@ -15738,6 +15767,16 @@ player:GetAttributeChangedSignal("VoidWalk"):Connect(function()
 	setVoidWalking(player:GetAttribute("VoidWalk") == true)
 end)
 setVoidWalking(player:GetAttribute("VoidWalk") == true)
+player:GetAttributeChangedSignal("Finished"):Connect(function()
+	if player:GetAttribute("Finished") ~= true or finaleStarted or dead then return end
+	-- If the RemoteEvent arrives before/after this replicated attribute it
+	-- wins; otherwise the SERVER'S Finished flag still guarantees the scare.
+	task.delay(0.12, function()
+		if player:GetAttribute("Finished") == true and not finaleStarted and not dead then
+			beginFinale(nil) -- finds the concealed witness or draws the ring-eyed fallback
+		end
+	end)
+end)
 
 local function restoreCamera()
 	camera = Workspace.CurrentCamera
@@ -15862,6 +15901,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Death" then
 		stopRareCues()
 		voidDrone:Stop()
+		panicPulse:Stop()
 		if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
 		if scare.Visible then
 			dead = true
@@ -15876,17 +15916,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			showEnd(false)
 		end
 	elseif event == "Finale" then
-		finished = true
-		setSprint(false)
-		setTorchLights(false)
-		playFinalAudio()
-		showScare("FINAL", a)
-		local token = scareToken
-		task.delay(3.25, function()
-			if scareToken ~= token or not finished then return end
-			scare.Visible = false
-			showEnd(true)
-		end)
+		beginFinale(a)
 	elseif event == "Victory" then
 		-- Retain compatibility with older saves; this build uses the physical finale.
 		showEnd(true)
@@ -15909,19 +15939,21 @@ local function onCharacter(character)
 	peekBlend = 0
 	dead = false
 	finished = false
+	finaleStarted = false
 	pendingSelection = nil
 	pillEffectUntil = 0
 	stopRareCues()
 	voidDrone:Stop()
 	if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
-	finalImpact:Stop(); finalVoice:Stop(); finalRumble:Stop()
+	finalImpact:Stop(); finalVoice:Stop(); finalRumble:Stop(); panicPulse:Stop()
 	voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
 	wasWithBlind, blindStarted = false, false
 	voidColor.Brightness, voidColor.Contrast, voidBloom.Intensity = 0, 0, 0
 	voidGlare.BackgroundTransparency = 1
 	panicColor.TintColor = Color3.new(1, 1, 1)
 	panicColor.Brightness, panicColor.Contrast, panicColor.Saturation = 0, 0, 0
-	panicBlur.Size = 0
+	panicBlur.Size, panicBloom.Intensity = 0, 0
+	panicVeil.BackgroundTransparency = 1
 	for _, bar in ipairs(panicBars) do bar.BackgroundTransparency = 1 end
 	setVoidWalking(false)
 	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
@@ -15975,34 +16007,49 @@ local function updateSoundscape(dt)
 		* damp(withBlind and 2.3 or 1.1, dt)
 	if blindTheme then
 		if withBlind and not blindStarted then blindTheme:Play(); blindStarted = true end
-		blindTheme.Volume = 0.52 * blindBlend
+		blindTheme.Volume = 0.65 * blindBlend
 		if not withBlind and blindStarted and blindBlend &lt; 0.008 then
 			blindTheme:Stop()
 			blindStarted = false
 		end
 	end
-	if withBlind and not wasWithBlind then nextPanicAt = elapsed + math.random(2, 4) end
-	if withBlind and elapsed &gt;= nextPanicAt then
-		panicLeft = 0.38 + math.random() * 0.52
-		nextPanicAt = elapsed + math.random(6, 12)
+	if withBlind and not wasWithBlind then
+		panicLeft = 1.05 -- a real reaction at first sight, not 2–4 silent seconds
+		nextPanicAt = elapsed + math.random(3, 6)
+		panicPulse:Play()
+	elseif withBlind and elapsed &gt;= nextPanicAt then
+		panicLeft = 0.72 + math.random() * 0.45
+		nextPanicAt = elapsed + math.random(3, 6)
+		panicPulse:Stop(); panicPulse:Play()
 	end
-	if not withBlind then panicLeft = 0 end
+	if not withBlind then
+		panicLeft = 0
+		if wasWithBlind then panicPulse:Stop() end
+	end
 	wasWithBlind = withBlind
 	local attack = panicLeft &gt; 0
-	local strength = attack and math.min(1, panicLeft * 2.3) or 0
+	local ambient = withBlind and (0.28 + proximity * 0.32) or 0
+	local strength = math.max(ambient, attack and math.min(1, panicLeft * 1.6) or 0)
 	panicLeft = math.max(0, panicLeft - dt)
-	panicColor.TintColor = attack and PANIC_TINTS[math.floor(elapsed * 29) % 3 + 1]
-		or Color3.new(1, 1, 1)
-	panicColor.Brightness = attack and (math.sin(elapsed * 47) * 0.17 * strength) or 0
-	panicColor.Saturation = strength * 1.05
-	panicColor.Contrast = strength * 0.36
-	panicBlur.Size = strength * 4.2
+	local tint = PANIC_TINTS[math.floor(elapsed * 17) % #PANIC_TINTS + 1]
+	panicColor.TintColor = attack and tint
+		or withBlind and Color3.fromRGB(220, 230, 249) or Color3.new(1, 1, 1)
+	panicColor.Brightness = attack and math.sin(elapsed * 26) * 0.22 * strength
+		or withBlind and math.sin(elapsed * 3.2) * 0.03 or 0
+	panicColor.Saturation = attack and strength * 0.98 or ambient * 0.42
+	panicColor.Contrast = attack and strength * 0.53 or ambient * 0.22
+	panicBlur.Size = attack and strength * 9.5 or ambient * 4.0
+	panicBloom.Intensity = attack and strength * 1.45 or ambient * 0.35
+	panicVeil.BackgroundColor3 = tint
+	panicVeil.BackgroundTransparency = 1 - (attack and strength * 0.17 or ambient * 0.09)
 	for index, bar in ipairs(panicBars) do
-		bar.BackgroundTransparency = attack and (1 - strength * (index % 3 == 0 and 0.42 or 0.24)) or 1
-		if attack then
-			bar.Position = UDim2.fromScale(math.random(-9, 9) / 100,
-				(index + math.random() * 0.8) / 13)
-			bar.Size = UDim2.fromScale(math.random(63, 117) / 100, math.random(1, 4) / 850)
+		bar.BackgroundTransparency = attack and (1 - strength * (index % 3 == 0 and 0.72 or 0.53))
+			or withBlind and 0.88 or 1
+		if withBlind then
+			bar.Position = UDim2.fromScale(math.random(-18, 18) / 100,
+				(index + math.random() * 0.8) / 19)
+			bar.Size = UDim2.fromScale(math.random(35, 115) / 100,
+				math.random(2, 7) / 850)
 		end
 	end
 
@@ -16126,11 +16173,11 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if withBlind then
-		local tremor = panicStrength &gt; 0 and 0.18 * panicStrength or 0.005
+		local tremor = 0.045 + panicStrength * 0.35
 		camera.CFrame = camera.CFrame * CFrame.new(
 			(math.random() - 0.5) * tremor, (math.random() - 0.5) * tremor, 0)
-			* CFrame.Angles(0, (math.random() - 0.5) * tremor * 0.13,
-				(math.random() - 0.5) * tremor * 0.45)
+			* CFrame.Angles(0, (math.random() - 0.5) * tremor * 0.18,
+				math.sin(elapsed * 31) * (0.012 + panicStrength * 0.064))
 	end
 	local velocity = root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
@@ -16142,6 +16189,7 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	if not hidden and not enteringCloset and not inVoid and os.clock() &lt; pillEffectUntil then
 		targetFOV = targetFOV + 5
 	end
+	if withBlind then targetFOV = targetFOV - panicStrength * 4.5 end
 	camera.FieldOfView = camera.FieldOfView + (targetFOV - camera.FieldOfView) * damp(4, dt)
 	local held = player.Character and player.Character:FindFirstChild("HeldItem")
 	local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"
@@ -16355,7 +16403,7 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v15 / native first person] real R6/R15 hands, including the white-void eye shield")
+print("[NOCTURNE v16 / native first person] real R6/R15 hands; no fake viewmodel")
 </ProtectedString>
           <bool name="Disabled">false</bool>
         </Properties>

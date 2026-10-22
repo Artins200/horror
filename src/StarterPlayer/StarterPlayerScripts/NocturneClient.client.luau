@@ -32,6 +32,7 @@ local selected, charge, flashlightOn, hasFlashlight = 1, 0, false, false
 local pendingSelection = nil -- do not undo a click with a late inventory snapshot
 local pillEffectUntil = 0
 local hidden, dead, finished, enteringCloset, voidWalking = false, false, false, false, false
+local finaleStarted = false
 local entranceAge, elapsed = 0, 0
 local walletHasMoney = false
 local function damp(rate, dt) return 1 - math.exp(-rate * dt) end
@@ -372,18 +373,30 @@ local panicBlur = Instance.new("BlurEffect")
 panicBlur.Name = "Blind Guest double vision"
 panicBlur.Size = 0
 panicBlur.Parent = Lighting
+local panicBloom = Instance.new("BloomEffect")
+panicBloom.Name = "Blind Guest retinal overload"
+panicBloom.Intensity = 0
+panicBloom.Threshold = 0.85
+panicBloom.Size = 34
+panicBloom.Parent = Lighting
+local panicVeil = frame(ui, "Blind chromatic bleed", UDim2.fromScale(1, 1),
+	UDim2.fromScale(0, 0), Color3.fromRGB(255, 77, 148), 1)
+panicVeil.ZIndex = 14
 local panicBars = {}
-for i = 1, 12 do
-	local bar = frame(ui, "Blind signal fracture", UDim2.fromScale(1, 0.003),
-		UDim2.fromScale(0, i / 13), i % 2 == 0 and Color3.fromRGB(138, 224, 220)
-			or Color3.fromRGB(216, 98, 163), 1)
+for i = 1, 18 do
+	local color = i % 3 == 0 and Color3.fromRGB(250, 250, 243)
+		or i % 2 == 0 and Color3.fromRGB(83, 242, 220)
+		or Color3.fromRGB(245, 63, 151)
+	local bar = frame(ui, "Blind signal fracture", UDim2.fromScale(0.9, 0.005),
+		UDim2.fromScale(0, i / 19), color, 1)
 	bar.ZIndex = 15
 	panicBars[i] = bar
 end
 local voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
 local wasWithBlind, blindStarted = false, false
-local PANIC_TINTS = {Color3.fromRGB(255, 95, 166),
-	Color3.fromRGB(81, 245, 229), Color3.fromRGB(172, 132, 255)}
+local PANIC_TINTS = {Color3.fromRGB(255, 58, 146),
+	Color3.fromRGB(67, 252, 229), Color3.fromRGB(173, 101, 255),
+	Color3.fromRGB(202, 249, 91)}
 
 local modal = frame(ui, "End card", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), DARK, 0.06)
 modal.ZIndex = 25
@@ -455,6 +468,7 @@ local arrivalImpact = localCue("Corridor arrival impact", "action_jump_land.mp3"
 local itemClick = localCue("Physical item used", "action_get_up.mp3", 0.31, 1.18)
 local itemDenied = localCue("Item cannot be used yet", "action_get_up.mp3", 0.16, 0.67)
 local spiderImpact = localCue("Drawer spider strike", "action_jump_land.mp3", 0.88, 1.35)
+local panicPulse = localCue("Blind panic heartbeat", "action_jump_land.mp3", 0.72, 0.58)
 local voidDrone = localCue("White void sub-bass", "action_falling.ogg", 0, 0.42)
 voidDrone.Looped = true
 local finalImpact = localCue("Final bone impact", "action_jump_land.mp3", 1.8, 0.55)
@@ -502,8 +516,15 @@ local function playFinalAudio()
 		strike:Play()
 	end
 	finalImpact:Stop(); finalImpact:Play()
-	task.delay(0.10, function() if finished and not dead and not modal.Visible then finalVoice:Play() end end)
-	task.delay(0.23, function() if finished and not dead and not modal.Visible then finalRumble:Play() end end)
+	finalVoice:Stop(); finalVoice:Play() -- the face and shriek hit in the SAME frame
+	task.delay(0.10, function()
+		if finished and not dead and not modal.Visible then finalRumble:Play() end
+	end)
+	task.delay(0.31, function()
+		if finished and not dead and not modal.Visible then
+			finalImpact:Stop(); finalImpact:Play() -- second jagged impact during the lunge
+		end
+	end)
 end
 local roomLength = 44
 
@@ -767,33 +788,41 @@ local function showScare(kind, source)
 		or kind == "MOTH" and Color3.fromRGB(129, 171, 154)
 		or kind == "RUSH" and Color3.fromRGB(126, 141, 151)
 		or Color3.fromRGB(177, 190, 181)
-	scareVeil.BackgroundTransparency = kind == "FINAL" and 0.03 or 0.78
-	scareCamera.FieldOfView = 58
-	scareCamera.CFrame = CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
-		Vector3.new(0, eyeY, 0))
+	scareVeil.BackgroundTransparency = kind == "FINAL" and 0.88 or 0.78
+	-- The final face is already on screen in the FIRST frame. A distant
+	-- silhouette/opaque white veil made the old threshold feel like no scare.
+	scareCamera.FieldOfView = kind == "FINAL" and 39 or 58
+	scareCamera.CFrame = kind == "FINAL"
+		and CFrame.lookAt(Vector3.new(0, eyeY + 0.08, -nearDistance),
+			Vector3.new(0, eyeY, -0.2))
+		or CFrame.lookAt(Vector3.new(0, eyeY + 0.12, -farDistance),
+			Vector3.new(0, eyeY, 0))
 	if kind == "FINAL" then
-		-- First the white simulation tears; a hard, noisy face lunge follows.
-		-- Keep both eyes framed even on portrait phones, then HOLD the model
-		-- clearly before the win card instead of covering it in a red wash.
-		task.delay(0.11, function()
-			if token ~= scareToken then return end
-			scareVeil.BackgroundTransparency = 0.94
-			TweenService:Create(scareCamera, TweenInfo.new(0.11, Enum.EasingStyle.Quart,
-				Enum.EasingDirection.In), {
-				CFrame = CFrame.lookAt(Vector3.new(0.15, eyeY + 0.08, -nearDistance),
-					Vector3.new(0, eyeY, -0.2)), FieldOfView = 40,
-			}):Play()
-		end)
-		task.delay(0.39, function()
+		-- Jerk closer with two short chromatic cuts, then HOLD the real model.
+		-- Unlike the v15 white fade, this cannot hide its face at entry.
+		task.delay(0.09, function()
 			if token ~= scareToken then return end
 			scareVeil.BackgroundColor3 = Color3.fromRGB(242, 62, 76)
-			scareVeil.BackgroundTransparency = 0.44
-			TweenService:Create(scareVeil, TweenInfo.new(0.13),
+			scareVeil.BackgroundTransparency = 0.48
+			TweenService:Create(scareVeil, TweenInfo.new(0.10),
+				{BackgroundTransparency = 0.95}):Play()
+			TweenService:Create(scareCamera, TweenInfo.new(0.10, Enum.EasingStyle.Quart,
+				Enum.EasingDirection.In), {
+				CFrame = CFrame.lookAt(Vector3.new(0.13, eyeY + 0.09,
+					-math.max(2.8, nearDistance - 0.4)), Vector3.new(0, eyeY, -0.2)),
+				FieldOfView = 37,
+			}):Play()
+		end)
+		task.delay(0.32, function()
+			if token ~= scareToken then return end
+			scareVeil.BackgroundColor3 = Color3.fromRGB(93, 251, 236)
+			scareVeil.BackgroundTransparency = 0.62
+			TweenService:Create(scareVeil, TweenInfo.new(0.12),
 				{BackgroundTransparency = 0.97}):Play()
 			TweenService:Create(scareCamera, TweenInfo.new(0.10), {
-				CFrame = CFrame.lookAt(Vector3.new(-0.09, eyeY + 0.02,
-					-math.max(2.8, nearDistance - 0.55)), Vector3.new(0, eyeY, -0.3)),
-				FieldOfView = 38,
+				CFrame = CFrame.lookAt(Vector3.new(-0.12, eyeY + 0.02,
+					-math.max(2.8, nearDistance - 0.75)), Vector3.new(0, eyeY, -0.3)),
+				FieldOfView = 36,
 			}):Play()
 		end)
 	else
@@ -839,6 +868,22 @@ local function showEnd(win)
 	setTorchLights(false)
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	UserInputService.MouseIconEnabled = true
+end
+
+local function beginFinale(witness)
+	if finaleStarted or dead then return end
+	finaleStarted = true -- the attribute fallback and remote can race
+	finished = true
+	setSprint(false)
+	setTorchLights(false)
+	showScare("FINAL", witness) -- render the face before attempting any audio
+	playFinalAudio()
+	local token = scareToken
+	task.delay(3.25, function()
+		if scareToken ~= token or not finished then return end
+		scare.Visible = false
+		showEnd(true)
+	end)
 end
 
 retryButton.MouseButton1Click:Connect(function()
@@ -935,6 +980,16 @@ player:GetAttributeChangedSignal("VoidWalk"):Connect(function()
 	setVoidWalking(player:GetAttribute("VoidWalk") == true)
 end)
 setVoidWalking(player:GetAttribute("VoidWalk") == true)
+player:GetAttributeChangedSignal("Finished"):Connect(function()
+	if player:GetAttribute("Finished") ~= true or finaleStarted or dead then return end
+	-- If the RemoteEvent arrives before/after this replicated attribute it
+	-- wins; otherwise the SERVER'S Finished flag still guarantees the scare.
+	task.delay(0.12, function()
+		if player:GetAttribute("Finished") == true and not finaleStarted and not dead then
+			beginFinale(nil) -- finds the concealed witness or draws the ring-eyed fallback
+		end
+	end)
+end)
 
 local function restoreCamera()
 	camera = Workspace.CurrentCamera
@@ -1059,6 +1114,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 	elseif event == "Death" then
 		stopRareCues()
 		voidDrone:Stop()
+		panicPulse:Stop()
 		if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
 		if scare.Visible then
 			dead = true
@@ -1073,17 +1129,7 @@ remote.OnClientEvent:Connect(function(event, a, b, c)
 			showEnd(false)
 		end
 	elseif event == "Finale" then
-		finished = true
-		setSprint(false)
-		setTorchLights(false)
-		playFinalAudio()
-		showScare("FINAL", a)
-		local token = scareToken
-		task.delay(3.25, function()
-			if scareToken ~= token or not finished then return end
-			scare.Visible = false
-			showEnd(true)
-		end)
+		beginFinale(a)
 	elseif event == "Victory" then
 		-- Retain compatibility with older saves; this build uses the physical finale.
 		showEnd(true)
@@ -1106,19 +1152,21 @@ local function onCharacter(character)
 	peekBlend = 0
 	dead = false
 	finished = false
+	finaleStarted = false
 	pendingSelection = nil
 	pillEffectUntil = 0
 	stopRareCues()
 	voidDrone:Stop()
 	if blindTheme then blindTheme:Stop(); blindTheme.Volume = 0 end
-	finalImpact:Stop(); finalVoice:Stop(); finalRumble:Stop()
+	finalImpact:Stop(); finalVoice:Stop(); finalRumble:Stop(); panicPulse:Stop()
 	voidBlend, blindBlend, panicLeft, nextPanicAt = 0, 0, 0, 0
 	wasWithBlind, blindStarted = false, false
 	voidColor.Brightness, voidColor.Contrast, voidBloom.Intensity = 0, 0, 0
 	voidGlare.BackgroundTransparency = 1
 	panicColor.TintColor = Color3.new(1, 1, 1)
 	panicColor.Brightness, panicColor.Contrast, panicColor.Saturation = 0, 0, 0
-	panicBlur.Size = 0
+	panicBlur.Size, panicBloom.Intensity = 0, 0
+	panicVeil.BackgroundTransparency = 1
 	for _, bar in ipairs(panicBars) do bar.BackgroundTransparency = 1 end
 	setVoidWalking(false)
 	scareToken = scareToken + 1 -- cancel a previous life's delayed death card
@@ -1172,34 +1220,49 @@ local function updateSoundscape(dt)
 		* damp(withBlind and 2.3 or 1.1, dt)
 	if blindTheme then
 		if withBlind and not blindStarted then blindTheme:Play(); blindStarted = true end
-		blindTheme.Volume = 0.52 * blindBlend
+		blindTheme.Volume = 0.65 * blindBlend
 		if not withBlind and blindStarted and blindBlend < 0.008 then
 			blindTheme:Stop()
 			blindStarted = false
 		end
 	end
-	if withBlind and not wasWithBlind then nextPanicAt = elapsed + math.random(2, 4) end
-	if withBlind and elapsed >= nextPanicAt then
-		panicLeft = 0.38 + math.random() * 0.52
-		nextPanicAt = elapsed + math.random(6, 12)
+	if withBlind and not wasWithBlind then
+		panicLeft = 1.05 -- a real reaction at first sight, not 2–4 silent seconds
+		nextPanicAt = elapsed + math.random(3, 6)
+		panicPulse:Play()
+	elseif withBlind and elapsed >= nextPanicAt then
+		panicLeft = 0.72 + math.random() * 0.45
+		nextPanicAt = elapsed + math.random(3, 6)
+		panicPulse:Stop(); panicPulse:Play()
 	end
-	if not withBlind then panicLeft = 0 end
+	if not withBlind then
+		panicLeft = 0
+		if wasWithBlind then panicPulse:Stop() end
+	end
 	wasWithBlind = withBlind
 	local attack = panicLeft > 0
-	local strength = attack and math.min(1, panicLeft * 2.3) or 0
+	local ambient = withBlind and (0.28 + proximity * 0.32) or 0
+	local strength = math.max(ambient, attack and math.min(1, panicLeft * 1.6) or 0)
 	panicLeft = math.max(0, panicLeft - dt)
-	panicColor.TintColor = attack and PANIC_TINTS[math.floor(elapsed * 29) % 3 + 1]
-		or Color3.new(1, 1, 1)
-	panicColor.Brightness = attack and (math.sin(elapsed * 47) * 0.17 * strength) or 0
-	panicColor.Saturation = strength * 1.05
-	panicColor.Contrast = strength * 0.36
-	panicBlur.Size = strength * 4.2
+	local tint = PANIC_TINTS[math.floor(elapsed * 17) % #PANIC_TINTS + 1]
+	panicColor.TintColor = attack and tint
+		or withBlind and Color3.fromRGB(220, 230, 249) or Color3.new(1, 1, 1)
+	panicColor.Brightness = attack and math.sin(elapsed * 26) * 0.22 * strength
+		or withBlind and math.sin(elapsed * 3.2) * 0.03 or 0
+	panicColor.Saturation = attack and strength * 0.98 or ambient * 0.42
+	panicColor.Contrast = attack and strength * 0.53 or ambient * 0.22
+	panicBlur.Size = attack and strength * 9.5 or ambient * 4.0
+	panicBloom.Intensity = attack and strength * 1.45 or ambient * 0.35
+	panicVeil.BackgroundColor3 = tint
+	panicVeil.BackgroundTransparency = 1 - (attack and strength * 0.17 or ambient * 0.09)
 	for index, bar in ipairs(panicBars) do
-		bar.BackgroundTransparency = attack and (1 - strength * (index % 3 == 0 and 0.42 or 0.24)) or 1
-		if attack then
-			bar.Position = UDim2.fromScale(math.random(-9, 9) / 100,
-				(index + math.random() * 0.8) / 13)
-			bar.Size = UDim2.fromScale(math.random(63, 117) / 100, math.random(1, 4) / 850)
+		bar.BackgroundTransparency = attack and (1 - strength * (index % 3 == 0 and 0.72 or 0.53))
+			or withBlind and 0.88 or 1
+		if withBlind then
+			bar.Position = UDim2.fromScale(math.random(-18, 18) / 100,
+				(index + math.random() * 0.8) / 19)
+			bar.Size = UDim2.fromScale(math.random(35, 115) / 100,
+				math.random(2, 7) / 850)
 		end
 	end
 
@@ -1323,11 +1386,11 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 		end
 	end
 	if withBlind then
-		local tremor = panicStrength > 0 and 0.18 * panicStrength or 0.005
+		local tremor = 0.045 + panicStrength * 0.35
 		camera.CFrame = camera.CFrame * CFrame.new(
 			(math.random() - 0.5) * tremor, (math.random() - 0.5) * tremor, 0)
-			* CFrame.Angles(0, (math.random() - 0.5) * tremor * 0.13,
-				(math.random() - 0.5) * tremor * 0.45)
+			* CFrame.Angles(0, (math.random() - 0.5) * tremor * 0.18,
+				math.sin(elapsed * 31) * (0.012 + panicStrength * 0.064))
 	end
 	local velocity = root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
@@ -1339,6 +1402,7 @@ RunService:BindToRenderStep("NocturneEffects", Enum.RenderPriority.Camera.Value 
 	if not hidden and not enteringCloset and not inVoid and os.clock() < pillEffectUntil then
 		targetFOV = targetFOV + 5
 	end
+	if withBlind then targetFOV = targetFOV - panicStrength * 4.5 end
 	camera.FieldOfView = camera.FieldOfView + (targetFOV - camera.FieldOfView) * damp(4, dt)
 	local held = player.Character and player.Character:FindFirstChild("HeldItem")
 	local lens = held and held:GetAttribute("ItemKind") == "FLASHLIGHT"

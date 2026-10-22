@@ -17,9 +17,8 @@ local CONFIG = {
 	Ahead = 2,
 	KeepBehind = 8,
 	WalkSpeed = 12,
-	VoidWalkSpeed = 5,
 	VoidLength = 48,
-	VoidScareOffset = 43,
+	VoidTriggerDepth = 0.55, -- first step past door 100, not the far wall
 	SprintSpeed = 19,
 	CrouchSpeed = 7,
 	SprintDrain = 19,
@@ -102,6 +101,7 @@ local state = {
 	echo = nil,
 	spawn = nil,
 	backSeal = nil,
+	finalWitness = nil, -- replicated but invisible; only a client's scare clone is shown
 }
 
 local function newPart(parent, name, size, cf, color, material, transparency, collide)
@@ -2174,24 +2174,30 @@ buildRoom = function(index)
 		end
 	end)
 end
--- A separate, genuinely collidable space follows door 100. Local exposure
--- makes its white-on-white surfaces look infinite; none of its edges are open.
-local function enterVoidWalk(player, root, humanoid)
+-- The white chamber remains solid, but it is now a THRESHOLD scare. The
+-- engine sometimes touches a sensor with a hand before the root crosses it;
+-- the Heartbeat guard below retries until the actual avatar steps inside.
+local function triggerFinale(player, root, humanoid)
 	local info = state.players[player]
-	if not info or info.voidWalk or not root or not humanoid or humanoid.Health <= 0
-		or state.hidden[player] or state.entering[player] or player:GetAttribute("Finished")
-		or state.opened ~= CONFIG.Doors then return end
+	local witness = state.finalWitness
+	if not info or not witness or not witness.Parent or not root or not humanoid
+		or humanoid.Health <= 0 or state.hidden[player] or state.entering[player]
+		or player:GetAttribute("Finished") or state.opened ~= CONFIG.Doors then return end
 	local z = CONFIG.Doors * L
-	if root.Position.Z < z + 2 or root.Position.Z > z + CONFIG.VoidLength - 3
+	if root.Position.Z < z + CONFIG.VoidTriggerDepth
+		or root.Position.Z > z + CONFIG.VoidLength - 2
 		or math.abs(root.Position.X) > W / 2 - 1
 		or math.abs(root.Position.Y - Layout.EntranceY(CONFIG.Doors) - 3) > 5 then return end
 	info.voidWalk = true
-	info.voidStart = state.clock
 	info.sprinting, info.crouching, info.torchOn = false, false, false
 	player:SetAttribute("Crouching", false)
 	player:SetAttribute("VoidWalk", true)
-	humanoid.WalkSpeed = CONFIG.VoidWalkSpeed
-	syncInventory(player) -- extinguish the real hand torch, not the avatar
+	player:SetAttribute("Finished", true) -- once, before either callback can repeat
+	humanoid.WalkSpeed = 0
+	root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+	syncInventory(player) -- turn off a held flashlight; never replace the avatar
+	remote:FireClient(player, "Finale", witness)
 end
 
 local function makeExit()
@@ -2246,8 +2252,11 @@ local function makeExit()
 			piece.Enabled = false
 		end
 	end
-	local entry = newPart(model, "White threshold", Vector3.new(19, 9, 3),
-		CFrame.new(0, y + 4.5, z + 3.5), white, Enum.Material.SmoothPlastic, 1, false)
+	state.finalWitness = witness
+	-- A sensor directly beyond the open door fires INSTANTLY. If its first
+	-- Touched happens too early (a limb before the root), Heartbeat is backup.
+	local entry = newPart(model, "End of the nightmare", Vector3.new(9.5, 10, 2),
+		CFrame.new(0, y + 5, z + 1.3), white, Enum.Material.SmoothPlastic, 1, false)
 	entry.CanTouch, entry.CanQuery = true, false
 	local mySession = session
 	entry.Touched:Connect(function(hit)
@@ -2256,29 +2265,7 @@ local function makeExit()
 		local player = avatar and Players:GetPlayerFromCharacter(avatar)
 		if player then
 			local root, humanoid = playerRoot(player)
-			enterVoidWalk(player, root, humanoid)
-		end
-	end)
-	local trigger = newPart(model, "End of the nightmare", Vector3.new(19, 10, 3),
-		CFrame.new(0, y + 5, z + CONFIG.VoidScareOffset), white,
-		Enum.Material.SmoothPlastic, 1, false)
-	trigger.CanTouch, trigger.CanQuery = true, false
-	trigger.Touched:Connect(function(hit)
-		if mySession ~= session then return end
-		local avatar = hit:FindFirstAncestorOfClass("Model")
-		local player = avatar and Players:GetPlayerFromCharacter(avatar)
-		if not player or player:GetAttribute("Finished") then return end
-		local root, humanoid = playerRoot(player)
-		local info = state.players[player]
-		if info and info.voidWalk and root and humanoid and humanoid.Health > 0
-			and root.Position.Z >= z + CONFIG.VoidScareOffset - 1.5
-			and state.clock - info.voidStart >= 4 then
-			player:SetAttribute("Finished", true)
-			humanoid.WalkSpeed = 0
-			root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-			-- Only this client gets the reveal and its audio. Other players still
-			-- see an untouched, empty white horizon until they reach their end.
-			remote:FireClient(player, "Finale", witness)
+			triggerFinale(player, root, humanoid)
 		end
 	end)
 end
@@ -3586,12 +3573,13 @@ local function resetWorld()
 	state.moth = nil
 	state.echo = nil
 	state.backSeal = nil
+	state.finalWitness = nil
 	for player, info in pairs(state.players) do
 		info.items = emptyItems()
 		info.coins, info.notes, info.gold = 0, 0, 0
 		info.charge, info.health, info.selected = 0, 100, 1
 		info.torchOn, info.pillUntil, info.closetCooldown = false, 0, 0
-		info.voidWalk, info.voidStart = false, nil
+		info.voidWalk = false
 		info.nextSpiderRoom = 0
 		syncInventory(player)
 	end
@@ -3603,13 +3591,13 @@ local function resetWorld()
 	state.plan = planRooms(state.seed)
 	state.world:SetAttribute("Seed", state.seed)
 	state.world:SetAttribute("CameraBuild", "NativeFirstPerson-v10")
-	state.world:SetAttribute("GenerationBuild", "WhiteVoidAndBlindAudio-v15")
+	state.world:SetAttribute("GenerationBuild", "ThresholdScareAndBlindPanic-v16")
 	local firstDoors = {}
 	for index = 0, 7 do
 		local room = state.plan[index]
 		table.insert(firstDoors, string.format("%03d:%s/%s", index + 1, room.kind, room.shape))
 	end
-	print("[NOCTURNE v15] run seed", state.seed, table.concat(firstDoors, "  "))
+	print("[NOCTURNE v16] run seed", state.seed, table.concat(firstDoors, "  "))
 	state.world:SetAttribute("DoorsOpened", 0)
 	state.world:SetAttribute("TotalDoors", CONFIG.Doors)
 	state.world:SetAttribute("Storeys", math.floor(Layout.EntranceY(CONFIG.Doors) / Layout.StoreyRise) + 1)
@@ -3653,7 +3641,7 @@ local function registerPlayer(player)
 		stamina = 100, sprinting = false, crouching = false, torchOn = false,
 		items = emptyItems(), coins = 0, notes = 0, gold = 0,
 		charge = 0, health = 100, selected = 1, pillUntil = 0, closetCooldown = 0,
-		voidWalk = false, voidStart = nil, nextSpiderRoom = 0,
+		voidWalk = false, nextSpiderRoom = 0,
 	}
 	player:SetAttribute("Stamina", 100)
 	syncInventory(player)
@@ -3677,7 +3665,7 @@ local function registerPlayer(player)
 		info.torchOn = false
 		info.health = 100 -- a new life, but the run's wallet and items survive
 		info.pillUntil = 0
-		info.voidWalk, info.voidStart = false, nil
+		info.voidWalk = false
 		player:SetAttribute("VoidWalk", false)
 		player:SetAttribute("Stamina", 100)
 		syncInventory(player)
@@ -3708,7 +3696,7 @@ local function registerPlayer(player)
 			leaveCloset(player, false)
 			info.health = 0
 			info.torchOn = false
-			info.voidWalk, info.voidStart = false, nil
+			info.voidWalk = false
 			player:SetAttribute("VoidWalk", false)
 			syncInventory(player)
 			remote:FireClient(player, "Death")
@@ -3885,7 +3873,12 @@ RunService.Heartbeat:Connect(function(dt)
 	local farthest = state.opened == CONFIG.Doors and CONFIG.Doors * L + CONFIG.VoidLength
 		or math.min(CONFIG.Doors, state.opened + CONFIG.Ahead) * L
 	for player in pairs(state.players) do
-		local root = playerRoot(player)
+		local root, humanoid = playerRoot(player)
+		if root and humanoid and not player:GetAttribute("Finished")
+			and state.opened == CONFIG.Doors
+			and root.Position.Z >= CONFIG.Doors * L + CONFIG.VoidTriggerDepth then
+			triggerFinale(player, root, humanoid) -- recovers even if .Touched was missed
+		end
 		if root and not player:GetAttribute("Finished") then
 			local index = Layout.RoomIndexAt(root.Position.Z)
 			local floorY = index >= CONFIG.Doors and Layout.EntranceY(CONFIG.Doors)
@@ -3925,14 +3918,6 @@ RunService.Heartbeat:Connect(function(dt)
 			end
 		elseif humanoid and not player:GetAttribute("Finished") and not state.entering[player] then
 			keepInsideHotel(player, root)
-			-- Touched is normally immediate, but this heartbeat also handles a
-			-- skipped sensor or a streaming/network timing gap on door 100.
-			if info.voidWalk and root.Position.Z < CONFIG.Doors * L + 0.8 then
-				info.voidWalk, info.voidStart = false, nil
-				player:SetAttribute("VoidWalk", false)
-			elseif not info.voidWalk then
-				enterVoidWalk(player, root, humanoid)
-			end
 			local gap = leader and (leaderZ - root.Position.Z) / L or 0
 			local catchup = gap >= 5 and 7 or gap >= 2.5 and 3 or 0
 			if gap >= 7 and leader ~= root
@@ -3968,9 +3953,8 @@ RunService.Heartbeat:Connect(function(dt)
 					info.stamina = math.min(100, info.stamina + CONFIG.StaminaRegen * step)
 				end
 				local fast = state.clock < info.pillUntil and 9 or 0
-				local speed = info.voidWalk and CONFIG.VoidWalkSpeed
-					or (info.crouching and CONFIG.CrouchSpeed
-						or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed) + fast + catchup)
+				local speed = info.crouching and CONFIG.CrouchSpeed
+					or (running and CONFIG.SprintSpeed or CONFIG.WalkSpeed) + fast + catchup
 				if humanoid.WalkSpeed ~= speed then humanoid.WalkSpeed = speed end
 				local rounded = math.floor(info.stamina + 0.5)
 				if player:GetAttribute("Stamina") ~= rounded then player:SetAttribute("Stamina", rounded) end
@@ -3989,4 +3973,4 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-print("[NOCTURNE v15] solid white finale, individual Blind Guest music and native first person.")
+print("[NOCTURNE v16] instant white threshold scare, intensified Blind Guest panic and native first person.")

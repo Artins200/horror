@@ -1,12 +1,14 @@
--- CLIENT Command Bar during Play: stay in the SAME room as the living Blind
--- Guest, run this, then leave through a door. Watch/hear the panic and fade.
--- The delayed probes print to Client Output while you keep playing.
+-- CLIENT Command Bar during Play: stand in the SAME room as the living Blind
+-- Guest, run this, then leave through a door. Visual panic is now present
+-- continuously, with a hard first-sight hit and sharp recurring bursts.
 local player = game:GetService("Players").LocalPlayer
 assert(player, "Run in the CLIENT Command Bar, not on the server")
 local world = workspace:FindFirstChild("NocturneWorld")
-assert(world and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15",
-	"Open Nocturne-v15.rbxl in a NEW Studio tab and press Play")
-local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+assert(world and world:GetAttribute("GenerationBuild") == "ThresholdScareAndBlindPanic-v16",
+	"Open Nocturne-v16.rbxl in a NEW Studio tab and press Play")
+local character = player.Character
+local root = character and character:FindFirstChild("HumanoidRootPart")
+local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 local guest = world:FindFirstChild("TheBlindGuest")
 local function sameRoom()
 	return root and root.Parent and guest and guest.Parent and not guest:GetAttribute("Banished")
@@ -17,37 +19,46 @@ local service = game:GetService("SoundService")
 local music = service:FindFirstChild("Blind Guest / local theme")
 local scary = service:FindFirstChild("Rare scary sound")
 local growl = service:FindFirstChild("Rare scary growl")
+local pulse = service:FindFirstChild("Blind panic heartbeat")
 local source = workspace:FindFirstChild("музыка_для_слепого когда в одной комнате")
-assert(source and source:IsA("Sound") and music and scary and growl and music.Looped
-	and not source.IsPlaying, "The original v14 Sound objects were not cloned locally")
-task.wait(1.1)
-assert(sameRoom() and music.IsPlaying and music.Volume > 0.1,
-	"The Blind Guest's music is not playing while both of you are in the same room")
-if not music.IsLoaded then
-	warn("NOCTURNE: the Sound is playing but NOT LOADED. Check Studio Output for audio permissions; "
-		.. "the owner of IDs in Nocturne-v14 must grant this place access.")
-end
-local grade = game:GetService("Lighting"):FindFirstChild("Blind Guest colour panic")
-local blur = game:GetService("Lighting"):FindFirstChild("Blind Guest double vision")
+assert(source and source:IsA("Sound") and music and scary and growl and pulse
+	and music.Looped and not source.IsPlaying,
+	"The original v14 Sound objects were not cloned locally")
+local lighting = game:GetService("Lighting")
+local grade = lighting:FindFirstChild("Blind Guest colour panic")
+local blur = lighting:FindFirstChild("Blind Guest double vision")
+local bloom = lighting:FindFirstChild("Blind Guest retinal overload")
 local gui = player:FindFirstChildOfClass("PlayerGui"):FindFirstChild("NocturneHUD")
 local bar = gui and gui:FindFirstChild("Blind signal fracture")
-assert(grade and blur and bar and workspace.CurrentCamera.CameraType == Enum.CameraType.Custom,
-	"Panic effects or the normal Humanoid first-person camera are missing")
-print("NOCTURNE v15: supplied Blind Guest music playing locally at", music.Volume,
-	"loaded:", music.IsLoaded, "-- now leave this room; music should fade rather than cut")
+local veil = gui and gui:FindFirstChild("Blind chromatic bleed")
+task.wait(0.25)
+assert(sameRoom() and music.IsPlaying and music.Volume > 0.1
+	and grade and grade.Saturation > 0.02 and blur and blur.Size > 0.5
+	and bloom and bloom.Intensity > 0.03
+	and bar and bar.BackgroundTransparency < 0.98
+	and veil and veil.BackgroundTransparency < 1
+	and workspace.CurrentCamera.CameraType == Enum.CameraType.Custom
+	and workspace.CurrentCamera.CameraSubject == humanoid,
+	"Guest's music/persistent distortion is missing or the native camera detached")
+if not music.IsLoaded then
+	warn("NOCTURNE: Sound playing but NOT LOADED; check Studio Output for audio permissions. "
+		.. "The owner of the original v14 sound must allow this place to play it.")
+end
+print("NOCTURNE v16: Blind theme volume", music.Volume, "loaded:", music.IsLoaded,
+	"-- stay for a coloured burst, then leave for the music fade")
 task.spawn(function()
-	local start = os.clock()
-	local panicSeen = false
-	while sameRoom() and os.clock() - start < 20 do
-		if blur.Size > 0 and grade.Saturation > 0 and bar.BackgroundTransparency < 1 then
-			panicSeen = true
+	local start, seen = os.clock(), false
+	while sameRoom() and os.clock() - start < 9 do
+		if blur.Size > 8 and bloom.Intensity > 1 and grade.Saturation > 0.8
+			and bar.BackgroundTransparency < 0.5 and veil.BackgroundTransparency < 0.9 then
+			seen = true
 		end
-		task.wait(0.08)
+		task.wait(0.06)
 	end
-	if sameRoom() and not panicSeen then
-		warn("NOCTURNE: no colour panic observed after 20 seconds; inspect Client Output")
-	elseif panicSeen then
-		print("NOCTURNE v15: irregular colour/blur/signal panic observed; camera remains attached")
+	if sameRoom() and not seen then
+		warn("NOCTURNE: no STRONG coloured/blurred panic in nine seconds; check Client Output")
+	elseif seen then
+		print("NOCTURNE v16: strong colour/blur/bloom/static spike; camera remains physical")
 	end
 end)
 task.spawn(function()
@@ -60,10 +71,11 @@ task.spawn(function()
 	local before = music.Volume
 	task.wait(0.20)
 	local after = music.Volume
-	assert(after < before and after > 0 and music.IsPlaying,
-		"Music cut off instead of fading after leaving the Blind Guest's room")
+	assert(after < before and after > 0 and music.IsPlaying
+		and blur.Size == 0 and bloom.Intensity == 0 and veil.BackgroundTransparency == 1,
+		"Guest's theme cut off or personal visual panic followed it into another room")
 	task.wait(6)
 	assert(music.Volume < 0.02 and not music.IsPlaying,
-		"The Blind Guest theme did not finish its gradual fade after exit")
-	print("NOCTURNE v15: personal Blind Guest theme faded smoothly and stopped")
+		"The theme did not complete its gradual fade after exit")
+	print("NOCTURNE v16: personal Blind Guest theme faded smoothly and stopped")
 end)

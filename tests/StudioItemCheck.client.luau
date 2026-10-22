@@ -6,8 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 assert(player, "Run this in the CLIENT Command Bar during Play, not Run")
 local world = workspace:WaitForChild("NocturneWorld", 10)
-assert(world and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15",
-	"Open Nocturne-v15.rbxl in a NEW Studio tab and press Play")
+assert(world and world:GetAttribute("GenerationBuild") == "ThresholdScareAndBlindPanic-v16",
+	"Open Nocturne-v16.rbxl in a NEW Studio tab and press Play")
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 assert(humanoid.Health > 0 and not player:GetAttribute("Hidden")
@@ -51,6 +51,6 @@ elseif id == "CRUCIFIX" then
 else
 	error("Unknown selected item: " .. tostring(id))
 end
-print("NOCTURNE v15: live item action", id, reply,
+print("NOCTURNE v16: live item action", id, reply,
 	"health", humanoid.Health, "speed", humanoid.WalkSpeed,
 	"light", player:GetAttribute("TorchOn"))

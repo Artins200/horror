@@ -532,7 +532,7 @@ local player = addPlayer("SmokeTester")
 local world = services.Workspace:FindFirstChild("NocturneWorld")
 assert(world and world:GetAttribute("DoorsOpened") == 0)
 assert(world:GetAttribute("CameraBuild") == "NativeFirstPerson-v10"
-    and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15", "old place was loaded")
+    and world:GetAttribute("GenerationBuild") == "ThresholdScareAndBlindPanic-v16", "old place was loaded")
 assert(services.Workspace.Gravity == 196.2, "zero gravity leaves the player floating")
 assert(services.SoundService.AmbientReverb == Enum.ReverbType.Hallway,
     "hotel walls no longer have physical audio reverb")
@@ -1449,46 +1449,55 @@ for index = 0, 99 do
         local human = player.Character:FindFirstChildOfClass("Humanoid")
         local y = NocturneLayout.EntranceY(100) + 3
         local trigger = exit:FindFirstChild("End of the nightmare")
-        root.CFrame = CFrame.new(0, y, 100 * L + 43)
-        trigger.Touched:Fire(root)
+        assert(trigger and trigger.CanTouch and not trigger.CanCollide
+            and math.abs(trigger.Position.Z - (100 * L + 1.3)) < 0.001
+            and not exit:FindFirstChild("White threshold"),
+            "the one-shot finale sensor must be just past door 100, not the far wall")
+        root.CFrame = CFrame.new(0, y, 100 * L - 0.15)
+        trigger.Touched:Fire(root) -- a limb can hit before the avatar actually enters
+        services.RunService.Heartbeat:Fire(0.2)
         assert(not player:GetAttribute("Finished") and countEvent("Finale") == 0,
-            "touching the end before the white threshold skipped the slow walk")
-        root.CFrame = CFrame.new(0, y, 100 * L + 3.5)
-        exit:FindFirstChild("White threshold").Touched:Fire(root)
-        assert(player:GetAttribute("VoidWalk") and human.WalkSpeed == 5
-            and not player:GetAttribute("Crouching") and not player:GetAttribute("TorchOn"),
-            "the real Humanoid did not slow down and extinguish the torch")
+            "touching the door before entering prematurely fired the scare")
+        root.CFrame = CFrame.new(0, y, 100 * L + 0.65)
+        trigger.Touched:Fire(root)
+        assert(player:GetAttribute("Finished") and player:GetAttribute("VoidWalk")
+            and healthOf(player) == 100 and human.WalkSpeed == 0
+            and not player:GetAttribute("Crouching") and not player:GetAttribute("TorchOn")
+            and countEvent("Finale") == 1 and countEvent("Victory") == 0
+            and countEvent("MonsterSpawn", "FINAL") == 0,
+            "entering the WHITE ROOM did not instantly freeze and scare the real avatar")
+        local firstEvent = observed.events[#observed.events]
+        assert(firstEvent.event == "Finale" and firstEvent.a == witness
+            and firstEvent.player == player,
+            "final scare was not addressed only to the player crossing the door")
         remote.OnServerEvent:Fire(player, "Sprint", true)
         remote.OnServerEvent:Fire(player, "Crouch", true)
         remote.OnServerEvent:Fire(player, "Torch", true)
-        services.RunService.Heartbeat:Fire(0.2)
-        assert(human.WalkSpeed == 5 and not player:GetAttribute("Crouching")
-            and not player:GetAttribute("TorchOn"),
-            "remote controls bypassed the server-owned slow walk")
-        root.CFrame = CFrame.new(0, y, 100 * L - 1)
-        services.RunService.Heartbeat:Fire(0.2)
-        assert(not player:GetAttribute("VoidWalk") and human.WalkSpeed == 12,
-            "returning through door 100 left the player permanently slow")
-        root.CFrame = CFrame.new(0, y, 100 * L + 3.5)
-        services.RunService.Heartbeat:Fire(0.2) -- fallback also detects entry
-        assert(player:GetAttribute("VoidWalk") and human.WalkSpeed == 5,
-            "a missed threshold touch cannot recover the finale")
-        root.CFrame = CFrame.new(0, y, 100 * L + 43)
         trigger.Touched:Fire(root)
-        assert(not player:GetAttribute("Finished"), "end fired immediately without a walk")
-        for _ = 1, 11 do services.RunService.Heartbeat:Fire(0.4) end
-        trigger.Touched:Fire(root)
-        assert(player:GetAttribute("Finished") and healthOf(player) == 100
-            and human.WalkSpeed == 0 and countEvent("Finale") == 1
-            and countEvent("Victory") == 0 and countEvent("MonsterSpawn", "FINAL") == 0,
-            "final scare was not personal, delayed, physical or model-driven")
+        services.RunService.Heartbeat:Fire(0.2)
+        assert(human.WalkSpeed == 0 and not player:GetAttribute("TorchOn")
+            and countEvent("Finale") == 1 and witness.PrimaryPart.Transparency == 1,
+            "controls or a duplicate touch undid the scare or revealed it to teammates")
+        local teammate = addPlayer("SkippedFinalTouch")
+        local otherRoot = rootOf(teammate)
+        otherRoot.CFrame = CFrame.new(14.5, y, 100 * L + 0.8)
+        trigger.Touched:Fire(otherRoot)
+        assert(not teammate:GetAttribute("Finished") and countEvent("Finale") == 1,
+            "a root OUTSIDE the doorway triggered the personal finale")
+        otherRoot.CFrame = CFrame.new(0, y, 100 * L + 0.8)
+        services.RunService.Heartbeat:Fire(0.2) -- no Touched callback at all
+        assert(teammate:GetAttribute("Finished") and countEvent("Finale") == 2
+            and teammate.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == 0,
+            "missing Touched did not recover through the server Heartbeat guard")
         local lastEvent = observed.events[#observed.events]
-        assert(lastEvent.event == "Finale" and lastEvent.a == witness,
-            "finale sent the wrong model to the client")
-        trigger.Touched:Fire(root)
-        assert(countEvent("Finale") == 1 and witness.PrimaryPart.Transparency == 1,
-            "second touch replayed the scare or revealed the model to other players")
-        assert(healthOf(player) == 100, "completed player died during the victory scene")
+        assert(lastEvent.event == "Finale" and lastEvent.a == witness
+            and lastEvent.player == teammate and witness.PrimaryPart.Transparency == 1,
+            "the fallback did not send the concealed model ONLY to the late player")
+        trigger.Touched:Fire(otherRoot)
+        services.RunService.Heartbeat:Fire(0.2)
+        assert(countEvent("Finale") == 2 and healthOf(player) == 100,
+            "the finished player was scared twice or died during the victory scene")
+        removePlayer(teammate)
     end
     if room:GetAttribute("Threat") == "RUSH" then rushCount = rushCount + 1 end
     if room:GetAttribute("Threat") == "BLIND" then blindCount = blindCount + 1 end
@@ -1801,4 +1810,4 @@ if (status !== lua.LUA_OK) {
     .map((text, offset) => `${Math.max(1, line - 3) + offset}: ${text}`).join("\n");
   throw new Error(`Server generator smoke test failed: ${message}\n${nearby}`);
 }
-console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; four threats, shared loot, sealed white finale and real-avatar slow walk`);
+console.log(`Server smoke test OK: ${lua.lua_tointeger(state, -1)} doors; four threats, shared loot, sealed white chamber, immediate personal scare and missed-touch recovery`);

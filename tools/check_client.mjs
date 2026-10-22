@@ -660,26 +660,43 @@ local blindBody = Instance.new("Part")
 blindBody.Position = Vector3.new(0, 4.7, 18)
 blindBody.Parent = blind
 blind.PrimaryPart = blindBody
-local panicSeen = false
-for _ = 1, 85 do
-    replacement.CFrame = CFrame.new(0, 6, 3) -- Roblox's native CameraModule refreshes each frame
+replacement.CFrame = CFrame.new(0, 6, 3) -- native eye before the first sight of the Guest
+runService.render(0.07)
+local panicBlur = lighting:FindFirstChild("Blind Guest double vision")
+local panicBloom = lighting:FindFirstChild("Blind Guest retinal overload")
+local panicVeil = gui:FindFirstChild("Blind chromatic bleed")
+local panicBar = gui:FindFirstChild("Blind signal fracture")
+local panicPulse = soundService:FindFirstChild("Blind panic heartbeat")
+assert(panicPulse.Plays == 1 and panicBlur.Size > 8 and panicBloom.Intensity > 1
+    and panicVeil.BackgroundTransparency < 0.85 and panicBar.BackgroundTransparency < 0.5
+    and music.IsPlaying and replacement.CameraType == Enum.CameraType.Custom
+    and replacement.CameraSubject == nextHumanoid,
+    "entering the Blind Guest's room did not immediately distort colour, sound and camera")
+for _ = 1, 29 do
+    replacement.CFrame = CFrame.new(0, 6, 3)
     runService.render(0.07)
-    if lighting:FindFirstChild("Blind Guest double vision").Size > 0.1
-        and gui:FindFirstChild("Blind signal fracture").BackgroundTransparency < 1 then
-        panicSeen = true
-    end
 end
-assert(music.IsPlaying and music.Plays == 1 and music.Volume > 0.25 and panicSeen
+assert(panicBlur.Size > 1 and panicBloom.Intensity > 0
+    and panicBar.BackgroundTransparency < 1 and panicVeil.BackgroundTransparency < 1,
+    "visual pressure disappeared between panic spikes while still with the Blind Guest")
+for _ = 1, 100 do
+    replacement.CFrame = CFrame.new(0, 6, 3)
+    runService.render(0.07)
+end
+assert(music.IsPlaying and music.Plays == 1 and music.Volume > 0.4
+    and panicPulse.Plays >= 2
     and replacement.CameraType == Enum.CameraType.Custom
     and replacement.CameraSubject == nextHumanoid
     and not workspace:FindFirstChild("музыка_для_слепого когда в одной комнате").IsPlaying,
-    "same-room Blind Guest music, personal panic or native camera is missing")
+    "same-room music, recurrent panic or grounded native camera is missing")
 local beforeFade = music.Volume
 blind:SetAttribute("RoomIndex", 1) -- monster followed a sound through a door
 runService.render(0.07)
 assert(music.IsPlaying and music.Volume < beforeFade and music.Volume > 0
-    and lighting:FindFirstChild("Blind Guest double vision").Size == 0,
-    "music cut off suddenly or panic followed a monster into another room")
+    and panicBlur.Size == 0 and panicBloom.Intensity == 0
+    and panicVeil.BackgroundTransparency == 1 and panicBar.BackgroundTransparency == 1
+    and not panicPulse.IsPlaying,
+    "music cut suddenly or panic effects followed the Guest into another room")
 for _ = 1, 115 do runService.render(0.07) end
 assert(not music.IsPlaying and music.Volume < 0.01
     and music.Plays == 1 and not scary.IsPlaying and not growl.IsPlaying,
@@ -700,66 +717,71 @@ for _ = 1, 2100 do runService.render(0.07) end
 assert((scary.Plays or 0) + (growl.Plays or 0) == 2
     and not (scary.IsPlaying and growl.IsPlaying),
     "second rare sound did not wait until first ended and its long cooldown passed")
-nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 5)
+-- The server now fires AT THE ENTRANCE (depth 0.55), not after 43 studs.
+nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 0.65)
 nextRoot.CFrame = CFrame.new(nextRoot.Position)
 player:SetAttribute("VoidWalk", true)
 local beforeVoidInput = #remote.actions
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.LeftShift, UserInputType=Enum.UserInputType.Keyboard}, false)
 uiService.InputBegan:Fire({KeyCode=Enum.KeyCode.F, UserInputType=Enum.UserInputType.Keyboard}, false)
-for _ = 1, 20 do runService.render(0.07) end
 assert(#remote.actions == beforeVoidInput and not torch.Enabled and not replacementReach.Enabled
-    and not replacementBounce.Enabled and not reticle.Visible and not bar.Visible
-    and not gui:FindFirstChild("Health track").Visible
-    and not gui:FindFirstChild("Mobile sprint").Visible
-    and not scary.IsPlaying and not growl.IsPlaying
-    and lighting:FindFirstChild("Void eye adaptation").Brightness > 0.25
-    and lighting:FindFirstChild("Void white bloom").Intensity > 1.4
-    and gui:FindFirstChild("White void glare").BackgroundTransparency < 1
-    and soundService:FindFirstChild("White void sub-bass").IsPlaying
-    and nextHumanoid.CameraOffset.Y < -0.1
-    and replacement.CameraType == Enum.CameraType.Custom and replacement.CameraSubject == nextHumanoid
-    and not nextRoot.Anchored,
-    "white-void lighting/lean/slow controls broke the grounded native first person")
+    and not replacementBounce.Enabled and not reticle.Visible and not bar.Visible,
+    "entry did not cancel sprint, flashlight and equipment")
 local witness=Instance.new("Model")
 witness.Name="TheLastWitness"
 local finalFace=Instance.new("Part")
 finalFace.Name="The face behind the dawn"
-finalFace.Transparency=1 -- invisible template must not spoil a teammate's walk
+finalFace.Transparency=1 -- invisible template must not spoil a teammate's view
 finalFace.Parent=witness
 witness.Parent=world
-nextRoot.Position = Vector3.new(0, 3, 100 * 44 + 43)
-remote.OnClientEvent:Fire("Finale", witness)
+remote.OnClientEvent:Fire("Finale", witness) -- NO adaptation frames or far-end delay
 local finalCopy = stage:FindFirstChild("TheLastWitness")
+local finalVeil = gui:FindFirstChild("Creature close-up"):FindFirstChild("Split second red flash")
 assert(scare.Visible and not modal.Visible and not reticle.Visible
     and finalCopy and finalCopy:FindFirstChild("The face behind the dawn").Transparency == 0
     and finalFace.Transparency == 1 and view.Size[1] == 1.29
+    and view.CurrentCamera.FieldOfView == 39 and finalVeil.BackgroundTransparency > 0.8
     and soundService:FindFirstChild("Final bone impact").IsPlaying
-    and (scary.IsPlaying ~= growl.IsPlaying),
-    "end of the empty walk did not reveal a PRIVATE face with exclusive layered audio")
+    and soundService:FindFirstChild("Final close shriek").IsPlaying
+    and (scary.IsPlaying ~= growl.IsPlaying)
+    and replacement.CameraType == Enum.CameraType.Custom and replacement.CameraSubject == nextHumanoid
+    and not nextRoot.Anchored,
+    "first frame at the white-room entrance hid the face, muted the shriek or lost the avatar")
+player:SetAttribute("Finished", true)
+remote.OnClientEvent:Fire("Finale", witness) -- duplicated event/attribute must be idempotent
+assert(soundService:FindFirstChild("Final bone impact").Plays == 1,
+    "attribute replication restarted the final scare")
 local finaleHold=false
 for _,timer in ipairs(timers) do if timer.at>=3.25 then finaleHold=true end end
 assert(finaleHold and not torch.Enabled and not replacementReach.Enabled
-    and not replacementBounce.Enabled, "finale left a bright beam on the death screen")
+    and not replacementBounce.Enabled, "finale left a bright beam on the victory screen")
 drainTimers()
 assert(modal.Visible and modal:FindFirstChild("End title").Text=="ВЫХОД"
     and not scare.Visible and replacement.CameraSubject==nextHumanoid
+    and soundService:FindFirstChild("Final bone impact").Plays == 2
     and soundService:FindFirstChild("Final close shriek").Plays == 1
     and soundService:FindFirstChild("Final deep distortion").Plays == 1,
-    "final sound design/scare did not lead to victory without detaching the camera")
--- Even if the last model has not replicated, the giant ring-eyed face remains.
+    "personal threshold scare did not hold then lead to the victory card")
+-- Even if the RemoteEvent and model do not replicate, the server Finished flag
+-- must still reveal a giant ring-eyed fallback face, not an empty white screen.
 witness.Parent = nil
-player:SetAttribute("VoidWalk", false) -- authoritative respawn clears its old attribute
+player:SetAttribute("Finished", false)
+player:SetAttribute("VoidWalk", false)
 player.CharacterAdded:Fire(nextAvatar)
-remote.OnClientEvent:Fire("Finale", nil)
+assert(not scare.Visible and not modal.Visible, "a previous life kept its jumpscare")
+player:SetAttribute("Finished", true) -- remote was deliberately lost
+drainTimers() -- runs the 0.12 s attribute recovery, schedules the new finale
 local blank=stage:FindFirstChild("Last glimpse of FINAL")
 local rings=0
-for _,piece in ipairs(blank:GetChildren()) do
-    if piece.Name=="Pale orbital rim" then rings=rings+1 end
+if blank then
+    for _,piece in ipairs(blank:GetChildren()) do
+        if piece.Name=="Pale orbital rim" then rings=rings+1 end
+    end
 end
 assert(scare.Visible and rings==28 and not modal.Visible,
-    "late final-model replication produced a blank jumpscare")
+    "missing final-model/remote replication produced a blank jumpscare")
 drainTimers()
-assert(modal.Visible and not scare.Visible, "fallback finale never completed")
+assert(modal.Visible and not scare.Visible, "attribute-only finale never completed")
 return true
 `;
 for (const device of ["desktop", "phone"]) {
@@ -779,5 +801,5 @@ for (const device of ["desktop", "phone"]) {
       `${Math.max(1, atLine - 3) + i}: ${s}`).join("\n");
     throw new Error(`${device} HUD/avatar smoke test failed: ${error}\n${nearby}`);
   }
-  console.log(`${device} HUD OK: owned slots, v14 audio, same-room panic/music fade, rare cues and private finale`);
+  console.log(`${device} HUD OK: owned slots, v14 audio, instant Blind panic/music fade, rare cues and threshold/attribute finale`);
 }

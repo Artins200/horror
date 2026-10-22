@@ -184,4 +184,4 @@ RunService:BindToRenderStep("NocturnePerspective", Enum.RenderPriority.Camera.Va
 		end
 	end
 end)
-print("[NOCTURNE v15 / native first person] real R6/R15 hands, including the white-void eye shield")
+print("[NOCTURNE v16 / native first person] real R6/R15 hands; no fake viewmodel")

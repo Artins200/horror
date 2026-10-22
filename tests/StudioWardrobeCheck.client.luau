@@ -5,8 +5,8 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 assert(player, "Run in the CLIENT Command Bar during Play, not Run")
 local world = workspace:WaitForChild("NocturneWorld", 10)
-assert(world and world:GetAttribute("GenerationBuild") == "WhiteVoidAndBlindAudio-v15",
-	"Open Nocturne-v15.rbxl in a NEW Studio tab and press Play")
+assert(world and world:GetAttribute("GenerationBuild") == "ThresholdScareAndBlindPanic-v16",
+	"Open Nocturne-v16.rbxl in a NEW Studio tab and press Play")
 local character = player.Character or player.CharacterAdded:Wait()
 local root = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
